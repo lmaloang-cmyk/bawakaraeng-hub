@@ -851,7 +851,7 @@ function initPantau(){
 function openZone(i){var z=zones[i];var pct=Math.round(z.planted/z.need*100);if(pantauMap){pantauMap.setView(z.c,14);}document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+zc[z.st]+'22;color:'+zc[z.st]+'">● '+zt[z.st]+'</span><h2 style="margin-top:8px">'+z.n+'</h2><div class="lat" style="color:#2b6fff;font-style:normal;font-weight:800">🔥 Terdampak sejak '+z.year+'</div><div class="info-row"><div class="info"><b>'+z.ha+' ha</b><small>Luas Kritis</small></div><div class="info"><b>'+fmt(z.need)+'</b><small>Pohon Dibutuhkan</small></div><div class="info"><b>'+pct+'%</b><small>Progress</small></div></div><p class="body">'+z.cause+'</p><div class="quota" style="margin-top:12px"><i style="width:'+pct+'%;background:'+zc[z.st]+'"></i></div><div class="zmeta" style="margin-top:6px">'+fmt(z.planted)+' dari '+fmt(z.need)+' pohon telah ditanam</div><button class="btn g-green" onclick="adopt('+i+')">🌱 Adopsi 250 Bibit Pohon</button>';openSheet();}
 function adopt(i){var z=zones[i];z.planted=Math.min(z.need,z.planted+250);renderPantauStats();renderZones();openZone(i);toast('250 bibit diadopsi untuk '+z.n,'ok');}
 renderPantauStats();renderZones();
-renderFeed();renderFcar();renderChips();renderSpecies();renderRules();renderMap();renderKom();renderDates();updateTotal();tick();setInterval(tick,10000);
+tick();setInterval(tick,10000);[renderFeed,renderFcar,renderChips,renderSpecies,renderRules,renderMap,renderKom,renderDates,updateTotal].forEach(function(f){try{f();}catch(e){console.warn('render skip',e);}});
 var hb=document.getElementById('holdbtn');
 hb.addEventListener('mousedown',startHold);hb.addEventListener('mouseup',cancelHold);hb.addEventListener('mouseleave',cancelHold);
 hb.addEventListener('touchstart',function(e){e.preventDefault();startHold();},{passive:false});
@@ -1034,7 +1034,7 @@ async function enrichSpecies(){
   var note=document.getElementById('eksplorNote');if(note){note.style.display='block';}
   try{await Promise.all(species.map(function(s){return Promise.all([_fetchINat(s),_fetchWiki(s)]);}));}catch(e){}
   if(note){note.style.display='none';}
-  if(typeof renderSpecies==='function'){renderSpecies();}
+  if(typeof renderSpecies==='function'){renderSpecies();}if(typeof renderFcar==='function'){renderFcar();}
 }
 </script>
 <script>
@@ -1081,7 +1081,7 @@ async function enrichSpecies(){
     }
   }
   window.loadBerandaWeather=loadBerandaWeather;
-  window.addEventListener('load',function(){setTimeout(loadBerandaWeather,300);});
+  window.addEventListener('load',function(){setTimeout(loadBerandaWeather,300);setTimeout(function(){try{if(typeof enrichSpecies==='function')enrichSpecies();}catch(e){}},400);});
 })();
 </script>
 </body>
