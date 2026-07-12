@@ -893,7 +893,7 @@ async function loadLiveData(){
   if(window._liveDone) return; window._liveDone=true;
   var html="";
   try{
-    var r=await fetch((window.API_BASE||"")+"/api/bmkg");
+    var r=await fetch((window.API_BASE||"")+"/api/bmkg?adm4=73.06.04.1010");
     if(r.ok){
       var d=await r.json();var c=d.cuaca,g=d.gempa;
       if(c){html+='<div class="li-row"><span class="li-ic">🌦️</span><div><b>'+(c.desc||"-")+(c.temp!=null?" · "+c.temp+"°C":"")+'</b><small>'+(c.area||"Kawasan Bawakaraeng")+'</small></div></div>';}
@@ -1081,7 +1081,7 @@ async function enrichSpecies(){
     if(done)return;done=true;
     var card=document.getElementById('wcard');
     try{
-      var r=await fetch((window.API_BASE||'')+'/api/bmkg');
+      var r=await fetch((window.API_BASE||'')+'/api/bmkg?adm4=73.06.04.1010');
       if(!r.ok)throw 0;
       var d=await r.json();var c=d.cuaca,g=d.gempa;
       if(card)card.classList.remove('loading');
