@@ -291,6 +291,45 @@
   .liveinfo b{font-size:13px;color:#16233d;display:block;line-height:1.3}
   .liveinfo small{font-size:11px;color:var(--sub);font-weight:600}
   .liveinfo .li-hd{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  /* ===== Fitur tambahan ===== */
+  .form-card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px;margin-top:12px}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:12px;font-weight:800;color:var(--sub);margin-bottom:5px}
+  .fld input,.fld select{width:100%;box-sizing:border-box;border:1.5px solid #e7ebf2;border-radius:12px;padding:11px 12px;font-size:14px;font-family:var(--font);background:#fafbfe}
+  .fld input:focus,.fld select:focus{outline:none;border-color:#ff2d55}
+  .frow{display:flex;gap:10px}.frow .fld{flex:1}
+  .permit{background:var(--g-indigo);color:#fff;border-radius:18px;padding:18px;margin-top:14px;box-shadow:var(--shadow-lg)}
+  .permit h4{margin:0 0 2px;font-size:16px}.permit>small{opacity:.9;font-size:11px}
+  .permit .code{font-family:monospace;font-size:20px;font-weight:800;letter-spacing:2px;margin:8px 0}
+  .permit .qr{background:#fff;border-radius:12px;padding:8px;width:140px;height:140px;display:flex;align-items:center;justify-content:center;margin:10px auto;font-size:40px}
+  .permit .qr img{width:100%;height:100%;border-radius:6px}
+  .permit .pdet{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;opacity:.96}
+  .pkg{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+  .pkgcard{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);cursor:pointer;border:2px solid transparent;transition:.15s}
+  .pkgcard.on{border-color:#08b96f}
+  .pkgcard .pemoji{font-size:30px}
+  .pkgcard b{font-size:15px}.pkgcard small{color:var(--sub);font-size:12px;display:block}
+  .pkgcard .price{margin-left:auto;font-weight:800;color:#08b96f;white-space:nowrap}
+  .cert{background:linear-gradient(135deg,#ffffff,#f2fff8);border:2px solid #08b96f;border-radius:18px;padding:18px;margin-top:14px;text-align:center;box-shadow:var(--shadow-lg)}
+  .cert .seal{font-size:40px}.cert small{color:var(--sub);font-weight:700;letter-spacing:1px;font-size:10px}
+  .cert h4{margin:6px 0 2px;font-size:18px}
+  .cert .cid{font-family:monospace;font-weight:800;color:#08b96f;font-size:15px;margin:6px 0}
+  .tier{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .tier button{flex:1;min-width:78px;border:1.5px solid #e7ebf2;background:#fafbfe;border-radius:12px;padding:12px 6px;font-weight:800;font-family:var(--font);cursor:pointer;font-size:13px}
+  .tier button.on{background:var(--g-brand);color:#fff;border-color:transparent}
+  .alloc .arow{margin:12px 0}
+  .alloc .atop{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px}
+  .cmp{position:relative;border-radius:16px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow);height:210px;user-select:none}
+  .cmp .layer{position:absolute;inset:0;background-size:cover;background-position:center;display:flex;align-items:flex-end}
+  .cmp .lbl{background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;margin:10px}
+  .cmp .divider{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.45);transform:translateX(-1px)}
+  .cmp input[type=range]{position:absolute;bottom:10px;left:5%;width:90%;z-index:5}
+  .evt{display:flex;gap:12px;background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-top:12px;align-items:center}
+  .evt .cal{background:var(--g-teal);color:#fff;border-radius:12px;padding:8px 10px;text-align:center;min-width:50px}
+  .evt .cal b{font-size:20px;display:block;line-height:1}.evt .cal small{font-size:10px;font-weight:700}
+  .evt .einfo{flex:1}.evt .einfo b{font-size:14px}.evt .einfo small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
+  .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
+  .evt .ebtn.done{background:#c7ccd6}
 </style>
 </head>
 <body>
@@ -328,10 +367,14 @@
       <button class="q" onclick="go('peta')"><div class="ic g-blue">🗺️</div><span>Peta Jalur</span></button>
       <button class="q" onclick="go('lapor')"><div class="ic g-amber">📷</div><span>Lapor</span></button>
       <button class="q" onclick="openSOS()"><div class="ic g-brand">🆘</div><span>SOS</span></button>
-      <button class="q" onclick="go('trip')"><div class="ic g-indigo">🎫</div><span>SIMAKSI</span></button>
+      <button class="q" onclick="go('simaksi')"><div class="ic g-indigo">🎫</div><span>SIMAKSI</span></button>
       <button class="q" onclick="go('regulasi')"><div class="ic g-violet">⚖️</div><span>Regulasi</span></button>
       <button class="q" onclick="go('komunitas')"><div class="ic g-pink">👥</div><span>Komunitas</span></button>
       <button class="q" onclick="go('pantau')"><div class="ic g-teal">🌳</div><span>Pantau Pohon</span></button>
+      <button class="q" onclick="go('adopsi')"><div class="ic g-green">🌱</div><span>Adopsi Pohon</span></button>
+      <button class="q" onclick="go('donasi')"><div class="ic g-brand">💚</div><span>Donasi</span></button>
+      <button class="q" onclick="go('bandingkan')"><div class="ic g-teal">🌗</div><span>Before-After</span></button>
+      <button class="q" onclick="go('agenda')"><div class="ic g-amber">📅</div><span>Agenda</span></button>
     </div>
 
     <div class="sh"><span class="bar"></span><h3>Laporan Terkini</h3><span class="link" onclick="toast('Menampilkan semua laporan')">Semua</span></div>
@@ -495,6 +538,63 @@
     <div id="zoneList"></div>
     <button class="btn g-green" onclick="go('lapor')">🌱 Ikut Program Tanam Pohon</button>
     <p class="note">Lokasi ilustratif: longsor kaldera 2004, kebakaran 2019–2020 &amp; sedimentasi hulu Jeneberang. Peta citra satelit Esri (butuh internet).</p>
+  </section>
+
+  <!-- SIMAKSI ONLINE -->
+  <section id="simaksi" class="view">
+    <div class="sec-title">SIMAKSI Online 🎫</div>
+    <div class="sec-sub">Ajukan Surat Izin Masuk Kawasan Konservasi langsung dari aplikasi.</div>
+    <div class="form-card">
+      <div class="fld"><label>Nama Ketua Rombongan</label><input id="sk-nama" placeholder="Nama lengkap"/></div>
+      <div class="frow"><div class="fld"><label>Jumlah Anggota</label><input id="sk-jml" type="number" min="1" value="1"/></div><div class="fld"><label>Asal / Organisasi</label><input id="sk-org" placeholder="Komunitas / kampus"/></div></div>
+      <div class="frow"><div class="fld"><label>Tanggal Naik</label><input id="sk-naik" type="date"/></div><div class="fld"><label>Tanggal Turun</label><input id="sk-turun" type="date"/></div></div>
+      <div class="fld"><label>No. HP / Kontak Darurat</label><input id="sk-hp" placeholder="08xx"/></div>
+      <button class="btn g-indigo" onclick="ajukanSimaksi()">📝 Ajukan SIMAKSI</button>
+    </div>
+    <div id="sk-result"></div>
+    <p class="note">Pengajuan diverifikasi Tim Reichas Chelebes &amp; petugas kawasan sebelum berlaku.</p>
+  </section>
+
+  <!-- ADOPSI POHON -->
+  <section id="adopsi" class="view">
+    <div class="sec-title">Adopsi Pohon 🌱</div>
+    <div class="sec-sub">Danai satu pohon untuk direstorasi di lahan kritis Bawakaraeng — dapat sertifikat digital.</div>
+    <div class="pkg" id="pkgList"></div>
+    <div class="form-card"><div class="fld"><label>Nama untuk Sertifikat</label><input id="ad-nama" placeholder="Nama kamu / instansi"/></div>
+      <button class="btn g-green" onclick="adopsiPohon()">🌳 Adopsi Sekarang</button></div>
+    <div id="ad-result"></div>
+  </section>
+
+  <!-- DONASI & TRANSPARANSI -->
+  <section id="donasi" class="view">
+    <div class="sec-title">Donasi &amp; Transparansi 💚</div>
+    <div class="sec-sub">Dukung reboisasi &amp; patroli Bawakaraeng. Setiap rupiah kami laporkan.</div>
+    <div class="form-card">
+      <div class="row-between" style="font-size:12px;font-weight:800"><span>Terkumpul 2026</span><span style="color:#08b96f">Rp 47.500.000</span></div>
+      <div class="quota" style="margin-top:8px"><i style="width:63%;background:var(--g-green)"></i></div>
+      <div class="row-between" style="font-size:11px;color:var(--sub);margin-top:4px"><span>Target Rp 75.000.000</span><span>63%</span></div>
+      <div class="tier" id="dnTier"></div>
+      <button class="btn g-brand" onclick="donasi()">❤️ Donasi Sekarang</button>
+    </div>
+    <div class="sh"><span class="bar"></span><h3>Ke mana dana disalurkan?</h3></div>
+    <div class="form-card alloc" id="allocList"></div>
+    <p class="note">Laporan keuangan lengkap dipublikasikan tiap kuartal oleh Reichas Chelebes.</p>
+  </section>
+
+  <!-- BEFORE - AFTER -->
+  <section id="bandingkan" class="view">
+    <div class="sec-title">Before – After 🌗</div>
+    <div class="sec-sub">Geser untuk melihat perubahan lahan sebelum &amp; sesudah reboisasi.</div>
+    <div id="cmpList"></div>
+    <p class="note">Foto ilustratif zona restorasi. Unggah foto lapangan asli untuk pembaruan berkala.</p>
+  </section>
+
+  <!-- AGENDA KEGIATAN -->
+  <section id="agenda" class="view">
+    <div class="sec-title">Agenda Kegiatan 📅</div>
+    <div class="sec-sub">Ikut tanam pohon, bersih gunung &amp; patroli bersama komunitas.</div>
+    <div id="agendaList"></div>
+    <p class="note">Kuota terbatas. Konfirmasi keikutsertaan dikirim via kontak terdaftar.</p>
   </section>
 
   <!-- Bottom nav -->
@@ -732,5 +832,61 @@ async function loadLiveData(){
   box.innerHTML=html||'<small>🌐 Data langsung aktif setelah aplikasi di-deploy online (proxy /api). Saat ini memakai data statis.</small>';
 }
 (function(){if(typeof initPantau==="function"){var _o=initPantau;initPantau=function(){_o();setTimeout(loadLiveData,250);};}})();
-</script></body>
+</script><script>
+/* ===== Fitur tambahan: SIMAKSI, Adopsi, Donasi, Before-After, Agenda ===== */
+function _rid(p){return p+Math.random().toString(36).slice(2,7).toUpperCase();}
+function _rupiah(n){return 'Rp '+n.toLocaleString('id-ID');}
+
+/* SIMAKSI */
+function ajukanSimaksi(){
+  var nama=(document.getElementById('sk-nama').value||'').trim();
+  var jml=document.getElementById('sk-jml').value||'1';
+  var org=(document.getElementById('sk-org').value||'-').trim()||'-';
+  var naik=document.getElementById('sk-naik').value||'-';
+  var turun=document.getElementById('sk-turun').value||'-';
+  if(!nama){toast('Isi nama ketua rombongan dulu','err');return;}
+  var code=_rid('SMK-');
+  var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+code+' | '+nama+' | '+jml+' org');
+  document.getElementById('sk-result').innerHTML='<div class="permit"><h4>🎫 SIMAKSI Terbit</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class="code">'+code+'</div><div class="qr"><img src="'+qurl+'" onerror="this.parentNode.innerHTML=&#39;📄&#39;"/></div><div class="pdet"><span>Ketua</span><b>'+nama+'</b></div><div class="pdet"><span>Anggota</span><b>'+jml+' orang</b></div><div class="pdet"><span>Asal</span><b>'+org+'</b></div><div class="pdet"><span>Naik</span><b>'+naik+'</b></div><div class="pdet"><span>Turun</span><b>'+turun+'</b></div></div>';
+  toast('SIMAKSI berhasil diajukan!','ok');
+  document.getElementById('sk-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ADOPSI */
+var _pkgs=[{id:'bibit',e:'🌱',n:'Bibit',d:'1 bibit endemik + tanam',p:25000},{id:'pohon',e:'🌳',n:'Pohon',d:'1 pohon + perawatan 1 thn',p:100000},{id:'rumpun',e:'🌲',n:'Rumpun',d:'10 pohon + monitoring',p:500000}];
+var _pkgSel='pohon';
+function renderPkg(){document.getElementById('pkgList').innerHTML=_pkgs.map(function(p){return '<div class="pkgcard'+(p.id===_pkgSel?' on':'')+'" onclick="selPkg(&#39;'+p.id+'&#39;)"><span class="pemoji">'+p.e+'</span><div><b>'+p.n+'</b><small>'+p.d+'</small></div><span class="price">'+_rupiah(p.p)+'</span></div>';}).join('');}
+function selPkg(id){_pkgSel=id;renderPkg();}
+function adopsiPohon(){
+  var nama=(document.getElementById('ad-nama').value||'').trim();
+  if(!nama){toast('Isi nama untuk sertifikat','err');return;}
+  var pk=_pkgs.filter(function(x){return x.id===_pkgSel;})[0];
+  var id=_rid('POH-');
+  var tgl=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('ad-result').innerHTML='<div class="cert"><div class="seal">🌳</div><small>SERTIFIKAT ADOPSI POHON</small><h4>'+nama+'</h4><p style="font-size:12px;color:var(--sub);margin:4px 0">telah mengadopsi <b>'+pk.n+'</b> ('+_rupiah(pk.p)+') untuk restorasi Gunung Bawakaraeng</p><div class="cid">'+id+'</div><small>'+tgl+' · Reichas Chelebes</small></div>';
+  toast('Terima kasih! Sertifikat terbit 🌱','ok');
+  document.getElementById('ad-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* DONASI */
+var _tiers=[20000,50000,100000,250000];var _tierSel=50000;
+function renderTier(){document.getElementById('dnTier').innerHTML=_tiers.map(function(t){return '<button class="'+(t===_tierSel?'on':'')+'" onclick="selTier('+t+')">'+_rupiah(t)+'</button>';}).join('');}
+function selTier(t){_tierSel=t;renderTier();}
+var _alloc=[{l:'🌱 Bibit & penanaman',v:45},{l:'🥾 Patroli & pengamanan',v:25},{l:'📚 Edukasi & sosialisasi',v:15},{l:'🛠️ Alat & logistik',v:15}];
+function renderAlloc(){document.getElementById('allocList').innerHTML=_alloc.map(function(a){return '<div class="arow"><div class="atop"><span>'+a.l+'</span><span>'+a.v+'%</span></div><div class="quota"><i style="width:'+a.v+'%;background:var(--g-green)"></i></div></div>';}).join('');}
+function donasi(){toast('Terima kasih atas donasi '+_rupiah(_tierSel)+' 💚','ok');}
+
+/* BEFORE-AFTER */
+var _cmps=[{t:'Lembah Ramma',b:'linear-gradient(135deg,#8a6d3b,#c9a227)',a:'linear-gradient(135deg,#0f9d58,#34c759)'},{t:'Pos 1–3 (pasca kebakaran)',b:'linear-gradient(135deg,#6b4f3a,#a5763f)',a:'linear-gradient(135deg,#0b8043,#5bd07f)'}];
+function renderCmp(){document.getElementById('cmpList').innerHTML=_cmps.map(function(c,i){return '<div class="cmp" id="cmp'+i+'"><div class="layer" style="background:'+c.b+'"><span class="lbl">SEBELUM · '+c.t+'</span></div><div class="layer after" id="cmpA'+i+'" style="background:'+c.a+';clip-path:inset(0 0 0 50%)"><span class="lbl">SESUDAH</span></div><div class="divider" id="cmpD'+i+'" style="left:50%"></div><input type="range" min="0" max="100" value="50" oninput="cmpMove('+i+',this.value)"/></div>';}).join('');}
+function cmpMove(i,v){document.getElementById('cmpA'+i).style.clipPath='inset(0 0 0 '+v+'%)';document.getElementById('cmpD'+i).style.left=v+'%';}
+
+/* AGENDA */
+var _evts=[{d:'19',m:'JUL',t:'Tanam 500 Bibit — Lembah Ramma',loc:'Sabtu · 07.00 WITA · titik kumpul Lembanna',cap:40,reg:27},{d:'02',m:'AGU',t:'Bersih Gunung & Angkut Sampah',loc:'Minggu · area Pos 2',cap:30,reg:12},{d:'17',m:'AGU',t:'Patroli Cegah Kebakaran',loc:'Sabtu · punggungan utara',cap:20,reg:20}];
+function renderAgenda(){document.getElementById('agendaList').innerHTML=_evts.map(function(e,i){var full=e.reg>=e.cap;return '<div class="evt"><div class="cal"><b>'+e.d+'</b><small>'+e.m+'</small></div><div class="einfo"><b>'+e.t+'</b><small>'+e.loc+'</small><small>'+e.reg+'/'+e.cap+' relawan terdaftar</small></div><button class="ebtn'+(full?' done':'')+'" onclick="daftarEvt('+i+')">'+(full?'Penuh':'Daftar')+'</button></div>';}).join('');}
+function daftarEvt(i){var e=_evts[i];if(e.reg>=e.cap){toast('Kuota penuh','err');return;}e.reg++;renderAgenda();toast('Kamu terdaftar untuk kegiatan ini 🎉','ok');}
+
+try{renderPkg();renderTier();renderAlloc();renderCmp();renderAgenda();}catch(e){}
+</script>
+</body>
 </html>
