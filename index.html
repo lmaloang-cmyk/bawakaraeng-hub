@@ -330,6 +330,20 @@
   .evt .einfo{flex:1}.evt .einfo b{font-size:14px}.evt .einfo small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
   .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
   .evt .ebtn.done{background:#c7ccd6}
+  #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .jhint{font-size:12px;color:var(--sub);margin:8px 4px 2px;text-align:center;line-height:1.5}
+  .trailwrap{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .tcard{background:var(--card);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid #d5803b}
+  .tcard .th{display:flex;align-items:center;gap:10px}
+  .tcard .tic{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;flex:0 0 auto}
+  .tcard h4{margin:0;font-size:16px;font-weight:800}
+  .tcard .tsub{font-size:12px;color:var(--sub)}
+  .tchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .tchip{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#f1f3f7;color:#485162}
+  .tchip.diff-sedang{background:#fff2e2;color:#c9711f}
+  .tchip.diff-berat{background:#ffe3ea;color:#e01e46}
+  .tchip.diff-landai{background:#e3f7ec;color:#0a8a4f}
+  .tdesc{font-size:13px;color:#374151;margin-top:10px;line-height:1.55}
 </style>
 </head>
 <body>
@@ -416,22 +430,12 @@
   <!-- PETA -->
   <section id="peta" class="view">
     <div class="sec-title">Peta Jalur 🗺️</div>
-    <div class="sec-sub">Ketuk pos untuk lihat status &amp; ketinggian.</div>
-    <div class="map">
-      <svg viewBox="0 0 360 300" id="mapsvg">
-        <defs>
-          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7d8ff"/><stop offset="1" stop-color="#e9f6ff"/></linearGradient>
-          <linearGradient id="mtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fae7d"/><stop offset="1" stop-color="#3c7a53"/></linearGradient>
-          <linearGradient id="mtn2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ec4a6"/><stop offset="1" stop-color="#6a9e79"/></linearGradient>
-        </defs>
-        <rect width="360" height="300" fill="url(#sky)"/>
-        <polygon points="0,300 120,140 240,300" fill="url(#mtn2)"/>
-        <polygon points="180,40 320,300 60,300" fill="url(#mtn)"/>
-        <polygon points="180,40 214,105 146,105" fill="#fff" opacity=".9"/>
-        <path d="M90,282 C120,255 100,225 140,205 C182,183 150,150 186,128 C212,112 196,80 180,52" fill="none" stroke="#ff2d55" stroke-width="3.5" stroke-dasharray="7 6" stroke-linecap="round"/>
-      </svg>
-    </div>
+    <div class="sec-sub">Ketuk titik pos di peta untuk lihat ketinggian, sumber air &amp; area tenda.</div>
+    <div id="jalurMap"></div>
     <div class="legend"><span><i style="background:#08a35f"></i>Aman</span><span><i style="background:#d5803b"></i>Waspada</span><span><i style="background:#ff2d55"></i>Bahaya</span></div>
+    <div class="jhint">Titik pos jalur via Lembanna (perkiraan koordinat). Ketinggian dari peta resmi Gunungbagging 2020.</div>
+    <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
+    <div class="trailwrap" id="jalurTrails"></div>
   </section>
 
   <!-- REGULASI -->
@@ -675,7 +679,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}   window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -887,6 +891,64 @@ function renderAgenda(){document.getElementById('agendaList').innerHTML=_evts.ma
 function daftarEvt(i){var e=_evts[i];if(e.reg>=e.cap){toast('Kuota penuh','err');return;}e.reg++;renderAgenda();toast('Kamu terdaftar untuk kegiatan ini 🎉','ok');}
 
 try{renderPkg();renderTier();renderAlloc();renderCmp();renderAgenda();}catch(e){}
+</script>
+<script>
+/* ==== Peta Jalur interaktif ==== */
+var jalurMap=null;
+var _jStart=[-5.2536,119.9056], _jEnd=[-5.31694,119.94444];
+function _jc(f){return [_jStart[0]+(_jEnd[0]-_jStart[0])*f, _jStart[1]+(_jEnd[1]-_jStart[1])*f];}
+var jalurPos=[
+  {n:'Lembanna (Pintu Masuk)',f:0,el:1514,st:'ok',d:'Titik awal & registrasi SIMAKSI. Desa terakhir — ada warung & basecamp.'},
+  {n:'Pos 0',f:0.126,el:1680,st:'ok',d:'Awal jalur menembus hutan pinus.'},
+  {n:'Pos 1',f:0.156,el:1719,st:'ok',d:'Tugu & papan penunjuk arah — pemisah jalur Lembah Ramma dan jalur puncak.'},
+  {n:'Pos 2',f:0.225,el:1810,st:'ok',d:'💧 Sumber air · ⛺ cocok mendirikan tenda.'},
+  {n:'Pintu Rimba',f:0.288,el:1893,st:'ok',d:'Gerbang masuk hutan lebat, jalur mulai menanjak.'},
+  {n:'Pos 3',f:0.331,el:1950,st:'warn',d:'Padang rumput luas, sering tertutup kabut tebal.'},
+  {n:'Pos 5',f:0.499,el:2170,st:'warn',d:'💧 Batas sumber air TERAKHIR — isi penuh persediaan di sini.'},
+  {n:'Memorial',f:0.544,el:2230,st:'warn',d:'Tugu peringatan untuk mengenang pendaki.'},
+  {n:'Pos 8',f:0.703,el:2440,st:'warn',d:'Vegetasi menipis, angin mulai kencang.'},
+  {n:'Pos 9',f:0.833,el:2610,st:'danger',d:'Perpotongan jalur Sinjai. Trek menanjak & tebing curam menuju puncak.'},
+  {n:'Puncak Bawakaraeng',f:1,el:2830,st:'danger',d:'⛰️ Puncak 2.830 mdpl. Hati-hati cuaca cepat berubah.'}
+];
+var _jzc={ok:'#08a35f',warn:'#d5803b',danger:'#ff2d55'};
+var _jzt={ok:'Aman',warn:'Waspada',danger:'Bahaya'};
+function initJalur(){
+  if(!window.L){return;}
+  if(!jalurMap){
+    jalurMap=L.map('jalurMap',{scrollWheelZoom:false}).setView([-5.288,119.925],13);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles © Esri'}).addTo(jalurMap);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,opacity:.85}).addTo(jalurMap);
+    var pts=jalurPos.map(function(p){return _jc(p.f);});
+    L.polyline(pts,{color:'#ff2d55',weight:3.5,dashArray:'7 6',lineCap:'round'}).addTo(jalurMap);
+    jalurPos.forEach(function(p,i){
+      var c=_jc(p.f);
+      L.circleMarker(c,{radius:8,color:'#fff',weight:2,fillColor:_jzc[p.st],fillOpacity:1}).addTo(jalurMap).on('click',function(){openPos(i);}).bindTooltip(p.n+' · '+p.el+' m',{direction:'top'});
+    });
+    jalurMap.fitBounds(pts,{padding:[30,30]});
+  }
+  setTimeout(function(){jalurMap.invalidateSize();},130);
+}
+function openPos(i){
+  var p=jalurPos[i];var c=_jc(p.f);
+  if(jalurMap){jalurMap.setView(c,14);}
+  document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+_jzc[p.st]+'22;color:'+_jzc[p.st]+'">● '+_jzt[p.st]+'</span><h2 style="margin-top:8px">'+p.n+'</h2><div class="info-row"><div class="info"><b>'+p.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body">'+p.d+'</p><div style="margin-top:10px;font-size:12px;color:#8a94a6;line-height:1.5">Koordinat merupakan perkiraan jalur untuk ilustrasi. Gunakan peta/GPX resmi saat mendaki.</div>';
+  openSheet();
+}
+var jalurTrails=[
+  {ic:'🥾',bg:'var(--g-green)',n:'Via Lembanna',sub:'Jalur klasik & terpopuler',diff:'sedang',chips:['⏱️ 10–14 jam','📍 10 pos','💧 air s/d Pos 5','🏔️ mulai 1.514 m'],d:'Titik awal Desa Lembanna (Malino). Medan bervariasi dari landai hingga tanjakan curam berbatu. Jalur paling lengkap fasilitas & paling ramai.'},
+  {ic:'⛰️',bg:'var(--g-teal)',n:'Via Bulu Ballea',sub:'Favorit untuk tektok & latihan',diff:'sedang',chips:['⏱️ ± 8–10 jam','🌿 relatif landai','📍 8+ pos'],d:'Jalur dengan pemandangan terbuka dan tanjakan lebih bertahap. Populer untuk pendakian cepat (tektok), meski tetap butuh stamina.'},
+  {ic:'🌲',bg:'var(--g-indigo)',n:'Via Tassoso',sub:'Jalur alternatif sisi Sinjai',diff:'berat',chips:['⏱️ 12–15 jam','🌫️ jarang dilewati','⚠️ minim penanda'],d:'Jalur menantang dari sisi Tassoso. Vegetasi rapat & penanda terbatas — disarankan bersama pemandu lokal.'},
+  {ic:'🌄',bg:'var(--g-amber)',n:'Via Pattapang',sub:'Mulai dari hutan pinus',diff:'sedang',chips:['⏱️ ± 6,5 jam','🏔️ 1.523 → 2.803 m','📷 view kebun teh'],d:'Dimulai dari pintu hutan pinus Pattapang (1.523 mdpl). Salah satu akses dengan estimasi tercepat menuju puncak.'}
+];
+function renderJalurTrails(){
+  var el=document.getElementById('jalurTrails');if(!el){return;}
+  el.innerHTML=jalurTrails.map(function(t){
+    var chips=t.chips.map(function(c){return '<span class="tchip">'+c+'</span>';}).join('');
+    var bc=(t.diff==='berat'?'#e01e46':t.diff==='landai'?'#0a8a4f':'#d5803b');
+    return '<div class="tcard" style="border-left-color:'+bc+'"><div class="th"><div class="tic" style="background:'+t.bg+'">'+t.ic+'</div><div><h4>'+t.n+'</h4><div class="tsub">'+t.sub+'</div></div></div><div class="tchips"><span class="tchip diff-'+t.diff+'">🎯 '+t.diff.charAt(0).toUpperCase()+t.diff.slice(1)+'</span>'+chips+'</div><div class="tdesc">'+t.d+'</div></div>';
+  }).join('');
+}
+renderJalurTrails();
 </script>
 </body>
 </html>
