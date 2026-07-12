@@ -344,6 +344,33 @@
   .tchip.diff-berat{background:#ffe3ea;color:#e01e46}
   .tchip.diff-landai{background:#e3f7ec;color:#0a8a4f}
   .tdesc{font-size:13px;color:#374151;margin-top:10px;line-height:1.55}
+  .species .hero2{position:relative}
+  .species .credit{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px}
+  .obschip{display:inline-block;font-size:11.5px;font-weight:700;color:#0a8a4f;background:#e3f7ec;padding:3px 10px;border-radius:999px;margin:2px 0 6px}
+  .wikibox{background:#f6f8fb;border-radius:14px;padding:12px 14px;margin-top:12px}
+  .wikibox .wikih{font-size:12px;font-weight:800;color:#5a6b8c;margin-bottom:5px}
+  .wikibox p{margin:0;font-size:13px;line-height:1.55;color:#374151}
+  .srcline{font-size:11.5px;color:#8a94a6;margin-top:10px;line-height:1.5}
+  #eksplorNote{display:none;background:#eef3ff;color:#3b5bbf;font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:12px;margin:4px 0 12px;text-align:center}
+  /* === Kartu cuaca Beranda (BMKG live) === */
+  .wcard{margin-top:16px;border-radius:22px;padding:16px 18px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#2f7cf6,#4aa8ff 55%,#7bc6ff);box-shadow:0 14px 30px -12px rgba(47,124,246,.65)}
+  .wcard::after{content:"";position:absolute;right:-34px;top:-34px;width:160px;height:160px;background:radial-gradient(circle,rgba(255,255,255,.30),transparent 70%);border-radius:50%}
+  .wcard::before{content:"";position:absolute;left:-20px;bottom:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);border-radius:50%}
+  .wcard .wtop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:relative;z-index:1}
+  .wcard .wtemp{font-size:46px;font-weight:900;line-height:1;letter-spacing:-1px}
+  .wcard .wdesc{font-size:13.5px;font-weight:800;opacity:.97;margin-top:4px;text-transform:capitalize}
+  .wcard .warea{font-size:11px;font-weight:600;opacity:.85;margin-top:4px}
+  .wcard .wicon{width:78px;height:78px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
+  .wcard .wicon-fallback{font-size:60px;line-height:1;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
+  .wcard .wmeta{display:flex;gap:9px;margin-top:15px;position:relative;z-index:1;flex-wrap:wrap}
+  .wcard .wm{background:rgba(255,255,255,.20);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:7px 12px;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .wcard .wsrc{font-size:9.5px;font-weight:600;opacity:.82;margin-top:12px;position:relative;z-index:1}
+  .wcard.loading{background:linear-gradient(135deg,#9db8dd,#c3d6ee)}
+  .wcard.loading .wtemp,.wcard.loading .wdesc{opacity:.7}
+  .wquake{margin-top:10px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:11px 13px;display:flex;align-items:center;gap:11px}
+  .wquake .qk-ic{width:38px;height:38px;border-radius:11px;background:var(--g-amber);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .wquake b{font-size:12.5px;color:#16233d;display:block;line-height:1.3}
+  .wquake small{font-size:10.5px;color:var(--sub);font-weight:600}
 </style>
 </head>
 <body>
@@ -376,6 +403,26 @@
       </div>
     </div>
 
+    <div class="wcard loading" id="wcard">
+      <div class="wtop">
+        <div>
+          <div class="wtemp" id="wTemp">--°</div>
+          <div class="wdesc" id="wDesc">Memuat cuaca terkini…</div>
+          <div class="warea" id="wArea">Kawasan Gunung Bawakaraeng</div>
+        </div>
+        <div class="wicon-fallback" id="wIcon">🌤️</div>
+      </div>
+      <div class="wmeta" id="wMeta">
+        <span class="wm">💧 Lembap <span id="wHum">--</span></span>
+        <span class="wm">💨 Angin <span id="wWind">--</span></span>
+      </div>
+      <div class="wsrc" id="wSrc">Sumber: Prakiraan cuaca resmi BMKG</div>
+    </div>
+    <div class="wquake" id="wQuake" style="display:none">
+      <div class="qk-ic">📍</div>
+      <div><b id="wqMag">—</b><small id="wqLoc">—</small></div>
+    </div>
+
     <div class="qgrid">
       <button class="q" onclick="go('eksplor')"><div class="ic g-green">🌿</div><span>Flora &amp; Fauna</span></button>
       <button class="q" onclick="go('peta')"><div class="ic g-blue">🗺️</div><span>Peta Jalur</span></button>
@@ -404,6 +451,7 @@
     <div class="sec-sub">Kenali flora &amp; fauna endemik Bawakaraeng.</div>
     <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
     <div class="chips" id="chips"></div>
+    <div id="eksplorNote">⏳ Memuat foto asli &amp; data (iNaturalist + Wikipedia)…</div>
     <div id="speciesList"></div>
   </section>
 
@@ -679,7 +727,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}   window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -708,7 +756,7 @@ function renderSpecies(){
   if(!list.length){el.innerHTML='<div class="empty">🔍 Tidak ada hasil.</div>';return;}
   el.innerHTML=list.map(function(s){
     var im=s.photo?'<img src="'+s.photo+'"/>':s.emoji;
-    return '<div class="species" onclick="openSpecies('+s.id+')"><div class="hero2" style="background:'+s.bg+'">'+im+'<div class="badge">🛡️ '+s.protect+'</div></div><div class="body"><div class="hd"><div><h3>'+s.name+'</h3><div class="lat">'+s.lat+'</div></div><span class="kind">'+s.kind+'</span></div><div class="desc">'+s.desc+'</div></div></div>';
+    return '<div class="species" onclick="openSpecies('+s.id+')"><div class="hero2" style="background:'+s.bg+'">'+im+'<div class="badge">🛡️ '+s.protect+'</div>'+(s.photoBy?'<div class="credit">📷 '+s.photoBy+'</div>':'')+'</div><div class="body"><div class="hd"><div><h3>'+s.name+'</h3><div class="lat">'+s.lat+'</div></div><span class="kind">'+s.kind+'</span></div>'+(s.inatCount!=null?'<span class="obschip">📍 '+s.inatCount+' di sekitar</span>':'')+'<div class="desc">'+s.desc+'</div></div></div>';
   }).join('');
 }
 function openSpecies(id){
@@ -717,7 +765,7 @@ function openSpecies(id){
   document.getElementById('sheetBody').innerHTML=hero+'<h2>'+s.name+'</h2><div class="lat">'+s.lat+'</div>'+
     '<span class="pill" style="background:#ffe4ea;color:#e0154a">🛡️ '+s.protect+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">'+s.kind+'</span>'+
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
-    '<p class="body">'+s.desc+'</p><button class="btn g-green" onclick="closeSheet();go(\'lapor\')">📷 Laporkan Perjumpaan</button>';
+    '<p class="body">'+s.desc+'</p>'+(s.wiki?'<div class="wikibox"><div class="wikih">📖 Ringkasan Wikipedia</div><p>'+s.wiki+'</p></div>':'')+(s.inatCount!=null?'<div class="srcline">📍 <b>'+s.inatCount+'</b> pengamatan tercatat di sekitar Bawakaraeng · sumber iNaturalist</div>':'')+'<button class="btn g-green" onclick="closeSheet();go(\'lapor\')">📷 Laporkan Perjumpaan</button>';
   openSheet();
 }
 
@@ -949,6 +997,92 @@ function renderJalurTrails(){
   }).join('');
 }
 renderJalurTrails();
+</script>
+<script>
+/* ==== Eksplor: foto asli (iNaturalist) + ringkasan (Wikipedia) ==== */
+var _eksEnriched=false;
+var _BWK={lat:-5.31694,lng:119.94444};
+var _spOv={1:{wiki:'Macaca maura'},2:{wiki:'Anoa pegunungan'},3:{wiki:'Anaphalis javanica'},4:{wiki:'Nepenthes maxima'},5:{wiki:'Elang sulawesi'}};
+function _tname(s){return s.lat;}
+async function _fetchINat(s){
+  try{
+    var tr=await fetch('https://api.inaturalist.org/v1/taxa?q='+encodeURIComponent(_tname(s))+'&per_page=1');
+    var tj=await tr.json();
+    if(tj.results&&tj.results[0]){
+      var t=tj.results[0];
+      if(t.default_photo&&(t.default_photo.medium_url||t.default_photo.url)){s.photo=t.default_photo.medium_url||t.default_photo.url;s.photoBy='iNaturalist';}
+      s.taxonId=t.id;
+    }
+    var u='https://api.inaturalist.org/v1/observations?lat='+_BWK.lat+'&lng='+_BWK.lng+'&radius=45&per_page=0'+(s.taxonId?('&taxon_id='+s.taxonId):('&taxon_name='+encodeURIComponent(_tname(s))));
+    var orr=await fetch(u);var oj=await orr.json();
+    if(oj&&typeof oj.total_results==='number'){s.inatCount=oj.total_results;}
+  }catch(e){}
+}
+async function _fetchWiki(s){
+  try{
+    var ov=_spOv[s.id]||{};var title=ov.wiki||s.lat;
+    var r=await fetch('https://id.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(title));
+    if(!r.ok){r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(s.lat));}
+    if(r.ok){var j=await r.json();
+      if(j.extract){s.wiki=j.extract;}
+      if(!s.photo&&j.thumbnail&&j.thumbnail.source){s.photo=j.thumbnail.source;s.photoBy='Wikipedia';}
+    }
+  }catch(e){}
+}
+async function enrichSpecies(){
+  if(_eksEnriched){return;}_eksEnriched=true;
+  var note=document.getElementById('eksplorNote');if(note){note.style.display='block';}
+  try{await Promise.all(species.map(function(s){return Promise.all([_fetchINat(s),_fetchWiki(s)]);}));}catch(e){}
+  if(note){note.style.display='none';}
+  if(typeof renderSpecies==='function'){renderSpecies();}
+}
+</script>
+<script>
+/* === Cuaca Beranda (BMKG live) === */
+(function(){
+  var done=false;
+  function setIcon(url){
+    var el=document.getElementById('wIcon');
+    if(!el||!url)return;
+    var img=document.createElement('img');
+    img.className='wicon';img.alt='cuaca';img.id='wIcon';
+    img.onerror=function(){var s=document.createElement('div');s.className='wicon-fallback';s.id='wIcon';s.textContent='🌤️';if(img.parentNode)img.replaceWith(s);};
+    img.src=url;
+    el.replaceWith(img);
+  }
+  async function loadBerandaWeather(){
+    if(done)return;done=true;
+    var card=document.getElementById('wcard');
+    try{
+      var r=await fetch((window.API_BASE||'')+'/api/bmkg');
+      if(!r.ok)throw 0;
+      var d=await r.json();var c=d.cuaca,g=d.gempa;
+      if(c){
+        if(card)card.classList.remove('loading');
+        if(c.temp!=null)document.getElementById('wTemp').textContent=c.temp+'°';
+        document.getElementById('wDesc').textContent=c.desc||'Cuaca terkini';
+        document.getElementById('wArea').textContent=c.area||'Kawasan Gunung Bawakaraeng';
+        if(c.humidity!=null)document.getElementById('wHum').textContent=c.humidity+'%';
+        if(c.wind!=null)document.getElementById('wWind').textContent=c.wind+' km/j';
+        if(c.image)setIcon(c.image);
+        var hc=document.querySelectorAll('#beranda .hero .chips .hc');
+        if(hc&&hc[1]&&c.temp!=null)hc[1].textContent='🌡️ '+c.temp+'° · '+(c.desc||'');
+      }
+      if(g){
+        var q=document.getElementById('wQuake');
+        if(q){q.style.display='flex';
+          document.getElementById('wqMag').textContent='Gempa terkini · M '+(g.mag||'-');
+          document.getElementById('wqLoc').textContent=g.wilayah||'-';}
+      }
+    }catch(e){
+      if(card)card.classList.remove('loading');
+      var dd=document.getElementById('wDesc');if(dd)dd.textContent='Cuaca live aktif saat online';
+      var src=document.getElementById('wSrc');if(src)src.textContent='Data BMKG tampil otomatis setelah aplikasi online (mode offline: contoh statis)';
+    }
+  }
+  window.loadBerandaWeather=loadBerandaWeather;
+  window.addEventListener('load',function(){setTimeout(loadBerandaWeather,300);});
+})();
 </script>
 </body>
 </html>
