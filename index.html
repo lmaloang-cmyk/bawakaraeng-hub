@@ -1085,7 +1085,7 @@ async function enrichSpecies(){
       if(!r.ok)throw 0;
       var d=await r.json();var c=d.cuaca,g=d.gempa;
       if(card)card.classList.remove('loading');
-      if(!c){var _wd=document.getElementById('wDesc');if(_wd)_wd.textContent='Cuaca belum tersedia untuk wilayah ini';var _ws=document.getElementById('wSrc');if(_ws)_ws.textContent='Kode wilayah BMKG kosong — coba adm4 lain';}
+      if(!c){var _wd=document.getElementById('wDesc');if(_wd)_wd.textContent='Cuaca belum tersedia';var _ws=document.getElementById('wSrc');if(_ws){var _t=(d.debug&&d.debug.tried)||[];var _l=_t[_t.length-1]||{};_ws.textContent='BMKG: '+(d.cuacaError||('kode '+(_l.adm4||'?')+' · status '+(_l.status||'?')+' · data '+(_l.dataLen!=null?_l.dataLen:'?')));}}
       if(c){
         if(card)card.classList.remove('loading');
         if(c.temp!=null)document.getElementById('wTemp').textContent=c.temp+'°';
