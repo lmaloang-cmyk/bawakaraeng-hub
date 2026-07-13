@@ -213,6 +213,15 @@
   .seg{display:flex;background:#e9ecf5;border-radius:14px;padding:4px;margin-top:16px}
   .seg button{flex:1;font-size:12px;font-weight:800;padding:9px;border-radius:11px;color:#7b8399}
   .seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+  .subnav{display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:9px 11px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line);position:sticky;top:64px;z-index:29}
+  .subnav .sn-home{font-size:15px;font-weight:800;background:#eef1f7;border-radius:11px;padding:8px 11px;flex:none;cursor:pointer}
+  .subnav .sn-mid{flex:1;min-width:60px;display:flex;flex-direction:column;line-height:1.25;overflow:hidden}
+  .subnav .sn-cat{font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--sub);text-transform:uppercase}
+  .subnav .sn-cur{font-size:13px;font-weight:900;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .subnav .sn-arrows{display:flex;gap:6px;flex:none}
+  .subnav .sn-btn{font-size:12px;font-weight:800;color:#fff;background:var(--g-sunset);border-radius:11px;padding:8px 10px;display:inline-flex;align-items:center;gap:3px;cursor:pointer}
+  .subnav .sn-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62px}
+  .subnav .sn-btn:active,.subnav .sn-home:active{transform:scale(.94)}
 
   /* Leaderboard */
   .lead{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-top:12px;padding:13px 15px;display:flex;align-items:center;gap:13px}
@@ -923,7 +932,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1420,6 +1429,10 @@ function renderCat(){
  var g=document.getElementById('catGrid');if(g)g.innerHTML=c.tiles.map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
 }
 window.addEventListener('load',function(){setTimeout(function(){try{renderCat();}catch(e){}},60);});
+/* ===== Sub-navigasi antar tab (Beranda / sebelumnya / berikutnya) ===== */
+var NAV_SEQ=[];
+function buildNavSeq(){NAV_SEQ=[];catData.forEach(function(c){c.tiles.forEach(function(t){var m=/^go\('([a-z]+)'\)$/.exec(t.a);if(m){NAV_SEQ.push({view:m[1],label:t.l,emoji:t.e,cat:c.name,catEmoji:c.emoji});}});});}
+function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getElementById(id);if(!view){return;}var old=view.querySelector(':scope > .subnav');if(old){old.remove();}var idx=-1;for(var i=0;i<NAV_SEQ.length;i++){if(NAV_SEQ[i].view===id){idx=i;break;}}if(idx<0){return;}var cur=NAV_SEQ[idx];var prev=NAV_SEQ[(idx-1+NAV_SEQ.length)%NAV_SEQ.length];var next=NAV_SEQ[(idx+1)%NAV_SEQ.length];var bar=document.createElement('div');bar.className='subnav';bar.innerHTML='<button class="sn-home" onclick="go(\'beranda\')" title="Beranda">\ud83c\udfe0</button><div class="sn-mid"><span class="sn-cat">'+cur.catEmoji+' '+cur.cat+'</span><span class="sn-cur">'+cur.emoji+' '+cur.label+'</span></div><div class="sn-arrows"><button class="sn-btn" onclick="go(\''+prev.view+'\')" title="'+prev.label+'">\u2039 <span>'+prev.label+'</span></button><button class="sn-btn sn-next" onclick="go(\''+next.view+'\')" title="'+next.label+'"><span>'+next.label+'</span> \u203a</button></div>';view.insertBefore(bar,view.firstChild);}
 </script>
 <div id="introOverlay" class="intro-ov">
   <svg class="intro-bg" viewBox="0 0 460 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
