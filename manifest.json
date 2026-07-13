@@ -1,0 +1,19 @@
+{
+  "name": "Bawakaraeng Hub",
+  "short_name": "Bawakaraeng",
+  "description": "Konservasi & pendakian Gunung Bawakaraeng — cuaca BMKG, jalur, SIMAKSI, lapor & adopsi pohon. Dikelola Reichas Chelebes Rangers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1b2e",
+  "theme_color": "#ff2d55",
+  "lang": "id",
+  "categories": ["travel", "education", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
