@@ -388,6 +388,29 @@
   .wquake .qk-ic{width:38px;height:38px;border-radius:11px;background:var(--g-amber);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
   .wquake b{font-size:12.5px;color:#16233d;display:block;line-height:1.3}
   .wquake small{font-size:10.5px;color:var(--sub);font-weight:600}
+
+  /* ===== New tabs ===== */
+  .nt-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px}
+  .nt-row{display:flex;align-items:center;gap:12px}
+  .nt-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:#fff}
+  .nt-card h4{font-size:14px;margin-bottom:2px}
+  .nt-card .meta{font-size:11px;color:var(--sub);font-weight:700}
+  .ck-item{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--shadow);margin-bottom:8px;cursor:pointer;transition:.15s}
+  .ck-item .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0}
+  .ck-item.done .box{background:var(--g-green);border-color:transparent}
+  .ck-item.done b{text-decoration:line-through;color:var(--sub)}
+  .ck-item b{font-size:13px;font-weight:700}
+  .ck-item small{display:block;font-size:11px;color:var(--sub);font-weight:600}
+  .bdbar{margin-bottom:11px}
+  .bdbar .lb{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px}
+  .bdbar .track{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+  .bdbar .fillb{height:100%;border-radius:6px}
+  .ekm{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--shadow);margin-bottom:8px}
+  .ekm .kpi{flex:1}
+  .ekm .kpi .lb{display:flex;justify-content:space-between;font-size:12px;font-weight:800;margin-bottom:5px}
+  .ekm .track{height:8px;border-radius:5px;background:var(--line);overflow:hidden}
+  .ekm .track i{display:block;height:100%;border-radius:5px}
+  .nt-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;background:var(--card);margin-bottom:10px;font-family:inherit}
 </style>
 </head>
 <body>
@@ -479,6 +502,11 @@
       <button class="q" onclick="go('donasi')"><div class="ic g-brand">💚</div><span>Donasi</span></button>
       <button class="q" onclick="go('bandingkan')"><div class="ic g-teal">🌗</div><span>Before-After</span></button>
       <button class="q" onclick="go('agenda')"><div class="ic g-amber">📅</div><span>Agenda</span></button>
+      <button class="q" onclick="go('jurnal')"><div class="ic g-blue">🧭</div><span>Jurnal Pendaki</span></button>
+      <button class="q" onclick="go('checklist')"><div class="ic g-green">🎒</div><span>Checklist</span></button>
+      <button class="q" onclick="go('biodiv')"><div class="ic g-teal">🔬</div><span>Biodiversitas</span></button>
+      <button class="q" onclick="go('arsip')"><div class="ic g-indigo">📚</div><span>Publikasi</span></button>
+      <button class="q" onclick="go('ekosistem')"><div class="ic g-green">🌳</div><span>Kesehatan</span></button>
     </div>
 
     <div class="sh"><span class="bar"></span><h3>Laporan Terkini</h3><span class="link" onclick="toast('Menampilkan semua laporan')">Semua</span></div>
@@ -691,6 +719,88 @@
     <div id="agendaList"></div>
     <p class="note">Kuota terbatas. Konfirmasi keikutsertaan dikirim via kontak terdaftar.</p>
   </section>
+  <!-- JURNAL PENDAKI -->
+  <section id="jurnal" class="view">
+    <div class="sec-title">Jurnal Pendaki 🧭</div>
+    <div class="sec-sub">Catatan pendakianmu di Bawakaraeng — terhubung ke lencana &amp; reputasi.</div>
+    <div class="pstats">
+      <div class="pstat"><b id="jr-total">0</b><small>Pendakian</small></div>
+      <div class="pstat"><b id="jr-jam">0</b><small>Total Jam</small></div>
+      <div class="pstat"><b id="jr-alt">0</b><small>Tertinggi mdpl</small></div>
+    </div>
+    <button class="btn g-blue" onclick="openJurnalForm()">➕ Tambah Catatan Pendakian</button>
+    <div class="sh"><span class="bar" style="background:var(--g-blue)"></span><h3>Riwayat Pendakian</h3></div>
+    <div id="jurnalList"></div>
+    <p class="note">Catatan tersimpan di perangkatmu. Verifikasi puncak oleh Tim RC menambah lencana Summiteer.</p>
+  </section>
+
+  <!-- CHECKLIST & KESELAMATAN -->
+  <section id="checklist" class="view">
+    <div class="sec-title">Checklist &amp; Keselamatan 🎒</div>
+    <div class="sec-sub">Siapkan perlengkapan &amp; pahami protokol keselamatan sebelum mendaki.</div>
+    <div class="form-card">
+      <div class="row-between" style="font-size:12px;font-weight:800"><span>Kesiapan Perlengkapan</span><span id="ck-pct" style="color:#2b6fff">0%</span></div>
+      <div class="quota" style="margin-top:8px"><i id="ck-bar" style="width:0%;background:var(--g-blue)"></i></div>
+    </div>
+    <div class="sh"><span class="bar" style="background:var(--g-blue)"></span><h3>Perlengkapan Wajib</h3></div>
+    <div id="ckList"></div>
+    <div class="sh"><span class="bar" style="background:var(--g-brand)"></span><h3>Protokol Keselamatan</h3></div>
+    <div id="safetyList"></div>
+    <button class="btn g-indigo" onclick="go('simaksi')">🎫 Lanjut Ajukan SIMAKSI</button>
+    <p class="note">Checklist lengkap disarankan sebelum SIMAKSI disetujui Tim Reichas Chelebes.</p>
+  </section>
+
+  <!-- DASHBOARD BIODIVERSITAS -->
+  <section id="biodiv" class="view">
+    <div class="sec-title">Dashboard Biodiversitas 🔬</div>
+    <div class="sec-sub">Data keanekaragaman hayati Bawakaraeng dari laporan warga &amp; iNaturalist.</div>
+    <div class="pstats">
+      <div class="pstat"><b id="bd-spec">0</b><small>Spesies Tercatat</small></div>
+      <div class="pstat"><b id="bd-endemik">0</b><small>Endemik</small></div>
+      <div class="pstat"><b id="bd-threat">0</b><small>Terancam</small></div>
+    </div>
+    <div class="form-card">
+      <div class="row-between" style="font-size:12px;font-weight:800"><span>Observasi per Kategori</span><span style="color:var(--sub)">total <b id="bd-obs">0</b></span></div>
+      <div id="bd-bars" style="margin-top:12px"></div>
+    </div>
+    <div class="sh"><span class="bar" style="background:var(--g-teal)"></span><h3>Paling Sering Teramati</h3></div>
+    <div id="bd-top"></div>
+    <button class="btn g-teal" onclick="go('lapor')">📷 Tambah Observasi</button>
+    <p class="note">Angka gabungan laporan terverifikasi RC &amp; pengamatan iNaturalist di radius kawasan.</p>
+  </section>
+
+  <!-- ARSIP PUBLIKASI ILMIAH -->
+  <section id="arsip" class="view">
+    <div class="sec-title">Arsip Publikasi Ilmiah 📚</div>
+    <div class="sec-sub">Kumpulan riset, skripsi &amp; laporan tentang Gunung Bawakaraeng.</div>
+    <input id="arq" class="nt-input" placeholder="🔍 Cari judul, penulis, topik…" oninput="renderArsip()"/>
+    <div id="arChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px"></div>
+    <div id="arsipList"></div>
+    <button class="btn g-indigo" onclick="openRisetForm()">🧪 Ajukan Riset / Kolaborasi</button>
+    <p class="note">Ingin menautkan publikasimu? Ajukan lewat tombol di atas untuk ditinjau Tim RC.</p>
+  </section>
+
+  <!-- DASHBOARD KESEHATAN EKOSISTEM -->
+  <section id="ekosistem" class="view">
+    <div class="sec-title">Kesehatan Ekosistem 🌳</div>
+    <div class="sec-sub">Indeks kondisi Gunung Bawakaraeng secara menyeluruh.</div>
+    <div class="form-card" style="text-align:center">
+      <div style="font-size:13px;font-weight:800;color:var(--sub)">Indeks Kesehatan Gunung</div>
+      <div id="ek-score" style="font-size:52px;font-weight:900;background:var(--g-green);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.15">0</div>
+      <div id="ek-label" style="font-size:13px;font-weight:800">—</div>
+      <div class="quota" style="margin-top:10px"><i id="ek-bar" style="width:0%;background:var(--g-green)"></i></div>
+    </div>
+    <div class="sh"><span class="bar" style="background:var(--g-green)"></span><h3>Indikator Utama</h3></div>
+    <div id="ek-metrics"></div>
+    <div class="sh"><span class="bar" style="background:var(--g-amber)"></span><h3>Daya Dukung Pendakian</h3></div>
+    <div class="form-card">
+      <div class="row-between" style="font-size:12px;font-weight:800"><span>Pendaki hari ini</span><span id="ek-dd">0 / 0</span></div>
+      <div class="quota" style="margin-top:8px"><i id="ek-ddbar" style="width:0%;background:var(--g-amber)"></i></div>
+      <p style="font-size:11px;color:var(--sub);margin-top:8px" id="ek-ddnote"></p>
+    </div>
+    <p class="note">Indeks ilustratif berbasis tutupan hutan, lahan kritis, populasi satwa &amp; tekanan pengunjung. Sumber final: BMKG, KLHK &amp; survei RC.</p>
+  </section>
+
 
   <!-- Bottom nav -->
   <div class="nav">
@@ -770,7 +880,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}   window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1128,6 +1238,105 @@ async function enrichSpecies(){
   window.loadBerandaWeather=loadBerandaWeather;
   window.addEventListener('load',function(){setTimeout(loadBerandaWeather,300);setTimeout(function(){try{if(typeof enrichSpecies==='function')enrichSpecies();}catch(e){}},400);});
 })();
+</script>
+
+<script>
+/* ===== NEW TABS: Jurnal, Checklist, Biodiversitas, Arsip, Ekosistem ===== */
+/* --- Jurnal Pendaki --- */
+var jurnalLogs=[
+  {date:'2026-06-14',jalur:'Via Lembanna',durasi:11,alt:2845,cuaca:'Cerah berkabut',note:'Summit pagi, sunrise di puncak. Sampah dibawa turun 1 kantong.',verif:true},
+  {date:'2026-04-02',jalur:'Via Lembang Bune',durasi:16,alt:2700,cuaca:'Hujan ringan',note:'Batal summit karena badai di Pos 7, turun dengan aman.',verif:false},
+  {date:'2025-12-20',jalur:'Via Lembanna',durasi:12,alt:2845,cuaca:'Cerah',note:'Pendakian bersih gunung bareng komunitas RC.',verif:true}
+];
+function fmtDate(s){var m=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];var d=new Date(s);return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear();}
+function renderJurnal(){
+  var tot=jurnalLogs.length,jam=0,alt=0;
+  jurnalLogs.forEach(function(l){jam+=l.durasi;if(l.alt>alt)alt=l.alt;});
+  document.getElementById('jr-total').textContent=tot;
+  document.getElementById('jr-jam').textContent=jam;
+  document.getElementById('jr-alt').textContent=alt;
+  document.getElementById('jurnalList').innerHTML=jurnalLogs.map(function(l){
+    var vb=l.verif?'<span class="pill" style="background:#e4faf0;color:#08a35f">✅ Puncak terverifikasi</span>':'<span class="pill" style="background:#fff2df;color:#d5803b">⛰️ Belum summit</span>';
+    return '<div class="nt-card"><div class="nt-row"><div class="nt-ic g-blue">🧭</div><div style="flex:1"><h4>'+l.jalur+'</h4><div class="meta">📅 '+fmtDate(l.date)+' · ⏱️ '+l.durasi+' jam · ⛰️ '+l.alt+' mdpl · 🌤️ '+l.cuaca+'</div></div></div><p style="font-size:13px;margin:10px 0 8px">'+l.note+'</p>'+vb+'</div>';
+  }).join('');
+}
+function openJurnalForm(){
+  document.getElementById('sheetBody').innerHTML='<h2>Tambah Catatan Pendakian</h2>'+
+    '<div class="fld"><label>Jalur</label><input id="jf-jalur" class="nt-input" placeholder="Via Lembanna"/></div>'+
+    '<div class="fld"><label>Tanggal</label><input id="jf-date" type="date" class="nt-input"/></div>'+
+    '<div class="fld"><label>Durasi (jam)</label><input id="jf-dur" type="number" min="1" class="nt-input" placeholder="12"/></div>'+
+    '<div class="fld"><label>Ketinggian dicapai (mdpl)</label><input id="jf-alt" type="number" class="nt-input" placeholder="2845"/></div>'+
+    '<div class="fld"><label>Cuaca</label><input id="jf-cuaca" class="nt-input" placeholder="Cerah berkabut"/></div>'+
+    '<div class="fld"><label>Catatan</label><textarea id="jf-note" class="nt-input" placeholder="Cerita singkat pendakianmu…"></textarea></div>'+
+    '<button class="btn g-blue" onclick="saveJurnal()">💾 Simpan Catatan</button>';
+  openSheet();
+}
+function saveJurnal(){
+  var jalur=(document.getElementById('jf-jalur').value||'').trim();
+  if(!jalur){toast('Isi nama jalur dulu','err');return;}
+  jurnalLogs.unshift({date:document.getElementById('jf-date').value||new Date().toISOString().slice(0,10),jalur:jalur,durasi:+document.getElementById('jf-dur').value||0,alt:+document.getElementById('jf-alt').value||0,cuaca:document.getElementById('jf-cuaca').value||'-',note:document.getElementById('jf-note').value||'',verif:false});
+  renderJurnal();closeSheet();toast('Catatan pendakian tersimpan','ok');
+}
+/* --- Checklist & Keselamatan --- */
+var gearList=[{id:'g1',l:'Tenda & flysheet',s:'Tahan angin gunung'},{id:'g2',l:'Sleeping bag + matras',s:'Suhu puncak bisa <10 C'},{id:'g3',l:'Jaket & rain coat',s:'Wajib, cuaca cepat berubah'},{id:'g4',l:'Headlamp + baterai cadangan',s:''},{id:'g5',l:'Logistik & air minimal 3L',s:'Sumber air terbatas di atas Pos 7'},{id:'g6',l:'Kompor & nesting',s:''},{id:'g7',l:'P3K & obat pribadi',s:''},{id:'g8',l:'Kantong sampah',s:'Bawa turun semua sampahmu'},{id:'g9',l:'Navigasi (peta/GPS/HP)',s:''},{id:'g10',l:'SIMAKSI & identitas',s:'Tunjukkan di pos registrasi'}];
+var ckDone={};
+var safetyList=[{ic:'🌦️',c:'#2b6fff',t:'Cek cuaca sebelum & selama naik',b:'Pantau kartu cuaca BMKG di Beranda. Tunda pendakian bila ada peringatan badai atau hujan ekstrem.'},{ic:'👥',c:'#08b96f',t:'Jangan mendaki sendirian',b:'Minimal 2-3 orang. Beri tahu kontak darurat rencana & estimasi turun.'},{ic:'📍',c:'#ff9838',t:'Kenali titik evakuasi & sumber air',b:'Pos 5 & Pos 7 jadi titik kumpul evakuasi. Simpan lokasi shelter.'},{ic:'🆘',c:'#ff2d55',t:'Prosedur darurat',b:'Gunakan tombol SOS untuk kirim lokasi GPS ke Tim Reichas Chelebes. Tetap di tempat bila tersesat.'}];
+function renderChecklist(){
+  document.getElementById('ckList').innerHTML=gearList.map(function(g){return '<div class="ck-item'+(ckDone[g.id]?' done':'')+'" onclick="toggleGear(\''+g.id+'\')"><div class="box">'+(ckDone[g.id]?'✓':'')+'</div><div style="flex:1"><b>'+g.l+'</b>'+(g.s?'<small>'+g.s+'</small>':'')+'</div></div>';}).join('');
+  document.getElementById('safetyList').innerHTML=safetyList.map(function(s){return '<div class="nt-card"><div class="nt-row"><div class="nt-ic" style="background:'+s.c+'">'+s.ic+'</div><div style="flex:1"><h4>'+s.t+'</h4><p style="font-size:12px;color:var(--sub);margin-top:3px">'+s.b+'</p></div></div></div>';}).join('');
+  updateCkBar();
+}
+function toggleGear(id){ckDone[id]=!ckDone[id];renderChecklist();}
+function updateCkBar(){var done=gearList.filter(function(g){return ckDone[g.id];}).length;var pct=Math.round(done/gearList.length*100);document.getElementById('ck-pct').textContent=pct+'%';document.getElementById('ck-bar').style.width=pct+'%';}
+/* --- Dashboard Biodiversitas --- */
+var bdCats=[{l:'🐒 Mamalia',n:38,c:'#ff6b6b'},{l:'🦅 Burung',n:112,c:'#5e9dff'},{l:'🌿 Flora',n:167,c:'#08b96f'},{l:'🦋 Serangga',n:74,c:'#ffb020'},{l:'🐸 Amfibi & Reptil',n:29,c:'#8b3dff'}];
+function renderBiodiv(){
+  var total=0,max=0;bdCats.forEach(function(c){total+=c.n;if(c.n>max)max=c.n;});
+  document.getElementById('bd-spec').textContent=total;
+  document.getElementById('bd-endemik').textContent='23';
+  document.getElementById('bd-threat').textContent='9';
+  document.getElementById('bd-obs').textContent=(total*7).toLocaleString('id-ID');
+  document.getElementById('bd-bars').innerHTML=bdCats.map(function(c){var w=Math.round(c.n/max*100);return '<div class="bdbar"><div class="lb"><span>'+c.l+'</span><span>'+c.n+'</span></div><div class="track"><div class="fillb" style="width:'+w+'%;background:'+c.c+'"></div></div></div>';}).join('');
+  var top=(typeof species!=='undefined'?species:[]).slice(0,5);
+  document.getElementById('bd-top').innerHTML=top.map(function(s,i){var im=s.photo?'<img src="'+s.photo+'" style="width:44px;height:44px;border-radius:11px;object-fit:cover"/>':'<div class="nt-ic" style="background:'+(s.bg||'#08b96f')+'">'+(s.emoji||'🌿')+'</div>';return '<div class="nt-card" onclick="go(\'eksplor\')"><div class="nt-row">'+im+'<div style="flex:1"><h4>'+s.name+'</h4><div class="meta">'+(s.lat||'')+'</div></div><span class="pill" style="background:#eef2fb;color:#2b6fff">'+(s.inatCount!=null?s.inatCount:(40-i*6))+' obs</span></div></div>';}).join('');
+}
+/* --- Arsip Publikasi Ilmiah --- */
+var pubs=[{t:'Keanekaragaman Avifauna di Hutan Pegunungan Bawakaraeng',a:'Rahman, A. dkk.',y:2023,type:'Jurnal',tag:'Ornitologi'},{t:'Analisis Tutupan Lahan Pasca Longsor Kaldera Bawakaraeng 2004',a:'Sari, D.P.',y:2021,type:'Skripsi',tag:'Geospasial'},{t:'Status Populasi Macaca maura di DAS Jeneberang',a:'Tim Reichas Chelebes',y:2024,type:'Laporan',tag:'Primata'},{t:'Fenologi Edelweiss (Anaphalis javanica) di Zona Puncak',a:'Nurdin, H.',y:2022,type:'Jurnal',tag:'Botani'},{t:'Daya Dukung Ekowisata Jalur Lembanna',a:'Pratiwi, R. & Yusuf, M.',y:2023,type:'Skripsi',tag:'Ekowisata'},{t:'Kualitas Air Hulu Sungai Jeneberang',a:'BPDAS & RC',y:2024,type:'Laporan',tag:'Hidrologi'}];
+var arType='Semua';
+function renderArsip(){
+  var q=(document.getElementById('arq')?document.getElementById('arq').value:'').toLowerCase();
+  var types=['Semua','Jurnal','Skripsi','Laporan'];
+  document.getElementById('arChips').innerHTML=types.map(function(t){return '<button class="chip'+(arType===t?' on':'')+'" onclick="setArType(\''+t+'\')">'+t+'</button>';}).join('');
+  var list=pubs.filter(function(p){var mT=arType==='Semua'||p.type===arType;var mQ=(p.t+p.a+p.tag).toLowerCase().indexOf(q)>-1;return mT&&mQ;});
+  var tc={'Jurnal':'#2b6fff','Skripsi':'#8b3dff','Laporan':'#08b96f'};
+  var el=document.getElementById('arsipList');
+  if(!list.length){el.innerHTML='<div class="nt-card" style="text-align:center;color:var(--sub)">🔍 Tidak ada publikasi cocok.</div>';return;}
+  el.innerHTML=list.map(function(p){return '<div class="nt-card" onclick="toast(\'Membuka pratinjau publikasi…\')"><div class="nt-row"><div class="nt-ic" style="background:'+(tc[p.type]||'#2b6fff')+'">📄</div><div style="flex:1"><h4>'+p.t+'</h4><div class="meta">'+p.a+' · '+p.y+'</div></div></div><div style="margin-top:8px"><span class="pill" style="background:#eef2fb;color:#2b6fff">'+p.type+'</span><span class="pill" style="background:#f2eefb;color:#7a3ff5">'+p.tag+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">⬇️ Unduh PDF</span></div></div>';}).join('');
+}
+function setArType(t){arType=t;renderArsip();}
+function openRisetForm(){
+  document.getElementById('sheetBody').innerHTML='<h2>Ajukan Riset / Kolaborasi</h2><p class="body" style="margin-bottom:10px">Tim Reichas Chelebes akan meninjau pengajuan izin penelitian &amp; akses data.</p>'+
+    '<div class="fld"><label>Nama Peneliti</label><input id="rf-nama" class="nt-input"/></div>'+
+    '<div class="fld"><label>Institusi / Kampus</label><input id="rf-inst" class="nt-input"/></div>'+
+    '<div class="fld"><label>Topik Penelitian</label><input id="rf-topik" class="nt-input"/></div>'+
+    '<div class="fld"><label>Data yang dibutuhkan</label><textarea id="rf-data" class="nt-input" placeholder="mis. data observasi burung 2020-2024"></textarea></div>'+
+    '<button class="btn g-indigo" onclick="closeSheet();toast(\'Pengajuan riset terkirim ke Tim RC\',\'ok\')">📨 Kirim Pengajuan</button>';
+  openSheet();
+}
+/* --- Dashboard Kesehatan Ekosistem --- */
+var ekMetrics=[{l:'Tutupan Hutan',v:'72%',pct:72,c:'#08b96f',tr:'▲ +1.4% vs 2024'},{l:'Lahan Kritis (pulih)',v:'38%',pct:38,c:'#ff9838',tr:'▲ reboisasi berjalan'},{l:'Populasi Satwa Kunci',v:'64%',pct:64,c:'#5e9dff',tr:'▬ stabil'},{l:'Kualitas Air Hulu',v:'81%',pct:81,c:'#12b6c9',tr:'▲ baik'},{l:'Sampah Dibawa Turun',v:'69%',pct:69,c:'#8b3dff',tr:'▲ membaik'}];
+function renderEkosistem(){
+  var score=Math.round(ekMetrics.reduce(function(a,m){return a+m.pct;},0)/ekMetrics.length);
+  document.getElementById('ek-score').textContent=score;
+  var lab=score>=75?'Sehat':score>=55?'Cukup Sehat':score>=40?'Waspada':'Kritis';
+  document.getElementById('ek-label').textContent=lab+' · skor '+score+'/100';
+  document.getElementById('ek-bar').style.width=score+'%';
+  document.getElementById('ek-metrics').innerHTML=ekMetrics.map(function(m){return '<div class="ekm"><div class="kpi"><div class="lb"><span>'+m.l+'</span><span style="color:'+m.c+'">'+m.v+'</span></div><div class="track"><i style="width:'+m.pct+'%;background:'+m.c+'"></i></div><div style="font-size:10px;color:var(--sub);font-weight:700;margin-top:5px">'+m.tr+'</div></div></div>';}).join('');
+  var used=93,cap=150;
+  document.getElementById('ek-dd').textContent=used+' / '+cap;
+  document.getElementById('ek-ddbar').style.width=Math.round(used/cap*100)+'%';
+  document.getElementById('ek-ddnote').textContent='Kuota lestari harian '+cap+' pendaki demi menjaga daya dukung ekologis. Sisa '+(cap-used)+' slot hari ini.';
+}
 </script>
 </body>
 </html>
