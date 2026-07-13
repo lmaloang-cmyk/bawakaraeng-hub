@@ -452,6 +452,25 @@
 .in-ic img{width:100%;height:100%;object-fit:cover}
 .in-tx b{display:block;font-size:14px;font-weight:800;margin-bottom:3px;color:#fff}
 .in-tx span{font-size:12px;line-height:1.5;color:#d7e0ee}
+
+.login-ov{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:34px 0;background:linear-gradient(160deg,#0d1b2e,#122b47 55%,#0d1b2e);opacity:1;transition:opacity .4s}
+.login-ov.hide{opacity:0;pointer-events:none}
+.login-card{width:100%;max-width:400px;padding:0 26px;text-align:center;color:#fff;animation:introPop .5s ease}
+.login-ic{width:88px;height:88px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.3);box-shadow:0 10px 26px rgba(0,0,0,.35);background:rgba(255,255,255,.08)}
+.login-ic img{width:100%;height:100%;object-fit:cover}
+.login-h{font-size:24px;font-weight:900;margin:0 0 6px}
+.login-p{font-size:13px;line-height:1.5;color:#c4d2e4;margin:0 auto 22px;max-width:300px}
+.login-lb{display:block;text-align:left;font-size:12px;font-weight:700;color:#9fb6d4;margin:0 0 6px 2px}
+.login-inp{width:100%;padding:14px 16px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#fff;font-size:15px;margin-bottom:18px;box-sizing:border-box;outline:none}
+.login-inp::placeholder{color:#7d93b0}
+.role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:24px}
+.role-chip{padding:12px 6px;border-radius:13px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);cursor:pointer;font-size:12px;font-weight:700;color:#dbe6f4;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.role-chip .re{font-size:22px}
+.role-chip.on{background:var(--g-brand);border-color:transparent;color:#fff;box-shadow:0 6px 16px rgba(255,45,85,.4)}
+.login-btn{width:100%;padding:15px;border:none;border-radius:15px;background:var(--g-brand);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(255,45,85,.4)}
+.login-btn:active{transform:scale(.98)}
+.login-skip{margin-top:14px;background:none;border:none;color:#9fb6d4;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline}
+.prof-chip{position:fixed;top:10px;right:12px;z-index:8000;display:none;align-items:center;gap:6px;background:rgba(13,27,46,.88);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:30px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 </style>
 </head>
 <body>
@@ -1449,13 +1468,47 @@ window.addEventListener('load',function(){setTimeout(function(){try{renderCat();
       <div class="intro-node"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div></div>
       <div class="intro-node"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div></div>
     </div>
-    <button class="intro-btn" onclick="closeIntro()">Masuk Aplikasi →</button>
+    <button class="intro-btn" onclick="enterApp()">Masuk Aplikasi →</button>
   </div>
 </div>
+<div id="loginOverlay" class="login-ov">
+  <div class="login-card">
+    <div class="login-ic"><img id="loginLogo" alt="RC"/></div>
+    <h2 class="login-h">Selamat Datang</h2>
+    <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
+    <label class="login-lb">Nama</label>
+    <input id="lgName" class="login-inp" placeholder="Nama lengkap" autocomplete="name"/>
+    <label class="login-lb">Peran</label>
+    <div class="role-grid">
+      <div class="role-chip" onclick="selRole(this,'Pendaki')"><span class="re">🥾</span>Pendaki</div>
+      <div class="role-chip" onclick="selRole(this,'Warga')"><span class="re">🏡</span>Warga</div>
+      <div class="role-chip" onclick="selRole(this,'KLH')"><span class="re">🏛️</span>KLH</div>
+      <div class="role-chip" onclick="selRole(this,'Kehutanan')"><span class="re">🌲</span>Kehutanan</div>
+      <div class="role-chip" onclick="selRole(this,'SAR')"><span class="re">🚨</span>SAR</div>
+      <div class="role-chip" onclick="selRole(this,'Admin')"><span class="re">🛡️</span>Admin</div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Masuk Aplikasi</button>
+    <button class="login-skip" onclick="skipLogin()">Lewati dulu</button>
+  </div>
+</div>
+<div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
 <script>
 function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},420);}}
 window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='⛰️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+<script>
+var BWK_ROLE='';
+function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
+function selRole(el,r){BWK_ROLE=r;var cs=document.querySelectorAll('.role-chip');for(var i=0;i<cs.length;i++){cs[i].classList.remove('on');}el.classList.add('on');}
+function enterApp(){closeIntro();var u=bwkUser();if(u){applyUser(u);}else{setTimeout(openLogin,460);}}
+function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
+function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
+function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
+function skipLogin(){hideLogin();}
+function applyUser(u){if(!u){return;}var c=document.getElementById('profChip');if(c){c.textContent='👤 '+u.name+' · '+u.role;c.style.display='flex';}}
+function logoutUser(){if(confirm('Keluar dari akun ini?')){localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
+window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}});
+</script>
 </body>
 </html>
