@@ -482,7 +482,47 @@
 .login-btn:active{transform:scale(.98)}
 .login-skip{margin-top:14px;background:none;border:none;color:#9fb6d4;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline}
 .prof-chip{position:fixed;top:10px;right:12px;z-index:8000;display:none;align-items:center;gap:6px;background:rgba(13,27,46,.88);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:30px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  /* ===== Fitur v4: dark mode, SOS+GPS, alert, elevasi, PDF ===== */
+  html.dark{--ink:#e9eefb;--sub:#9aa7c2;--line:#27324c;--canvas:#0c1322;--card:#161f33;--shadow:0 4px 14px rgba(0,0,0,.5);--shadow-lg:0 18px 44px rgba(0,0,0,.6)}
+  html.dark body{background:#05080f}
+  html.dark .nav{background:rgba(16,23,40,.97)}
+  html.dark .tab.on{background:#301523}
+  html.dark .fld input,html.dark .fld select{background:#0f1728;border-color:#2a3550;color:var(--ink)}
+  html.dark .seg button.on{background:#26314d;color:var(--ink)}
+  html.dark .subnav .sn-home{background:#22304d;color:var(--ink)}
+  html.dark .node .lbl{background:#161f33;color:var(--ink)}
+  html.dark .chip{color:var(--ink)}
+  #themeBtn{font-size:17px}
+  .locate-btn{width:100%;margin-top:10px;padding:12px;border:none;border-radius:14px;background:var(--g-blue);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:6px}
+  .locate-btn:active{transform:scale(.98)}
+  .elevwrap{margin-top:16px;background:var(--card);border-radius:18px;padding:14px 14px 8px;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .elevwrap .li-hd{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:6px}
+  #elevProfile svg{width:100%;height:auto;display:block}
+  .alertbox{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .alert{display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:15px;background:var(--card);box-shadow:var(--shadow);border-left:5px solid var(--sub)}
+  .alert .ai{font-size:20px;flex:none;line-height:1.2}
+  .alert b{font-size:13.5px;color:var(--ink);display:block}
+  .alert small{font-size:12px;color:var(--sub);display:block;margin-top:2px;line-height:1.45}
+  .alert.ok{border-left-color:#08a35f}
+  .alert.warn{border-left-color:#e5951c}
+  .alert.danger{border-left-color:#ff2d55}
+  .sos{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sos-loc{margin-top:14px;font-size:14px;line-height:1.5}
+  .sos-loc.ok b{font-size:18px}
+  .sos-loc small{display:block;opacity:.82;font-size:12px}
+  .sos-loc.warn{color:#ffd9d9}
+  .sos-actions{margin:16px auto 0;display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px}
+  .sos-share{display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:14px;font-size:14px;font-weight:800;text-decoration:none;border:none;cursor:pointer;color:#fff;background:rgba(255,255,255,.16)}
+  .sos-share.wa{background:#25d366;color:#053a1b}
+  .sos-share.sms{background:#3b82f6}
+  .sos-share.map{background:#0d1b2e;border:1px solid rgba(255,255,255,.35)}
+  .sos-share.copy{background:rgba(255,255,255,.18)}
+  .sos-share:active{transform:scale(.97)}
+  .pdf-btn{width:100%;margin-top:12px;padding:12px;border:none;border-radius:14px;background:var(--g-indigo);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+  .pdf-btn:active{transform:scale(.98)}
+  @media print{.topbar,.nav,.subnav,.pdf-btn,.hero-logout,.prof-chip,.note{display:none!important}body{background:#fff!important}body *{visibility:hidden}.print-target,.print-target *{visibility:visible}.print-target{position:absolute!important;left:0;top:0;width:92%!important;margin:0 4%!important;box-shadow:none!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
+<script>(function(){try{if(localStorage.getItem("bwkTheme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();</script>
 </head>
 <body>
 <div class="phone">
@@ -492,6 +532,7 @@
       <div><small>REICHAS CHELEBES</small><h1>Bawakaraeng Hub</h1></div>
     </div>
     <div class="hicons">
+      <button class="hbtn" id="themeBtn" onclick="toggleTheme()" title="Mode malam">🌙</button>
       <button class="hbtn" onclick="toast('3 notifikasi baru','ok')">🔔<span class="dot"></span></button>
       <button class="hbtn" onclick="go('profil')">👤</button>
     </div>
@@ -537,6 +578,7 @@
       </div>
     </div>
 
+    <div id="alertBox" class="alertbox"></div>
     <div class="wcard loading" id="wcard">
       <div class="wtop">
         <div>
@@ -603,8 +645,10 @@
     <div class="sec-title">Peta Jalur 🗺️</div>
     <div class="sec-sub">Ketuk titik pos di peta untuk lihat ketinggian, sumber air &amp; area tenda.</div>
     <div id="jalurMap"></div>
+    <button class="locate-btn" onclick="locateMe()">📍 Tunjukkan Lokasi Saya</button>
     <div class="legend"><span><i style="background:#08a35f"></i>Aman</span><span><i style="background:#d5803b"></i>Waspada</span><span><i style="background:#ff2d55"></i>Bahaya</span></div>
     <div class="jhint">Titik pos jalur via Lembanna (perkiraan koordinat). Ketinggian dari peta resmi Gunungbagging 2020.</div>
+    <div class="elevwrap"><div class="li-hd">📈 Profil Ketinggian (Via Lembanna)</div><div id="elevProfile"></div></div>
     <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
     <div class="trailwrap" id="jalurTrails"></div>
   </section>
@@ -886,7 +930,13 @@ var species=[
   {id:2,name:'Anoa Pegunungan',lat:'Bubalus quarlesi',kind:'Fauna Endemik',cat:'fauna',emoji:'🐃',photo:null,bg:'linear-gradient(135deg,#7c6a58,#3f342b)',protect:'Dilindungi',pos:'Pos 4–Pos 6',iucn:'Genting (EN)',size:'± 75 cm',desc:'Kerbau kerdil endemik, pemalu &amp; soliter. Populasi menurun akibat perburuan. Jaga jarak, jangan diganggu.'},
   {id:3,name:'Edelweiss Bawakaraeng',lat:'Anaphalis javanica',kind:'Flora Puncak',cat:'flora',emoji:'🩷',photo:null,bg:'linear-gradient(135deg,#8fa76a,#4d5f36)',protect:'Dilarang Memetik',pos:'Pos 8–Puncak',iucn:'Dilindungi',size:'Sabana',desc:'Bunga abadi di sabana berbatu ketinggian. Simbol pendakian yang wajib dilestarikan. Memetik = sanksi pidana.'},
   {id:4,name:'Kantong Semar',lat:'Nepenthes maxima',kind:'Flora Endemik',cat:'flora',emoji:'🌿',photo:null,bg:'linear-gradient(135deg,#5d8a4f,#2f4a2b)',protect:'Dilindungi',pos:'Pos 2–Pos 5',iucn:'Rentan (VU)',size:'15–30 cm',desc:'Tumbuhan karnivora pemerangkap serangga. Hidup di tebing lembap. Jangan isi kantongnya dengan sampah.'},
-  {id:5,name:'Elang Sulawesi',lat:'Nisaetus lanceolatus',kind:'Fauna Endemik',cat:'fauna',emoji:'🦅',photo:null,bg:'linear-gradient(135deg,#5a7a8a,#33454d)',protect:'Dilindungi',pos:'Area Puncak',iucn:'Rentan (VU)',size:'±130 cm',desc:'Raptor endemik yang mengitari lembah Bawakaraeng. Indikator ekosistem sehat. Amati dari kejauhan.'}
+  {id:5,name:'Elang Sulawesi',lat:'Nisaetus lanceolatus',kind:'Fauna Endemik',cat:'fauna',emoji:'🦅',photo:null,bg:'linear-gradient(135deg,#5a7a8a,#33454d)',protect:'Dilindungi',pos:'Area Puncak',iucn:'Rentan (VU)',size:'±130 cm',desc:'Raptor endemik yang mengitari lembah Bawakaraeng. Indikator ekosistem sehat. Amati dari kejauhan.'},
+  {id:6,name:'Sikatan Lompobatang',lat:'Ficedula bonthaina',kind:'Fauna Endemik',cat:'fauna',emoji:'🐦',photo:null,bg:'linear-gradient(135deg,#5b6b8a,#2e3a52)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Rentan (VU)',size:'±13 cm',desc:'Burung sikatan endemik yang hanya hidup di massif Bawakaraeng-Lompobattang. Jantan berdada jingga khas. Salah satu burung paling langka di Sulawesi Selatan.'},
+  {id:7,name:'Anis Gunung',lat:'Turdus poliocephalus',kind:'Burung Pengicau',cat:'fauna',emoji:'🐦',photo:null,bg:'linear-gradient(135deg,#6b7d6a,#33402f)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Risiko Rendah (LC)',size:'±22 cm',desc:'Burung pengicau bersuara merdu yang sering teramati di hutan ketinggian. Populasi lokalnya khas kawasan Bawakaraeng dan Lompobattang.'},
+  {id:8,name:'Tikus Hutan Sulawesi',lat:'Rattus hoffmanni',kind:'Fauna Endemik',cat:'fauna',emoji:'🐀',photo:null,bg:'linear-gradient(135deg,#7a6f5f,#3b3329)',protect:'Belum Dievaluasi',pos:'Lantai Hutan',iucn:'Risiko Rendah (LC)',size:'±18 cm',desc:'Tikus hutan endemik Sulawesi, pengurai serasah &amp; penyebar biji di lantai hutan. Aktif malam hari dan jarang terlihat pendaki.'},
+  {id:9,name:'Capung Jarum Endemik',lat:'Drepanosticta',kind:'Serangga Endemik',cat:'fauna',emoji:'🦗',photo:null,bg:'linear-gradient(135deg,#3f7d8a,#274a52)',protect:'Dilindungi Habitat',pos:'Sungai &amp; Mata Air',iucn:'Terbatas',size:'3–5 cm',desc:'Capung jarum khas perairan jernih Bawakaraeng. Kawasan ini punya marga capung endemik seperti Celebargiolestes dan Drepanosticta. Penanda kualitas air bersih.'},
+  {id:10,name:'Anggrek Hutan Pegunungan',lat:'Coelogyne celebensis',kind:'Flora Endemik',cat:'flora',emoji:'🌸',photo:null,bg:'linear-gradient(135deg,#8a6f9a,#4a3559)',protect:'Dilindungi',pos:'Batang &amp; Tebing Lembap',iucn:'Rentan (VU)',size:'Epifit',desc:'Anggrek hutan endemik Sulawesi yang menempel di batang pohon lembap. Berbunga indah namun rapuh. Jangan dipetik atau dipindahkan.'},
+  {id:11,name:'Hutan Pinus &amp; Sub-Alpine',lat:'Pinus merkusii',kind:'Flora Pegunungan',cat:'flora',emoji:'🌲',photo:null,bg:'linear-gradient(135deg,#4d7a4f,#2b4a2c)',protect:'Kawasan Konservasi',pos:'Pos 1–Pos 7',iucn:'Ekosistem Kunci',size:'Hutan',desc:'Vegetasi khas sub-alpine Bawakaraeng: pohon pinus, pandan, paku-pakuan, lumut kerak, rotan hingga anggrek hutan. Penjaga utama daerah tangkapan air.'}
 ];
 var rules=[
   {ico:'🚫',bg:'var(--g-brand)',title:'Dilarang Memetik Flora Endemik',body:'Sanksi pidana bagi siapa saja yang mengambil/memetik Edelweiss maupun Kantong Semar. Cukup abadikan lewat foto.'},
@@ -932,7 +982,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1104,7 +1154,7 @@ function ajukanSimaksi(){
   if(!nama){toast('Isi nama ketua rombongan dulu','err');return;}
   var code=_rid('SMK-');
   var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+code+' | '+nama+' | '+jml+' org');
-  document.getElementById('sk-result').innerHTML='<div class="permit"><h4>🎫 SIMAKSI Terbit</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class="code">'+code+'</div><div class="qr"><img src="'+qurl+'" onerror="this.parentNode.innerHTML=&#39;📄&#39;"/></div><div class="pdet"><span>Ketua</span><b>'+nama+'</b></div><div class="pdet"><span>Anggota</span><b>'+jml+' orang</b></div><div class="pdet"><span>Asal</span><b>'+org+'</b></div><div class="pdet"><span>Naik</span><b>'+naik+'</b></div><div class="pdet"><span>Turun</span><b>'+turun+'</b></div></div>';
+  document.getElementById('sk-result').innerHTML='<div class="permit"><h4>🎫 SIMAKSI Terbit</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class="code">'+code+'</div><div class="qr"><img src="'+qurl+'" onerror="this.parentNode.innerHTML=&#39;📄&#39;"/></div><div class="pdet"><span>Ketua</span><b>'+nama+'</b></div><div class="pdet"><span>Anggota</span><b>'+jml+' orang</b></div><div class="pdet"><span>Asal</span><b>'+org+'</b></div><div class="pdet"><span>Naik</span><b>'+naik+'</b></div><div class="pdet"><span>Turun</span><b>'+turun+'</b></div></div><button class="pdf-btn" onclick="printCard(&#39;sk-result&#39;)">⬇️ Simpan / Cetak PDF</button>';
   toast('SIMAKSI berhasil diajukan!','ok');
   document.getElementById('sk-result').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1120,7 +1170,7 @@ function adopsiPohon(){
   var pk=_pkgs.filter(function(x){return x.id===_pkgSel;})[0];
   var id=_rid('POH-');
   var tgl=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('ad-result').innerHTML='<div class="cert"><div class="seal">🌳</div><small>SERTIFIKAT ADOPSI POHON</small><h4>'+nama+'</h4><p style="font-size:12px;color:var(--sub);margin:4px 0">telah mengadopsi <b>'+pk.n+'</b> ('+_rupiah(pk.p)+') untuk restorasi Gunung Bawakaraeng</p><div class="cid">'+id+'</div><small>'+tgl+' · Reichas Chelebes</small></div>';
+  document.getElementById('ad-result').innerHTML='<div class="cert"><div class="seal">🌳</div><small>SERTIFIKAT ADOPSI POHON</small><h4>'+nama+'</h4><p style="font-size:12px;color:var(--sub);margin:4px 0">telah mengadopsi <b>'+pk.n+'</b> ('+_rupiah(pk.p)+') untuk restorasi Gunung Bawakaraeng</p><div class="cid">'+id+'</div><small>'+tgl+' · Reichas Chelebes</small></div><button class="pdf-btn" onclick="printCard(&#39;ad-result&#39;)">⬇️ Simpan / Cetak PDF</button>';
   toast('Terima kasih! Sertifikat terbit 🌱','ok');
   document.getElementById('ad-result').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1207,7 +1257,7 @@ renderJalurTrails();
 /* ==== Eksplor: foto asli (iNaturalist) + ringkasan (Wikipedia) ==== */
 var _eksEnriched=false;
 var _BWK={lat:-5.31694,lng:119.94444};
-var _spOv={1:{wiki:'Macaca maura'},2:{wiki:'Anoa pegunungan'},3:{wiki:'Anaphalis javanica'},4:{wiki:'Nepenthes maxima'},5:{wiki:'Elang sulawesi'}};
+var _spOv={1:{wiki:'Macaca maura'},2:{wiki:'Anoa pegunungan'},3:{wiki:'Anaphalis javanica'},4:{wiki:'Nepenthes maxima'},5:{wiki:'Elang sulawesi'},6:{wiki:'Sikatan lompobatang'},7:{wiki:'Anis gunung'},8:{wiki:'Rattus hoffmanni'},9:{wiki:'Capung jarum'},10:{wiki:'Coelogyne'},11:{wiki:'Pinus merkusii'}};
 function _tname(s){return s.lat;}
 async function _fetchINat(s){
   try{
@@ -1557,6 +1607,22 @@ window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}})
   if(typeof loadLiveData==='function'){var _oll=loadLiveData;loadLiveData=async function(){try{await _oll.apply(this,arguments);}catch(e){} await run();};}
   else if(typeof initPantau==='function'){var _o=initPantau;initPantau=function(){_o();setTimeout(run,900);};}
 })();
+</script>
+<script>
+/* ===== Fitur tambahan v4 ===== */
+function toggleTheme(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('bwkTheme',d?'dark':'light');}catch(e){}var b=document.getElementById('themeBtn');if(b)b.textContent=d?'\u2600\ufe0f':'\ud83c\udf19';if(window.jalurMap){setTimeout(function(){try{jalurMap.invalidateSize();}catch(e){}},80);}if(window.pantauMap){setTimeout(function(){try{pantauMap.invalidateSize();}catch(e){}},80);}}
+function _initThemeBtn(){var b=document.getElementById('themeBtn');if(b)b.textContent=document.documentElement.classList.contains('dark')?'\u2600\ufe0f':'\ud83c\udf19';}
+window.addEventListener('load',function(){setTimeout(_initThemeBtn,40);});
+var SOS_CONTACTS=[{n:'Basecamp RC',p:'6281354000111'},{n:'Tim SAR',p:'6281354000222'}];
+function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)u=o.name;}}catch(e){}return u;}
+function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}navigator.geolocation.getCurrentPosition(function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);},function(e){sosShareUI(null,null,null);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
+function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);var head=hasLoc?('<div class="sos-loc ok">\ud83d\udccd Lokasi terkunci<br><b>'+coordTxt+'</b><small>akurasi \u00b1'+Math.round(acc||0)+' m</small></div>'):'<div class="sos-loc warn">\u26a0\ufe0f GPS gagal \u2014 aktifkan izin lokasi. Kamu tetap bisa kirim pesan manual di bawah.</div>';var btns='';SOS_CONTACTS.forEach(function(c){btns+='<a class="sos-share wa" href="https://wa.me/'+c.p+'?text='+emsg+'" target="_blank" rel="noopener">\ud83d\udfe2 WhatsApp '+c.n+'</a>';});btns+='<a class="sos-share sms" href="sms:?&body='+emsg+'">\u2709\ufe0f Kirim via SMS</a>';if(hasLoc){btns+='<a class="sos-share map" href="'+maps+'" target="_blank" rel="noopener">\ud83d\uddfa\ufe0f Buka di Google Maps</a>';}btns+='<button class="sos-share copy" onclick="sosCopy(&#39;'+coordTxt+'&#39;)">\ud83d\udccb Salin koordinat</button>';s.innerHTML=head+'<div class="sos-actions">'+btns+'</div>';}
+function sosCopy(t){try{navigator.clipboard.writeText(t);toast('Koordinat disalin','ok');}catch(e){toast('Salin manual: '+t,'ok');}}
+function locateMe(){if(!navigator.geolocation){toast('GPS tidak tersedia di perangkat ini','err');return;}toast('Mencari lokasi kamu\u2026','ok');navigator.geolocation.getCurrentPosition(function(p){var la=p.coords.latitude,ln=p.coords.longitude,ac=p.coords.accuracy;if(window.jalurMap&&window.L){if(window._meMarker){jalurMap.removeLayer(_meMarker);}if(window._meCirc){jalurMap.removeLayer(_meCirc);}window._meCirc=L.circle([la,ln],{radius:ac||30,color:'#2b6fff',fillColor:'#2b6fff',fillOpacity:.15,weight:1}).addTo(jalurMap);window._meMarker=L.circleMarker([la,ln],{radius:7,color:'#fff',weight:3,fillColor:'#2b6fff',fillOpacity:1}).addTo(jalurMap).bindTooltip('Lokasi Anda',{direction:'top'}).openTooltip();jalurMap.setView([la,ln],14);toast('Lokasi ditemukan (\u00b1'+Math.round(ac||0)+' m)','ok');}else{toast('Koordinat: '+la.toFixed(5)+', '+ln.toFixed(5),'ok');}},function(e){toast('Gagal ambil lokasi. Aktifkan izin GPS.','err');},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
+function renderElevProfile(){var host=document.getElementById('elevProfile');if(!host)return;var pts=(typeof jalurPos!=='undefined'&&jalurPos)?jalurPos:[];if(!pts.length)return;var W=320,H=126,pad=8,base=H-18;var els=pts.map(function(p){return p.el;});var mn=Math.min.apply(null,els),mx=Math.max.apply(null,els);var n=pts.length;function X(i){return pad+i*((W-pad*2)/(n-1));}function Y(v){return 12+(base-12)*(1-(v-mn)/((mx-mn)||1));}var line='',area='M'+X(0).toFixed(1)+' '+base,dots='';pts.forEach(function(p,i){var x=X(i),y=Y(p.el);line+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';area+=' L'+x.toFixed(1)+' '+y.toFixed(1);var col=p.st==='danger'?'#ff2d55':(p.st==='warn'?'#e5951c':'#08a35f');dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.4" fill="'+col+'" stroke="#fff" stroke-width="1.4"><title>'+p.n+' \u00b7 '+p.el+' m</title></circle>';});area+=' L'+X(n-1).toFixed(1)+' '+base+' Z';var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="egr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b6fff" stop-opacity="0.32"/><stop offset="1" stop-color="#2b6fff" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#egr)"/><path d="'+line+'" fill="none" stroke="#2b6fff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'+dots+'<text x="'+X(0).toFixed(1)+'" y="'+(base+13)+'" font-size="8" fill="#8a94a6">'+els[0]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(base+13)+'" font-size="8" text-anchor="end" fill="#8a94a6">'+els[n-1]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(Y(mx)-4).toFixed(1)+'" font-size="8.5" text-anchor="end" font-weight="700" fill="#e0154a">\u25b2 '+mx+'m</text></svg>';host.innerHTML=svg;}
+async function loadAlerts(){var box=document.getElementById('alertBox');if(!box)return;var al=[];var LA=-5.31694,LN=119.94444;try{var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+LA+'&longitude='+LN+'&current=weather_code,wind_speed_10m&daily=precipitation_probability_max&timezone=Asia%2FMakassar&forecast_days=1');var d=await r.json();var pp=(d.daily&&d.daily.precipitation_probability_max)?d.daily.precipitation_probability_max[0]:null;var wc=d.current?d.current.weather_code:null;var ws=d.current?d.current.wind_speed_10m:null;if(pp!=null&&pp>=70)al.push({lv:'warn',ic:'\ud83c\udf27\ufe0f',t:'Potensi hujan lebat',d:'Peluang hujan '+pp+'% hari ini. Pertimbangkan menunda pendakian.'});if(wc!=null&&wc>=95)al.push({lv:'danger',ic:'\u26c8\ufe0f',t:'Badai petir terdeteksi',d:'Hindari area terbuka, punggungan, dan puncak.'});if(ws!=null&&ws>=40)al.push({lv:'warn',ic:'\ud83d\udca8',t:'Angin kencang',d:'Kecepatan angin sekitar '+Math.round(ws)+' km/jam.'});}catch(e){}try{var ra=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LA+'&longitude='+LN+'&current=us_aqi&timezone=Asia%2FMakassar');var da=await ra.json();var aqi=da.current?da.current.us_aqi:null;if(aqi!=null&&aqi>100)al.push({lv:(aqi>150?'danger':'warn'),ic:'\ud83d\ude37',t:'Kualitas udara buruk (AQI '+aqi+')',d:'Bisa indikasi asap/kebakaran. Batasi aktivitas berat.'});}catch(e){}try{var stt=new Date(Date.now()-86400000).toISOString().slice(0,10);var rq=await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime='+stt+'&minmagnitude=4&latitude='+LA+'&longitude='+LN+'&maxradiuskm=350&orderby=time&limit=1');var dq=await rq.json();if(dq.features&&dq.features.length){var q=dq.features[0];var m=q.properties.mag||0;al.push({lv:(m>=5?'danger':'warn'),ic:'\ud83d\udcf3',t:'Gempa M'+m.toFixed(1)+' terkini',d:(q.properties.place||'dekat kawasan')+'. Tetap waspada saat mendaki.'});}}catch(e){}if(!al.length){box.innerHTML='<div class="alert ok"><span class="ai">\u2705</span><div><b>Kondisi relatif aman</b><small>Tidak ada peringatan cuaca ekstrem, gempa, atau titik api signifikan saat ini.</small></div></div>';return;}box.innerHTML=al.map(function(a){return '<div class="alert '+a.lv+'"><span class="ai">'+a.ic+'</span><div><b>'+a.t+'</b><small>'+a.d+'</small></div></div>';}).join('');}
+window.addEventListener('load',function(){setTimeout(function(){try{loadAlerts();}catch(e){}},700);});
+function printCard(cid){var host=document.getElementById(cid);if(!host)return;var card=host.querySelector('.permit,.cert');if(!card){toast('Belum ada dokumen untuk dicetak','err');return;}card.classList.add('print-target');function done(){card.classList.remove('print-target');window.removeEventListener('afterprint',done);}window.addEventListener('afterprint',done);setTimeout(function(){try{window.print();}catch(e){done();}},80);}
 </script>
 </body>
 </html>
