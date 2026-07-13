@@ -420,6 +420,26 @@
 .catbtn:active{transform:scale(.96)}
 .catdesc{font-size:12px;color:var(--sub);margin:2px 2px 13px;font-weight:600;line-height:1.5}
 .catdesc b{color:#20263a;font-weight:800}
+
+.intro-ov{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0d1b2e,#122b47 55%,#0d1b2e);display:flex;align-items:center;justify-content:center;padding:24px 18px;overflow-y:auto;opacity:1;transition:opacity .42s}
+.intro-ov.hide{opacity:0;pointer-events:none}
+.intro-card{max-width:430px;width:100%;text-align:center;color:#fff;animation:introPop .5s ease}
+@keyframes introPop{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+.intro-badge{width:76px;height:76px;margin:0 auto 12px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.intro-badge img{width:100%;height:100%;object-fit:cover}
+.intro-org{font-size:11px;letter-spacing:2px;font-weight:800;color:#8fb4e0;margin-bottom:10px}
+.intro-title{font-size:26px;font-weight:900;margin:0 0 10px}
+.intro-sub{font-size:13px;line-height:1.6;color:#c4d2e4;margin:0 auto 20px;max-width:360px}
+.intro-tri-h{font-size:13px;font-weight:800;color:#ffd27a;margin-bottom:12px}
+.intro-tri{display:flex;flex-direction:column;gap:11px;text-align:left;margin-bottom:22px}
+.intro-node{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:13px 14px}
+.in-ic{width:42px;height:42px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.in-ic img{width:100%;height:100%;object-fit:cover}
+.in-tx b{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
+.in-tx span{font-size:12px;line-height:1.5;color:#c4d2e4}
+.intro-btn{width:100%;padding:15px;border:none;border-radius:16px;background:var(--g-brand);color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(255,45,85,.4)}
+.intro-btn:active{transform:scale(.98)}
+.intro-foot{margin-top:16px;font-size:12px;color:#8fb4e0;font-weight:700}
 </style>
 </head>
 <body>
@@ -1370,6 +1390,26 @@ function renderCat(){
  var g=document.getElementById('catGrid');if(g)g.innerHTML=c.tiles.map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
 }
 window.addEventListener('load',function(){setTimeout(function(){try{renderCat();}catch(e){}},60);});
+</script>
+<div id="introOverlay" class="intro-ov">
+  <div class="intro-card">
+    <div class="intro-badge"><img id="introLogo" alt="RC"/></div>
+    <div class="intro-org">REICHAS CHELEBES RANGERS</div>
+    <h1 class="intro-title">Tata Kelola &amp; Regulasi ⚖️</h1>
+    <p class="intro-sub">Pengelolaan Gunung Bawakaraeng berlandaskan kolaborasi tiga pihak demi kelestarian ekologis &amp; pendakian yang bertanggung jawab.</p>
+    <div class="intro-tri-h">🤝 Core Tripartit</div>
+    <div class="intro-tri">
+      <div class="intro-node"><div class="in-ic g-blue">🏛️</div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div></div>
+      <div class="intro-node"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div></div>
+      <div class="intro-node"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div></div>
+    </div>
+    <button class="intro-btn" onclick="closeIntro()">Lanjut ke Aplikasi →</button>
+    <div class="intro-foot">⛰️ Lestari Alam Bawakaraeng</div>
+  </div>
+</div>
+<script>
+function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},420);}}
+window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='⛰️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
 </script>
 </body>
 </html>
