@@ -429,11 +429,11 @@
 .catdesc{font-size:12px;color:var(--sub);margin:2px 2px 13px;font-weight:600;line-height:1.5}
 .catdesc b{color:#20263a;font-weight:800}
 
-.intro-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;opacity:1;transition:opacity .42s;background:#12213b}
+.intro-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;opacity:1;transition:opacity .42s;background:#12213b}
 .intro-ov.hide{opacity:0;pointer-events:none}
 .intro-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-.intro-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(8,12,24,.94) 0%,rgba(8,12,24,.62) 34%,rgba(8,12,24,0) 64%)}
-.intro-card{position:relative;z-index:2;max-width:430px;width:100%;text-align:center;color:#fff;padding:0 24px 48px;animation:introPop .6s ease}
+.intro-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(8,12,24,.95) 0%,rgba(8,12,24,.72) 55%,rgba(8,12,24,.5) 100%)}
+.intro-card{position:relative;z-index:2;max-width:430px;width:100%;text-align:center;color:#fff;padding:32px 24px;animation:introPop .6s ease}
 @keyframes introPop{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 .intro-icon{width:152px;height:152px;margin:0 auto 24px;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.24),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.38);display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.4)}
 .intro-icon span{position:relative;z-index:2;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
@@ -445,6 +445,12 @@
 .intro-sub{font-size:14px;line-height:1.6;color:#e9eef7;margin:0 auto 30px;max-width:330px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
 .intro-btn{width:100%;max-width:360px;padding:16px;border:none;border-radius:16px;background:var(--g-brand);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(255,45,85,.5)}
 .intro-btn:active{transform:scale(.98)}
+.intro-tri{display:flex;flex-direction:column;gap:10px;text-align:left;margin:0 auto 26px;max-width:360px}
+.intro-node{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:15px;padding:12px 14px}
+.in-ic{width:42px;height:42px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.in-ic img{width:100%;height:100%;object-fit:cover}
+.in-tx b{display:block;font-size:14px;font-weight:800;margin-bottom:3px;color:#fff}
+.in-tx span{font-size:12px;line-height:1.5;color:#d7e0ee}
 </style>
 </head>
 <body>
@@ -1436,6 +1442,11 @@ window.addEventListener('load',function(){setTimeout(function(){try{renderCat();
     <div class="intro-icon"><img id="introLogo" alt="Reichas Chelebes"/></div>
     <h1 class="intro-title">PANTAU<br/>BAWAKARAENG</h1>
     <p class="intro-sub">Pemantauan hutan, cuaca &amp; aktivitas pendakian Gunung Bawakaraeng dalam satu genggaman.</p>
+        <div class="intro-tri">
+      <div class="intro-node"><div class="in-ic g-blue">🏛️</div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div></div>
+      <div class="intro-node"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div></div>
+      <div class="intro-node"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div></div>
+    </div>
     <button class="intro-btn" onclick="closeIntro()">Masuk Aplikasi →</button>
   </div>
 </div>
