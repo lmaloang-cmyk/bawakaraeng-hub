@@ -411,6 +411,15 @@
   .ekm .track{height:8px;border-radius:5px;background:var(--line);overflow:hidden}
   .ekm .track i{display:block;height:100%;border-radius:5px}
   .nt-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;background:var(--card);margin-bottom:10px;font-family:inherit}
+
+.catbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:2px 0 2px;-webkit-overflow-scrolling:touch}
+.catbar::-webkit-scrollbar{display:none}
+.catbtn{flex:none;display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;padding:10px 15px;border-radius:16px;background:var(--card);border:1px solid var(--line);color:#4a5169;box-shadow:var(--shadow);white-space:nowrap;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.catbtn .ce{font-size:15px;line-height:1}
+.catbtn.on{color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(0,0,0,.16)}
+.catbtn:active{transform:scale(.96)}
+.catdesc{font-size:12px;color:var(--sub);margin:2px 2px 13px;font-weight:600;line-height:1.5}
+.catdesc b{color:#20263a;font-weight:800}
 </style>
 </head>
 <body>
@@ -489,25 +498,9 @@
       <div><b id="wqMag">—</b><small id="wqLoc">—</small></div>
     </div>
 
-    <div class="qgrid">
-      <button class="q" onclick="go('eksplor')"><div class="ic g-green">🌿</div><span>Flora &amp; Fauna</span></button>
-      <button class="q" onclick="go('peta')"><div class="ic g-blue">🗺️</div><span>Peta Jalur</span></button>
-      <button class="q" onclick="go('lapor')"><div class="ic g-amber">📷</div><span>Lapor</span></button>
-      <button class="q" onclick="openSOS()"><div class="ic g-brand">🆘</div><span>SOS</span></button>
-      <button class="q" onclick="go('simaksi')"><div class="ic g-indigo">🎫</div><span>SIMAKSI</span></button>
-      <button class="q" onclick="go('regulasi')"><div class="ic g-violet">⚖️</div><span>Regulasi</span></button>
-      <button class="q" onclick="go('komunitas')"><div class="ic g-pink">👥</div><span>Komunitas</span></button>
-      <button class="q" onclick="go('pantau')"><div class="ic g-teal">🌳</div><span>Pantau Pohon</span></button>
-      <button class="q" onclick="go('adopsi')"><div class="ic g-green">🌱</div><span>Adopsi Pohon</span></button>
-      <button class="q" onclick="go('donasi')"><div class="ic g-brand">💚</div><span>Donasi</span></button>
-      <button class="q" onclick="go('bandingkan')"><div class="ic g-teal">🌗</div><span>Before-After</span></button>
-      <button class="q" onclick="go('agenda')"><div class="ic g-amber">📅</div><span>Agenda</span></button>
-      <button class="q" onclick="go('jurnal')"><div class="ic g-blue">🧭</div><span>Jurnal Pendaki</span></button>
-      <button class="q" onclick="go('checklist')"><div class="ic g-green">🎒</div><span>Checklist</span></button>
-      <button class="q" onclick="go('biodiv')"><div class="ic g-teal">🔬</div><span>Biodiversitas</span></button>
-      <button class="q" onclick="go('arsip')"><div class="ic g-indigo">📚</div><span>Publikasi</span></button>
-      <button class="q" onclick="go('ekosistem')"><div class="ic g-green">🌳</div><span>Kesehatan</span></button>
-    </div>
+    <div class="catbar" id="catbar"></div>
+    <div class="catdesc" id="catdesc"></div>
+    <div class="qgrid" id="catGrid"></div>
 
     <div class="sh"><span class="bar"></span><h3>Laporan Terkini</h3><span class="link" onclick="toast('Menampilkan semua laporan')">Semua</span></div>
     <div class="feed" id="feed"></div>
@@ -880,7 +873,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='peta'){setTimeout(initJalur,80);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1337,6 +1330,46 @@ function renderEkosistem(){
   document.getElementById('ek-ddbar').style.width=Math.round(used/cap*100)+'%';
   document.getElementById('ek-ddnote').textContent='Kuota lestari harian '+cap+' pendaki demi menjaga daya dukung ekologis. Sisa '+(cap-used)+' slot hari ini.';
 }
+</script>
+<script>
+/* ===== Beranda 4 Kategori: KLH, Kehutanan, SAR, Adventure ===== */
+var catData=[
+ {id:'klh',name:'KLH',full:'Kementerian Lingkungan Hidup',emoji:'🏛️',grad:'var(--g-violet)',desc:'Tata kelola, kebijakan, kesehatan ekosistem & transparansi dana.',tiles:[
+   {a:"go('ekosistem')",ic:'g-green',e:'🌳',l:'Kesehatan'},
+   {a:"go('biodiv')",ic:'g-teal',e:'🔬',l:'Biodiversitas'},
+   {a:"go('arsip')",ic:'g-indigo',e:'📚',l:'Publikasi'},
+   {a:"go('regulasi')",ic:'g-violet',e:'⚖️',l:'Regulasi'},
+   {a:"go('donasi')",ic:'g-brand',e:'💚',l:'Donasi'}
+ ]},
+ {id:'hut',name:'Kehutanan',full:'Kehutanan',emoji:'🌲',grad:'var(--g-green)',desc:'Reboisasi, pemantauan tutupan hutan & keanekaragaman hayati.',tiles:[
+   {a:"go('pantau')",ic:'g-teal',e:'🌳',l:'Pantau Pohon'},
+   {a:"go('adopsi')",ic:'g-green',e:'🌱',l:'Adopsi Pohon'},
+   {a:"go('eksplor')",ic:'g-green',e:'🌿',l:'Flora & Fauna'},
+   {a:"go('bandingkan')",ic:'g-teal',e:'🌗',l:'Before-After'}
+ ]},
+ {id:'sar',name:'SAR',full:'SAR & Keselamatan',emoji:'🚨',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
+   {a:'openSOS()',ic:'g-brand',e:'🆘',l:'SOS Darurat'},
+   {a:"go('lapor')",ic:'g-amber',e:'📷',l:'Lapor Insiden'},
+   {a:"go('checklist')",ic:'g-green',e:'🎒',l:'Checklist'},
+   {a:"go('peta')",ic:'g-blue',e:'🗺️',l:'Peta Jalur'}
+ ]},
+ {id:'adv',name:'Adventure',full:'Adventure',emoji:'⛰️',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, izin SIMAKSI, agenda & komunitas.',tiles:[
+   {a:"go('jurnal')",ic:'g-blue',e:'🧭',l:'Jurnal Pendaki'},
+   {a:"go('simaksi')",ic:'g-indigo',e:'🎫',l:'SIMAKSI'},
+   {a:"go('agenda')",ic:'g-amber',e:'📅',l:'Agenda'},
+   {a:"go('komunitas')",ic:'g-pink',e:'👥',l:'Komunitas'}
+ ]}
+];
+var curCat='klh';
+function setCat(id){curCat=id;renderCat();}
+function renderCat(){
+ var bar=document.getElementById('catbar');if(!bar)return;
+ bar.innerHTML=catData.map(function(c){return '<button class="catbtn'+(c.id===curCat?' on':'')+'" style="'+(c.id===curCat?'background:'+c.grad+';':'')+'" onclick="setCat(\''+c.id+'\')"><span class="ce">'+c.emoji+'</span>'+c.name+'</button>';}).join('');
+ var c=catData.filter(function(x){return x.id===curCat;})[0];if(!c)return;
+ var d=document.getElementById('catdesc');if(d)d.innerHTML='<b>'+c.emoji+' '+c.full+'</b> — '+c.desc;
+ var g=document.getElementById('catGrid');if(g)g.innerHTML=c.tiles.map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
+}
+window.addEventListener('load',function(){setTimeout(function(){try{renderCat();}catch(e){}},60);});
 </script>
 </body>
 </html>
