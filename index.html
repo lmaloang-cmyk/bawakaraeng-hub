@@ -296,6 +296,14 @@
   .sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateY(100%);width:100%;max-width:460px;background:var(--canvas);border-radius:26px 26px 0 0;z-index:85;transition:transform .32s cubic-bezier(.3,.9,.3,1);max-height:88vh;overflow-y:auto;padding:8px 18px 30px}
   .sheet.show{transform:translateX(-50%) translateY(0)}
   .grip{width:44px;height:5px;border-radius:3px;background:#d4d9e6;margin:8px auto 14px}
+  .sheet-x{position:sticky;top:0;float:right;width:34px;height:34px;border:none;border-radius:50%;background:rgba(20,27,46,.6);color:#fff;font-size:15px;font-weight:800;line-height:1;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center}
+  .fc.photofail,.hero2.photofail,.shero.photofail{position:relative}
+  .photofail>img{display:none!important}
+  .photofail::after{content:attr(data-fb);position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .fc.photofail{background:linear-gradient(135deg,#3a4a63,#1f2a3d)}
+  .fc.photofail::after{font-size:40px}
+  .hero2.photofail::after{font-size:62px}
+  .shero.photofail::after{font-size:84px}
   .sheet .shero{height:170px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:84px;margin-bottom:14px;overflow:hidden;position:relative}
   .sheet .shero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .sheet h2{font-size:23px;font-weight:800} .sheet .lat{font-size:13px;color:#08a35f;font-style:italic;font-weight:600;margin-bottom:10px}
@@ -909,7 +917,7 @@
 </div>
 
 <div class="scrim" id="scrim" onclick="closeSheet()"></div>
-<div class="sheet" id="sheet"><div class="grip"></div><div id="sheetBody"></div></div>
+<div class="sheet" id="sheet"><button class="sheet-x" onclick="closeSheet()" aria-label="Tutup">✕</button><div class="grip"></div><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
 <div class="sos" id="sos">
   <h2>MODE DARURAT</h2>
@@ -993,9 +1001,10 @@ function renderFeed(){
     return '<div class="rcard"><div class="who"><div class="avatar" style="background:'+r.color+'">'+initials(r.name)+'</div><span>'+r.role+' — '+r.name+'</span><time>'+r.time+'</time></div><h4>'+r.title+'</h4><p>'+r.desc+'</p>'+tag+'</div>';
   }).join('');
 }
+function _pf(el,e){el.onerror=null;var pn=el.parentNode;if(pn){pn.setAttribute('data-fb',e);pn.classList.add('photofail');}}
 function renderFcar(){
   document.getElementById('fcar').innerHTML=species.map(function(s){
-    var im=s.photo?'<img src="'+s.photo+'"/>':'<div class="im" style="background:'+s.bg+'">'+s.emoji+'</div>';
+    var im=s.photo?'<img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':'<div class="im" style="background:'+s.bg+'">'+s.emoji+'</div>';
     return '<div class="fc" onclick="openSpecies('+s.id+')">'+im+'<div class="ov"></div><div class="bdg">'+s.protect+'</div><div class="t"><b>'+s.name+'</b><small>'+s.lat+'</small></div></div>';
   }).join('');
 }
@@ -1010,13 +1019,13 @@ function renderSpecies(){
   var el=document.getElementById('speciesList');
   if(!list.length){el.innerHTML='<div class="empty">🔍 Tidak ada hasil.</div>';return;}
   el.innerHTML=list.map(function(s){
-    var im=s.photo?'<img src="'+s.photo+'"/>':s.emoji;
+    var im=s.photo?'<img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':s.emoji;
     return '<div class="species" onclick="openSpecies('+s.id+')"><div class="hero2" style="background:'+s.bg+'">'+im+'<div class="badge">🛡️ '+s.protect+'</div>'+(s.photoBy?'<div class="credit">📷 '+s.photoBy+'</div>':'')+'</div><div class="body"><div class="hd"><div><h3>'+s.name+'</h3><div class="lat">'+s.lat+'</div></div><span class="kind">'+s.kind+'</span></div>'+(s.inatCount!=null?'<span class="obschip">📍 '+s.inatCount+' di sekitar</span>':'')+'<div class="desc">'+s.desc+'</div></div></div>';
   }).join('');
 }
 function openSpecies(id){
   var s=species.filter(function(x){return x.id===id})[0];
-  var hero=s.photo?'<div class="shero"><img src="'+s.photo+'"/></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
+  var hero=s.photo?'<div class="shero"><img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
   document.getElementById('sheetBody').innerHTML=hero+'<h2>'+s.name+'</h2><div class="lat">'+s.lat+'</div>'+
     '<span class="pill" style="background:#ffe4ea;color:#e0154a">🛡️ '+s.protect+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">'+s.kind+'</span>'+
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
@@ -1265,7 +1274,7 @@ async function _fetchINat(s){
     var tj=await tr.json();
     if(tj.results&&tj.results[0]){
       var t=tj.results[0];
-      if(t.default_photo&&(t.default_photo.medium_url||t.default_photo.url)){s.photo=t.default_photo.medium_url||t.default_photo.url;s.photoBy='iNaturalist';}
+      if(t.default_photo&&(t.default_photo.medium_url||t.default_photo.url)){s.photo=(t.default_photo.medium_url||t.default_photo.url).replace('http://','https://');s.photoBy='iNaturalist';}
       s.taxonId=t.id;
     }
     var u='https://api.inaturalist.org/v1/observations?lat='+_BWK.lat+'&lng='+_BWK.lng+'&radius=45&per_page=0'+(s.taxonId?('&taxon_id='+s.taxonId):('&taxon_name='+encodeURIComponent(_tname(s))));
@@ -1280,7 +1289,7 @@ async function _fetchWiki(s){
     if(!r.ok){r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(s.lat));}
     if(r.ok){var j=await r.json();
       if(j.extract){s.wiki=j.extract;}
-      if(!s.photo&&j.thumbnail&&j.thumbnail.source){s.photo=j.thumbnail.source;s.photoBy='Wikipedia';}
+      if(!s.photo&&j.thumbnail&&j.thumbnail.source){s.photo=j.thumbnail.source.replace('http://','https://');s.photoBy='Wikipedia';}
     }
   }catch(e){}
 }

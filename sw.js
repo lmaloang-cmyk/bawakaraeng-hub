@@ -1,4 +1,4 @@
-const CACHE='bwk-v6';
+const CACHE='bwk-v7';
 const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/species-macaca.jpg','/og.jpg'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
