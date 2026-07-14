@@ -604,7 +604,15 @@
 .pjoin{font-size:11px;font-weight:600;opacity:.85;margin-top:5px}
 .badges .bdg2.locked{opacity:.4;filter:grayscale(.9)}
 .badges .bdg2 span{transition:opacity .2s}
+.login-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid #dadce0;border-radius:12px;background:#fff;color:#3c4043;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0}
+.login-google:active{background:#f3f3f3}
+.login-google .gg{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:conic-gradient(#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);color:#fff;font-weight:900;font-size:13px;font-family:Arial,sans-serif}
+.login-or{display:flex;align-items:center;gap:10px;color:#9aa;font-size:12px;margin:14px 0 8px}
+.login-or span{white-space:nowrap}
+.login-or::before,.login-or::after{content:'';flex:1;height:1px;background:#e3e3e3}
+.login-hint{font-size:11px;color:#888;margin:10px 0 2px;text-align:center;line-height:1.4}
 </style>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="phone">
@@ -1660,17 +1668,16 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <div class="login-ic"><img id="loginLogo" alt="RC"/></div>
     <h2 class="login-h">Selamat Datang</h2>
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
+    <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
+    <div class="login-or"><span>atau isi manual</span></div>
     <label class="login-lb">Nama</label>
     <input id="lgName" class="login-inp" placeholder="Nama lengkap" autocomplete="name"/>
     <label class="login-lb">Peran</label>
     <div class="role-grid">
       <div class="role-chip" onclick="selRole(this,'Pendaki')"><span class="re">🥾</span>Pendaki</div>
       <div class="role-chip" onclick="selRole(this,'Warga')"><span class="re">🏡</span>Warga</div>
-      <div class="role-chip" onclick="selRole(this,'KLH')"><span class="re">🏛️</span>KLH</div>
-      <div class="role-chip" onclick="selRole(this,'Kehutanan')"><span class="re">🌲</span>Kehutanan</div>
-      <div class="role-chip" onclick="selRole(this,'SAR')"><span class="re">🚨</span>SAR</div>
-      <div class="role-chip" onclick="selRole(this,'Admin')"><span class="re">🛡️</span>Admin</div>
     </div>
+    <p class="login-hint">🔒 Peran petugas (Admin/KLH/SAR) hanya melalui "Masuk dengan Google".</p>
     <button class="login-btn" onclick="doLogin()">Masuk Aplikasi</button>
     <button class="login-skip" onclick="skipLogin()">Lewati dulu</button>
   </div>
@@ -1692,7 +1699,7 @@ function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.class
 function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
 function skipLogin(){hideLogin();}
 function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}}
-function logoutUser(){if(confirm('Keluar dari akun ini?')){localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
+function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
 window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
 </script>
@@ -1777,7 +1784,7 @@ function renderProfile(){
   var d={rep:_statN('bwkMyReports'),jur:_statN('bwkMyJurnal'),trees:_statN('bwkMyTrees'),ev:_statN('bwkMyEvents')};
   var poin=d.rep*10+d.jur*15+Math.floor(d.trees/10)+d.ev*20;
   var level=Math.max(1,Math.min(9,Math.floor(poin/100)+1));
-  var av=document.getElementById('profAv');if(av){av.textContent=(typeof initials==='function'&&name)?initials(name):name.slice(0,1).toUpperCase();}
+  var av=document.getElementById('profAv');if(av){var _ph=(u&&u.photo)?u.photo:'';if(_ph){av.innerHTML='<img src="'+_ph+'" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';}else{av.textContent=(typeof initials==='function'&&name)?initials(name):name.slice(0,1).toUpperCase();}}
   var pn=document.getElementById('profName');if(pn){pn.textContent=name;}
   var lv=document.getElementById('profLevel');if(lv){lv.textContent='\uD83C\uDFF5\uFE0F '+role+' \u00b7 Level '+level;}
   var pj=document.getElementById('profJoin');if(pj){pj.textContent=(u&&u.ts)?('Anggota sejak '+new Date(u.ts).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})):'';}
@@ -1813,6 +1820,18 @@ function saveProfile(){
   if(typeof closeSheet==='function'){closeSheet();}
   if(window.toast){toast('Profil diperbarui \u2713','ok');}
 }
+</script>
+<script>
+var SB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
+var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
+var ROLE_MAP={'songkrangveo@gmail.com':'Admin'};
+var _sb=null;
+function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
+function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
+window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
+function _fromGoogle(su){try{var m=su.user_metadata||{};var email=su.email||'';var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
+function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
+if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
 </script>
 </body>
 </html>
