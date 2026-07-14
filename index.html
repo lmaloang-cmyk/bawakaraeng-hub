@@ -820,6 +820,7 @@
     <div class="sh"><span class="bar" style="background:var(--g-amber)"></span><h3>Lencana</h3></div>
     <div class="badges" id="profBadges"></div>
     <div class="plist">
+      <div class="pli" id="profAdminLink" style="display:none" onclick="openAdmin()"><div class="pi g-brand">🛡️</div><b>Panel Admin</b><span class="chev">›</span></div>
       <div class="pli" onclick="openEditProfile()"><div class="pi g-brand">✏️</div><b>Edit Profil</b><span class="chev">›</span></div>
       <div class="pli" onclick="go('trip')"><div class="pi g-indigo">🎫</div><b>SIMAKSI Saya</b><span class="chev">›</span></div>
       <div class="pli" onclick="go('regulasi')"><div class="pi g-violet">⚖️</div><b>Regulasi &amp; Aturan</b><span class="chev">›</span></div>
@@ -1869,7 +1870,7 @@ if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEven
 <script>
 var _curAdmin='lapor';
 var _ADMIN_TBL={lapor:'reports',simaksi:'simaksi',jurnal:'jurnal'};
-function _adminToggle(role){var f=document.getElementById('adminFab');if(!f)return;f.style.display=(role==='Admin')?'flex':'none';}
+function _adminToggle(role){var on=(role==='Admin');var f=document.getElementById('adminFab');if(f){f.style.display=on?'flex':'none';}var pl=document.getElementById('profAdminLink');if(pl){pl.style.display=on?'flex':'none';}}
 function openAdmin(){var p=document.getElementById('adminPanel');if(p){p.style.display='flex';renderAdmin(_curAdmin);}}
 function closeAdmin(){var p=document.getElementById('adminPanel');if(p){p.style.display='none';}}
 function adminTab(k,el){var ts=document.querySelectorAll('.admin-tab');for(var i=0;i<ts.length;i++){ts[i].classList.remove('on');}if(el){el.classList.add('on');}renderAdmin(k);}
