@@ -306,6 +306,12 @@
   .shero.photofail::after{font-size:84px}
   .sheet .shero{height:170px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:84px;margin-bottom:14px;overflow:hidden;position:relative}
   .sheet .shero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .sheet .shero{cursor:zoom-in}
+  .shero-zoom{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:800;padding:5px 9px;border-radius:20px;pointer-events:none}
+  .imglb{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:120;display:none;align-items:center;justify-content:center;padding:18px}
+  .imglb.show{display:flex}
+  .imglb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .imglb-x{position:absolute;top:16px;right:16px;width:40px;height:40px;border:none;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:18px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .sheet h2{font-size:23px;font-weight:800} .sheet .lat{font-size:13px;color:#08a35f;font-style:italic;font-weight:600;margin-bottom:10px}
   .sheet .info-row{display:flex;gap:10px;margin:15px 0}
   .sheet .info{flex:1;background:var(--card);border-radius:14px;padding:11px;text-align:center;box-shadow:var(--shadow)}
@@ -467,6 +473,18 @@
 .intro-btn:active{transform:scale(.98)}
 .intro-tri{display:flex;flex-direction:column;gap:10px;text-align:left;margin:0 auto 26px;max-width:360px}
 .intro-node{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:15px;padding:12px 14px}
+  .tri-lead{font-size:12.5px;line-height:1.55;color:#e9eef7;margin:0 auto 12px;max-width:360px}
+  .intro-acc{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:15px;overflow:hidden}
+  .intro-acc .intro-node{background:none;border:none;border-radius:0;cursor:pointer;align-items:center}
+  .in-chev{margin-left:auto;font-size:13px;color:#ffd27a;transition:transform .3s;flex-shrink:0}
+  .intro-acc.open .in-chev{transform:rotate(180deg)}
+  .intro-detail{max-height:0;overflow:hidden;transition:max-height .45s ease}
+  .intro-acc.open .intro-detail{max-height:1800px;padding-bottom:12px}
+  .td-lead{font-size:12px;line-height:1.55;color:#dfe6f2;padding:0 14px;margin:2px 0 8px}
+  .intro-detail h5{font-size:11.5px;font-weight:800;color:#ffd27a;margin:10px 14px 3px;text-transform:uppercase;letter-spacing:.03em}
+  .intro-detail ul{margin:0;padding:0 14px 0 30px}
+  .intro-detail li{font-size:12px;line-height:1.5;color:#e3e9f4;margin:4px 0}
+  .tri-concl{font-size:11.5px;line-height:1.55;color:#fff;background:rgba(255,210,122,.14);border:1px solid rgba(255,210,122,.3);border-radius:13px;padding:11px 13px;margin-top:12px;text-align:left}
 .in-ic{width:42px;height:42px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
 .in-ic img{width:100%;height:100%;object-fit:cover}
 .in-tx b{display:block;font-size:14px;font-weight:800;margin-bottom:3px;color:#fff}
@@ -918,6 +936,7 @@
 
 <div class="scrim" id="scrim" onclick="closeSheet()"></div>
 <div class="sheet" id="sheet"><button class="sheet-x" onclick="closeSheet()" aria-label="Tutup">✕</button><div class="grip"></div><div id="sheetBody"></div></div>
+<div class="imglb" id="imglb" onclick="closeImg()"><img id="imglbImg" alt="Foto"/><button class="imglb-x" onclick="closeImg()" aria-label="Tutup">✕</button></div>
 <div class="toast" id="toast"></div>
 <div class="sos" id="sos">
   <h2>MODE DARURAT</h2>
@@ -1025,7 +1044,7 @@ function renderSpecies(){
 }
 function openSpecies(id){
   var s=species.filter(function(x){return x.id===id})[0];
-  var hero=s.photo?'<div class="shero"><img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
+  var hero=s.photo?'<div class="shero"><img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)" onclick="openImg(&#39;'+s.photo+'&#39;)"/><div class="shero-zoom">⤢ Ketuk untuk perbesar</div></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
   document.getElementById('sheetBody').innerHTML=hero+'<h2>'+s.name+'</h2><div class="lat">'+s.lat+'</div>'+
     '<span class="pill" style="background:#ffe4ea;color:#e0154a">🛡️ '+s.protect+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">'+s.kind+'</span>'+
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
@@ -1075,6 +1094,8 @@ function submitReport(){var desc=document.getElementById('desc').value.trim();if
 /* Sheet / toast / SOS */
 function openSheet(){document.getElementById('scrim').classList.add('show');document.getElementById('sheet').classList.add('show');}
 function closeSheet(){document.getElementById('scrim').classList.remove('show');document.getElementById('sheet').classList.remove('show');}
+function openImg(src){if(!src)return;var lb=document.getElementById('imglb');if(!lb)return;document.getElementById('imglbImg').src=src;lb.classList.add('show');}
+function closeImg(){var lb=document.getElementById('imglb');if(lb){lb.classList.remove('show');}}
 var toastTimer;function toast(msg,type){var t=document.getElementById('toast');t.className='toast show'+(type?(' '+type):'');t.innerHTML=(type==='ok'?'✅ ':type==='err'?'⚠️ ':'🔔 ')+msg;clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2200);}
 var holdTimer,holdStart;
 function openSOS(){document.getElementById('sos').classList.add('show');document.getElementById('sosStatus').textContent='';document.getElementById('fill').style.height='0';}
@@ -1535,9 +1556,9 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <div class="intro-eco">Ekosistem Gunung Bulu Bawakaraeng</div>
     <p class="intro-sub">Konservasi lingkungan, tata kelola hutan dan keselamatan pendakian dalam satu aplikasi.</p>
         <div class="intro-tri">
-      <div class="intro-node"><div class="in-ic g-blue">🏛️</div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div></div>
-      <div class="intro-node"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div></div>
-      <div class="intro-node"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div></div>
+      <p class="tri-lead">Pendekatan <b>Tripartit</b> membagi peran secara taktis demi kelestarian kawasan. Ketuk tiap pilar untuk melihat tugas &amp; fungsinya (tusi).</p><div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-blue">🏛️</div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Pemegang kendali legalitas, kebijakan &amp; pendanaan — melalui BBKSDA, Dinas Kehutanan, atau Pemerintah Daerah setempat.</p><h5>⚖️ Regulasi (Kebijakan Terarah)</h5><ul><li>Menyusun payung hukum tata tertib pendakian, zona konservasi, perlindungan flora &amp; fauna endemik, serta sanksi bagi pelanggar lingkungan.</li><li>Menetapkan kuota harian pendakian (carrying capacity) agar ekosistem tidak tertekan akibat over-tourism.</li></ul><h5>📝 Perizinan (Sistem Kontrol)</h5><ul><li>Mengatur izin masuk kawasan hutan (SIMAKSI).</li><li>Mengontrol izin penelitian, wisata minat khusus, maupun kegiatan adat/budaya.</li></ul><h5>💰 Penganggaran (Budgeting)</h5><ul><li>Mengalokasikan dana APBD/APBN untuk fasilitas konservasi: pos registrasi, jalur evakuasi, rambu, shelter.</li><li>Mendanai pemulihan ekosistem — reboisasi pasca-kebakaran &amp; rehabilitasi lahan kritis.</li></ul></div></div>
+      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Ujung tombak &amp; eksekutor langsung di lapangan — pendaki, komunitas pencinta alam (KPA), relawan, SAR, serta warga lokal (Lembanna).</p><h5>🛖 Pengelola &amp; Keamanan Lokal (Warga Sekitar)</h5><ul><li>Garda terdepan pengawasan pintu masuk (Pos Lembanna) &amp; penyedia jasa pemandu (porter/guide) lokal yang paham etika konservasi.</li><li>Menerapkan hukum adat/kearifan lokal demi menjaga kesucian spiritual &amp; keasrian fisik gunung.</li></ul><h5>🌱 Eksekutor Pemulihan (Komunitas &amp; Relawan)</h5><ul><li>Bersih gunung (clean-up) berkala untuk meminimalkan sampah plastik dari pos hingga puncak.</li><li>Penanaman pohon swadaya di area tangkapan air &amp; jalur rawan erosi.</li></ul><h5>🥾 Penerap Aturan (Para Pendaki)</h5><ul><li>Mematuhi standar keselamatan &amp; zero waste hiking.</li><li>Mengawasi sesama pendaki untuk mencegah vandalisme, perburuan liar &amp; api unggun pemicu kebakaran.</li></ul></div></div>
+      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Konektor cerdas antara kebijakan pemerintah &amp; aksi masyarakat — fokus pada tata kelola informasi &amp; pemantauan Gunung Bawakaraeng.</p><h5>🔗 Jembatan Data (Digitalisasi &amp; Integrasi)</h5><ul><li>Menyediakan sistem registrasi &amp; pendataan pendaki terintegrasi untuk melacak siapa saja yang naik dan turun gunung.</li><li>Mengumpulkan data riil lapangan (volume sampah, kerusakan jalur, frekuensi evakuasi) sebagai bahan evaluasi kebijakan.</li></ul><h5>📡 Sistem Monitoring (Supervisi)</h5><ul><li>Pemantauan berkala kepatuhan pendaki &amp; pengelolaan pos pintu masuk.</li><li>Membangun sistem peringatan dini (early warning) &amp; koordinasi darurat saat cuaca ekstrem, kebakaran, atau pendaki hilang.</li></ul><h5>📣 Edukasi &amp; Advokasi</h5><ul><li>Menyosialisasikan regulasi rumit ke bahasa praktis yang mudah dipahami komunitas &amp; masyarakat awam.</li><li>Mengadvokasi hak masyarakat lokal &amp; kebutuhan lapangan agar diakomodasi dalam kebijakan/anggaran pemerintah.</li></ul></div></div><div class="tri-concl"><b>Sinergi Tripartit:</b> Pemerintah menyiapkan wadah hukum &amp; dana, Reichas Chelebes menyediakan sistem kendali informasi &amp; pengawasan data, sementara Masyarakat menggerakkan fisiknya merawat langsung ekosistem Gunung Bawakaraeng secara berkelanjutan.</div>
     </div>
     <button class="intro-btn" onclick="enterApp()">Masuk Aplikasi →</button>
   </div>
@@ -1573,6 +1594,7 @@ var BWK_ROLE='';
 function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
 function selRole(el,r){BWK_ROLE=r;var cs=document.querySelectorAll('.role-chip');for(var i=0;i<cs.length;i++){cs[i].classList.remove('on');}el.classList.add('on');}
 function enterApp(){closeIntro();var u=bwkUser();if(u){applyUser(u);}else{setTimeout(openLogin,460);}}
+function triToggle(node){var a=node.parentNode;if(a){a.classList.toggle('open');}}
 function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
 function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
