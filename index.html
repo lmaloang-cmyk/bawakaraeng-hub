@@ -832,7 +832,7 @@
     <div class="form-card">
       <div class="fld"><label>Nama Ketua Rombongan</label><input id="sk-nama" placeholder="Nama lengkap"/></div>
       <div class="frow"><div class="fld"><label>Jumlah Anggota</label><input id="sk-jml" type="number" min="1" value="1"/></div><div class="fld"><label>Asal / Organisasi</label><input id="sk-org" placeholder="Komunitas / kampus"/></div></div>
-      <div class="frow"><div class="fld"><label>Tanggal Naik</label><input id="sk-naik" type="date"/></div><div class="fld"><label>Tanggal Turun</label><input id="sk-turun" type="date"/></div></div>
+      <div class="frow"><div class="fld"><label>Tanggal Naik</label><input id="sk-naik" type="date" onchange="var t=document.getElementById(&#39;sk-turun&#39;);t.min=this.value;if(t.value&&t.value&lt;=this.value){t.value=&#39;&#39;;}"/></div><div class="fld"><label>Tanggal Turun</label><input id="sk-turun" type="date"/></div></div>
       <div class="fld"><label>No. HP / Kontak Darurat</label><input id="sk-hp" placeholder="08xx"/></div>
       <button class="btn g-indigo" onclick="ajukanSimaksi()">📝 Ajukan SIMAKSI</button>
     </div>
@@ -1225,6 +1225,10 @@ function ajukanSimaksi(){
   var naik=document.getElementById('sk-naik').value||'-';
   var turun=document.getElementById('sk-turun').value||'-';
   if(!nama){toast('Isi nama ketua rombongan dulu','err');return;}
+  var _n=document.getElementById('sk-naik').value;
+  var _t=document.getElementById('sk-turun').value;
+  if(!_n||!_t){toast('Isi tanggal naik & turun dulu','err');return;}
+  if(_t<=_n){toast('Tanggal turun harus setelah tanggal naik','err');return;}
   var code=_rid('SMK-');
   var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+code+' | '+nama+' | '+jml+' org');
   document.getElementById('sk-result').innerHTML='<div class="permit"><h4>🎫 SIMAKSI Terbit</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class="code">'+code+'</div><div class="qr"><img src="'+qurl+'" onerror="this.parentNode.innerHTML=&#39;📄&#39;"/></div><div class="pdet"><span>Ketua</span><b>'+nama+'</b></div><div class="pdet"><span>Anggota</span><b>'+jml+' orang</b></div><div class="pdet"><span>Asal</span><b>'+org+'</b></div><div class="pdet"><span>Naik</span><b>'+naik+'</b></div><div class="pdet"><span>Turun</span><b>'+turun+'</b></div></div><button class="pdf-btn" onclick="printCard(&#39;sk-result&#39;)">⬇️ Simpan / Cetak PDF</button>';
