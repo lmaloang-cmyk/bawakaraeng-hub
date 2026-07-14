@@ -611,7 +611,25 @@
 .login-or span{white-space:nowrap}
 .login-or::before,.login-or::after{content:'';flex:1;height:1px;background:#e3e3e3}
 .login-hint{font-size:11px;color:#888;margin:10px 0 2px;text-align:center;line-height:1.4}
-</style>
+.admin-fab{position:fixed;right:16px;bottom:88px;z-index:120;width:54px;height:54px;border-radius:50%;background:#1f2b44;color:#fff;border:none;box-shadow:0 8px 20px rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.admin-ov{position:fixed;inset:0;z-index:300;background:#0f1523;display:none;flex-direction:column}
+.admin-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 10px;font-size:17px;font-weight:800;color:#e8edf6;border-bottom:1px solid rgba(255,255,255,.08)}
+.admin-x{cursor:pointer;font-size:20px;opacity:.7;padding:4px 10px}
+.admin-tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px}
+.admin-tab{flex:none;padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#9fb0c9;font-weight:700;font-size:13px;cursor:pointer}
+.admin-tab.on{background:#2b6fff;color:#fff;border-color:#2b6fff}
+.admin-body{flex:1;overflow-y:auto;padding:10px 16px 40px}
+.acard{background:#182234;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.acard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:700;color:#e8edf6}
+.acard-s{font-size:12.5px;color:#8b98ad;margin:6px 0 0;line-height:1.5}
+.ast{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.abt{flex:1;min-width:82px;padding:9px;border-radius:10px;border:none;font-weight:700;font-size:12.5px;cursor:pointer}
+.abt.ok{background:rgba(8,185,111,.15);color:#08b96f}
+.abt.no{background:rgba(229,72,77,.15);color:#e5484d}
+.abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#8b98ad}
+.aempty{text-align:center;color:#8b98ad;padding:46px 10px;font-size:13px}
+.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -1136,7 +1154,7 @@ function pickCat(c){chosenCat=c;document.getElementById('cat-flora').classList.t
 function previewPhoto(inp){if(inp.files&&inp.files[0]){var url=URL.createObjectURL(inp.files[0]);document.getElementById('drop').innerHTML='<img src="'+url+'"/>';hasPhoto=true;}}
 function updateGPS(btn){btn.textContent='...';var spots=[['Sekitar Pos 5','-5.3188','119.9320'],['Sekitar Pos 7','-5.3121','119.9265'],['Area Puncak','-5.3050','119.9188'],['Sekitar Pos 3','-5.3244','119.9377']];setTimeout(function(){var s=spots[Math.floor(Math.random()*spots.length)];document.getElementById('loc-name').textContent='Terdeteksi: '+s[0];document.getElementById('loc-coord').textContent='Lat: '+s[1]+', Long: '+s[2];btn.textContent='Update';toast('Lokasi GPS diperbarui','ok');},700);}
 function countChars(){document.getElementById('cc').textContent=document.getElementById('desc').value.length;}
-function submitReport(){var desc=document.getElementById('desc').value.trim();if(!hasPhoto){toast('Foto wajib diunggah','err');return;}if(desc.length<5){toast('Deskripsi minimal 5 huruf','err');return;}var loc=document.getElementById('loc-name').textContent.replace('Terdeteksi: ','');reports.unshift({name:'Anda',role:'Pendaki',color:'#08b96f',title:chosenCat==='flora'?'Temuan Flora/Fauna':'Laporan Insiden Jalur',desc:desc+' ('+loc+')',time:'Baru',status:'pending'});_lsSet('bwkReports',reports);_incStat('bwkMyReports');renderFeed();document.getElementById('desc').value='';countChars();document.getElementById('drop').innerHTML='<span class="di">📸</span><small>Ketuk untuk ambil / pilih foto</small><input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this)"/>';hasPhoto=false;toast('Laporan terkirim! Menunggu verifikasi','ok');setTimeout(function(){go('beranda')},900);}
+function submitReport(){var desc=document.getElementById('desc').value.trim();if(!hasPhoto){toast('Foto wajib diunggah','err');return;}if(desc.length<5){toast('Deskripsi minimal 5 huruf','err');return;}var loc=document.getElementById('loc-name').textContent.replace('Terdeteksi: ','');reports.unshift({name:'Anda',role:'Pendaki',color:'#08b96f',title:chosenCat==='flora'?'Temuan Flora/Fauna':'Laporan Insiden Jalur',desc:desc+' ('+loc+')',time:'Baru',status:'pending'});_lsSet('bwkReports',reports);try{if(typeof sbInsert==='function'){var _r=reports[0];sbInsert('reports',{title:_r.title,description:_r.desc,category:(typeof chosenCat!=='undefined'?chosenCat:''),astatus:'baru'});}}catch(e){}_incStat('bwkMyReports');renderFeed();document.getElementById('desc').value='';countChars();document.getElementById('drop').innerHTML='<span class="di">📸</span><small>Ketuk untuk ambil / pilih foto</small><input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this)"/>';hasPhoto=false;toast('Laporan terkirim! Menunggu verifikasi','ok');setTimeout(function(){go('beranda')},900);}
 
 /* Sheet / toast / SOS */
 function openSheet(){document.getElementById('scrim').classList.add('show');document.getElementById('sheet').classList.add('show');}
@@ -1237,6 +1255,8 @@ function ajukanSimaksi(){
   if(!_n||!_t){toast('Isi tanggal naik & turun dulu','err');return;}
   if(_t<=_n){toast('Tanggal turun harus setelah tanggal naik','err');return;}
   var code=_rid('SMK-');
+  try{if(typeof _lsSet==='function'){var _sk=_lsGet('bwkSimaksi',[]);_sk.unshift({code:code,nama:nama,jml:jml,org:org,naik:naik,turun:turun,astatus:'baru',ts:Date.now()});_lsSet('bwkSimaksi',_sk);}}catch(e){}
+  try{if(typeof sbInsert==='function'){sbInsert('simaksi',{code:code,nama:nama,jml:(+jml||1),org:org,naik:naik,turun:turun,astatus:'baru'});}}catch(e){}
   var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+code+' | '+nama+' | '+jml+' org');
   document.getElementById('sk-result').innerHTML='<div class="permit"><h4>🎫 SIMAKSI Terbit</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class="code">'+code+'</div><div class="qr"><img src="'+qurl+'" onerror="this.parentNode.innerHTML=&#39;📄&#39;"/></div><div class="pdet"><span>Ketua</span><b>'+nama+'</b></div><div class="pdet"><span>Anggota</span><b>'+jml+' orang</b></div><div class="pdet"><span>Asal</span><b>'+org+'</b></div><div class="pdet"><span>Naik</span><b>'+naik+'</b></div><div class="pdet"><span>Turun</span><b>'+turun+'</b></div></div><button class="pdf-btn" onclick="printCard(&#39;sk-result&#39;)">⬇️ Simpan / Cetak PDF</button>';
   toast('SIMAKSI berhasil diajukan!','ok');
@@ -1461,7 +1481,7 @@ function saveJurnal(){
   var jalur=(document.getElementById('jf-jalur').value||'').trim();
   if(!jalur){toast('Isi nama jalur dulu','err');return;}
   jurnalLogs.unshift({date:document.getElementById('jf-date').value||new Date().toISOString().slice(0,10),jalur:jalur,durasi:+document.getElementById('jf-dur').value||0,alt:+document.getElementById('jf-alt').value||0,cuaca:document.getElementById('jf-cuaca').value||'-',note:document.getElementById('jf-note').value||'',verif:false});
-  _lsSet('bwkJurnal',jurnalLogs);_incStat('bwkMyJurnal');renderJurnal();closeSheet();toast('Catatan pendakian tersimpan','ok');
+  _lsSet('bwkJurnal',jurnalLogs);try{if(typeof sbInsert==='function'){var _j=jurnalLogs[0];sbInsert('jurnal',{jalur:_j.jalur,jdate:_j.date,durasi:_j.durasi,alt:_j.alt,cuaca:_j.cuaca,astatus:'baru'});}}catch(e){}_incStat('bwkMyJurnal');renderJurnal();closeSheet();toast('Catatan pendakian tersimpan','ok');
 }
 /* --- Checklist & Keselamatan --- */
 var gearList=[{id:'g1',l:'Tenda & flysheet',s:'Tahan angin gunung'},{id:'g2',l:'Sleeping bag + matras',s:'Suhu puncak bisa <10 C'},{id:'g3',l:'Jaket & rain coat',s:'Wajib, cuaca cepat berubah'},{id:'g4',l:'Headlamp + baterai cadangan',s:''},{id:'g5',l:'Logistik & air minimal 3L',s:'Sumber air terbatas di atas Pos 7'},{id:'g6',l:'Kompor & nesting',s:''},{id:'g7',l:'P3K & obat pribadi',s:''},{id:'g8',l:'Kantong sampah',s:'Bawa turun semua sampahmu'},{id:'g9',l:'Navigasi (peta/GPS/HP)',s:''},{id:'g10',l:'SIMAKSI & identitas',s:'Tunjukkan di pos registrasi'}];
@@ -1698,7 +1718,7 @@ function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
 function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
 function skipLogin(){hideLogin();}
-function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}}
+function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}try{_adminToggle(u&&u.role);}catch(e){}}
 function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
 window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
@@ -1827,11 +1847,41 @@ var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
 var ROLE_MAP={'songkrangveo@gmail.com':'Admin'};
 var _sb=null;
 function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
+function _sbUser(){var c=_sbClient();if(!c)return Promise.resolve(null);return c.auth.getUser().then(function(r){return (r&&r.data)?r.data.user:null;}).catch(function(){return null;});}
+function sbInsert(table,row){var c=_sbClient();if(!c)return Promise.resolve({ok:false});return _sbUser().then(function(u){if(!u)return {ok:false};row.user_id=u.id;row.user_email=u.email||'';if(!row.user_name){row.user_name=(u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||row.user_email;}return c.from(table).insert(row).then(function(res){return {ok:!res.error,error:res.error};});}).catch(function(e){return {ok:false,error:e};});}
+window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
 function _fromGoogle(su){try{var m=su.user_metadata||{};var email=su.email||'';var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
+</script>
+<button id="adminFab" class="admin-fab" onclick="openAdmin()" title="Panel Admin">🛡️</button>
+<div id="adminPanel" class="admin-ov">
+  <div class="admin-head"><b>🛡️ Panel Admin</b><span class="admin-x" onclick="closeAdmin()">✕</span></div>
+  <div class="admin-tabs">
+    <button class="admin-tab on" onclick="adminTab('lapor',this)">📋 Laporan</button>
+    <button class="admin-tab" onclick="adminTab('simaksi',this)">🎫 SIMAKSI</button>
+    <button class="admin-tab" onclick="adminTab('jurnal',this)">📖 Jurnal</button>
+  </div>
+  <div class="admin-body" id="adminBody"></div>
+</div>
+<script>
+var _curAdmin='lapor';
+var _ADMIN_TBL={lapor:'reports',simaksi:'simaksi',jurnal:'jurnal'};
+function _adminToggle(role){var f=document.getElementById('adminFab');if(!f)return;f.style.display=(role==='Admin')?'flex':'none';}
+function openAdmin(){var p=document.getElementById('adminPanel');if(p){p.style.display='flex';renderAdmin(_curAdmin);}}
+function closeAdmin(){var p=document.getElementById('adminPanel');if(p){p.style.display='none';}}
+function adminTab(k,el){var ts=document.querySelectorAll('.admin-tab');for(var i=0;i<ts.length;i++){ts[i].classList.remove('on');}if(el){el.classList.add('on');}renderAdmin(k);}
+function _aArr(key){var v=(typeof _lsGet==='function')?_lsGet(key,null):null;if(v!=null)return v;if(key==='bwkReports'&&typeof reports!=='undefined')return reports;if(key==='bwkJurnal'&&typeof jurnalLogs!=='undefined')return jurnalLogs;return [];}
+function _stBadge(st){st=st||'baru';var m={baru:['#e9a100','Baru'],disetujui:['#08b96f','Disetujui'],ditolak:['#e5484d','Ditolak']};var c=m[st]||m.baru;return '<span class="ast" style="background:'+c[0]+'22;color:'+c[0]+'">'+c[1]+'</span>';}
+function _aCard2(k,ref,cloud,title,sub,st){var cb=cloud?'true':'false';return '<div class="acard"><div class="acard-h"><b>'+title+'</b>'+_stBadge(st)+'</div>'+(sub?'<div class="acard-s">'+sub+'</div>':'')+'<div class="acts"><button class="abt ok" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'disetujui\')">✓ Setujui</button><button class="abt no" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'ditolak\')">✕ Tolak</button><button class="abt del" onclick="adminDelX(\''+k+'\','+ref+','+cb+')">🗑️</button></div></div>';}
+function _localRows(k){if(k==='lapor')return _aArr('bwkReports');if(k==='simaksi')return (typeof _lsGet==='function')?_lsGet('bwkSimaksi',[]):[];if(k==='jurnal')return _aArr('bwkJurnal');return [];}
+function _renderRows(k,rows,cloud){var b=document.getElementById('adminBody');if(!b)return;var note='<div class="amode">'+(cloud?'☁️ Data server — semua pengguna':'📴 Data lokal — perangkat ini saja')+'</div>';if(!rows||!rows.length){b.innerHTML=note+'<div class="aempty">Belum ada data.</div>';return;}var html=note;rows.forEach(function(r,i){var ref=cloud?('"'+r.id+'"'):i;var title,sub,st=r.astatus;if(k==='lapor'){title=r.title||'Laporan';sub=(r.description||r.desc||'')+'<br><small>Oleh: '+(r.user_name||r.name||'-')+'</small>';}else if(k==='simaksi'){title='Pengajuan SIMAKSI';sub='Ketua: <b>'+(r.nama||'-')+'</b> · '+(r.jml||'-')+' org<br><small>'+(r.org||'-')+' · Naik '+(r.naik||'-')+' → Turun '+(r.turun||'-')+' · '+(r.code||'')+'</small>';}else{title='Jurnal Pendakian';sub='Jalur: '+(r.jalur||'-')+' · '+(r.jdate||r.date||'')+'<br><small>Durasi '+(r.durasi||0)+' jam · '+(r.alt||0)+' mdpl · '+(r.cuaca||'-')+'</small>';}html+=_aCard2(k,ref,cloud,title,sub,st);});b.innerHTML=html;}
+function renderAdmin(k){k=k||_curAdmin;_curAdmin=k;var b=document.getElementById('adminBody');if(!b)return;var c=(typeof _sbClient==='function')?_sbClient():null;var tbl=_ADMIN_TBL[k];if(c&&tbl){b.innerHTML='<div class="aempty">Memuat…</div>';c.from(tbl).select('*').order('created_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat dari server.<br><small>'+(res.error.message||'')+'</small><br>Pastikan SQL Supabase sudah dijalankan.</div>';return;}_renderRows(k,res.data||[],true);}).catch(function(e){_renderRows(k,_localRows(k),false);});}else{_renderRows(k,_localRows(k),false);}}
+function adminAct(k,ref,cloud,st){if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).update({astatus:st}).eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);if(a[ref]){a[ref].astatus=st;if(typeof _lsSet==='function')_lsSet(key,a);}renderAdmin(k);if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');}}
+function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).delete().eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast('Dihapus','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);a.splice(ref,1);if(typeof _lsSet==='function')_lsSet(key,a);renderAdmin(k);if(window.toast)toast('Dihapus','ok');}}
+(function(){try{var u=(typeof bwkUser==='function')?bwkUser():null;_adminToggle(u&&u.role);}catch(e){}})();
 </script>
 </body>
 </html>
