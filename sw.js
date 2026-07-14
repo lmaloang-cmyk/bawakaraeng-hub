@@ -1,5 +1,5 @@
-const CACHE='bwk-v12';
-const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/species-macaca.jpg','/og.jpg'];
+const CACHE='bwk-v13';
+const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/species-macaca.jpg','/og.jpg'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
