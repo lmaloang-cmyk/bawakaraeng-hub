@@ -1690,17 +1690,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <h2 class="login-h">Selamat Datang</h2>
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
-    <div class="login-or"><span>atau isi manual</span></div>
-    <label class="login-lb">Nama</label>
-    <input id="lgName" class="login-inp" placeholder="Nama lengkap" autocomplete="name"/>
-    <label class="login-lb">Peran</label>
-    <div class="role-grid">
-      <div class="role-chip" onclick="selRole(this,'Pendaki')"><span class="re">🥾</span>Pendaki</div>
-      <div class="role-chip" onclick="selRole(this,'Warga')"><span class="re">🏡</span>Warga</div>
-    </div>
-    <p class="login-hint">🔒 Peran petugas (Admin/KLH/SAR) hanya melalui "Masuk dengan Google".</p>
-    <button class="login-btn" onclick="doLogin()">Masuk Aplikasi</button>
-    <button class="login-skip" onclick="skipLogin()">Lewati dulu</button>
+    <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -1713,7 +1703,7 @@ window.addEventListener('load',function(){try{var t=document.querySelector('.tri
 var BWK_ROLE='';
 function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
 function selRole(el,r){BWK_ROLE=r;var cs=document.querySelectorAll('.role-chip');for(var i=0;i<cs.length;i++){cs[i].classList.remove('on');}el.classList.add('on');}
-function enterApp(){closeIntro();var u=bwkUser();if(u){applyUser(u);}else{setTimeout(openLogin,460);}}
+function enterApp(){closeIntro();var u=bwkUser();if(u&&u.google){applyUser(u);}else{try{localStorage.removeItem('bwkUser');}catch(e){}setTimeout(openLogin,460);}}
 function triToggle(node){var a=node.parentNode;if(a){a.classList.toggle('open');}}
 function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
@@ -1845,7 +1835,7 @@ function saveProfile(){
 <script>
 var SB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
 var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
-var ROLE_MAP={'songkrangveo@gmail.com':'Admin'};
+var ROLE_MAP={'songkrangveo@gmail.com':'Admin','upik.zulkiflie@gmail.com':'Admin'};
 var _sb=null;
 function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
 function _sbUser(){var c=_sbClient();if(!c)return Promise.resolve(null);return c.auth.getUser().then(function(r){return (r&&r.data)?r.data.user:null;}).catch(function(){return null;});}
@@ -1855,6 +1845,7 @@ function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]|
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
 function _fromGoogle(su){try{var m=su.user_metadata||{};var email=su.email||'';var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
+try{initAuth();}catch(e){}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
 </script>
 <button id="adminFab" class="admin-fab" onclick="openAdmin()" title="Panel Admin">🛡️</button>
