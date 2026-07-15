@@ -458,6 +458,12 @@
 .subcatbtn{flex:none;border:1px solid var(--line,#e6e9ef);background:var(--card,#fff);border-radius:20px;padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--sub,#667);cursor:pointer;white-space:nowrap}
 .subcatbtn.on{background:var(--g-violet);color:#fff;border-color:transparent}
 html.dark .subcatbtn{color:var(--sub)}
+.cathint{font-size:12.5px;color:var(--sub);font-weight:600;padding:2px 2px}
+.catdesc-row{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+.catdesc-tx{flex:1}
+.catclose{flex:none;border:1px solid var(--line,#e6e9ef);background:var(--card,#fff);color:var(--sub,#667);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.catclose:active{transform:scale(.94)}
+html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 
 .intro-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;opacity:1;transition:opacity .42s;background:#12213b;padding:max(18px,env(safe-area-inset-top)) 0 max(20px,env(safe-area-inset-bottom))}
 .intro-ov.hide{opacity:0;pointer-events:none}
@@ -585,6 +591,7 @@ html.dark .subcatbtn{color:var(--sub)}
 .hx-greet h2{margin:3px 0 9px;font-size:22px;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.55)}
 .hx-greet .chips{display:flex;flex-wrap:wrap;gap:6px}
 .hx-greet .hc{background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.hx-greet .hc.myalt{cursor:pointer;background:rgba(43,111,255,.32);border:1px solid rgba(255,255,255,.35)}
 .hx-wx{min-width:120px;background:rgba(255,255,255,.15);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.24);border-radius:16px;padding:11px 12px;text-align:right;cursor:pointer;transition:transform .18s}
 .hx-wx:active{transform:scale(.96)}
 .hx-wx.pulse{animation:hxpulse .5s ease}
@@ -673,6 +680,7 @@ html.dark .subcatbtn{color:var(--sub)}
           <div class="chips">
             <span class="hc" id="heroRoleChip" style="display:none"></span>
             <span class="hc">⛰️ 2.845 mdpl</span>
+            <span class="hc myalt" id="myAltChip" onclick="refreshMyAlt()" title="Ketuk untuk memperbarui ketinggianmu">📍 <span id="myAltVal">--</span> mdpl</span>
           </div>
         </div>
         <div class="hx-wx loading" id="wcard" onclick="wxPulse(this)">
@@ -1649,17 +1657,20 @@ var catData=[
    {a:"go('komunitas')",ic:'g-pink',e:'👥',l:'Komunitas'}
  ]}
 ];
-var curCat='pantau';
+var curCat=null;
 var curSub='klh';
 function _catById(id){return catData.filter(function(x){return x.id===id;})[0];}
 function _curTiles(c){if(c.subs){var s=c.subs.filter(function(x){return x.id===curSub;})[0]||c.subs[0];return s.tiles;}return c.tiles;}
-function setCat(id){curCat=id;var c=_catById(id);if(c&&c.subs){var has=c.subs.filter(function(s){return s.id===curSub;})[0];if(!has)curSub=c.subs[0].id;}renderCat();}
+function setCat(id){if(curCat===id){closeCat();return;}curCat=id;var c=_catById(id);if(c&&c.subs){var has=c.subs.filter(function(s){return s.id===curSub;})[0];if(!has)curSub=c.subs[0].id;}renderCat();var g=document.getElementById('catGrid');if(g){try{g.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}}}
+function closeCat(){curCat=null;renderCat();}
 function setSub(id){curSub=id;renderCat();}
 function renderCat(){
  var bar=document.getElementById('catbar');if(!bar)return;
  bar.innerHTML=catData.map(function(c){return '<button class="catbtn'+(c.id===curCat?' on':'')+'" style="'+(c.id===curCat?'background:'+c.grad+';':'')+'" onclick="setCat(\''+c.id+'\')"><span class="ce">'+c.emoji+'</span>'+c.name+'</button>';}).join('');
+ var d=document.getElementById('catdesc');var g0=document.getElementById('catGrid');var sc0=document.getElementById('subcatbar');
+ if(!curCat){if(d)d.innerHTML='<div class="cathint">👆 Pilih kategori di atas untuk membuka menunya.</div>';if(sc0){sc0.style.display='none';sc0.innerHTML='';}if(g0)g0.innerHTML='';return;}
  var c=_catById(curCat);if(!c)return;
- var d=document.getElementById('catdesc');if(d)d.innerHTML='<b>'+c.emoji+' '+c.full+'</b> — '+c.desc;
+ if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+c.emoji+' '+c.full+'</b> — '+c.desc+'</span><button class="catclose" onclick="closeCat()">✕ Tutup</button></div>';
  var g=document.getElementById('catGrid');
  var sc=document.getElementById('subcatbar');
  if(c.subs){
@@ -1797,6 +1808,8 @@ window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}tr
 function toggleTheme(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('bwkTheme',d?'dark':'light');}catch(e){}var b=document.getElementById('themeBtn');if(b)b.textContent=d?'\u2600\ufe0f':'\ud83c\udf19';if(window.jalurMap){setTimeout(function(){try{jalurMap.invalidateSize();}catch(e){}},80);}if(window.pantauMap){setTimeout(function(){try{pantauMap.invalidateSize();}catch(e){}},80);}}
 function _initThemeBtn(){var b=document.getElementById('themeBtn');if(b)b.textContent=document.documentElement.classList.contains('dark')?'\u2600\ufe0f':'\ud83c\udf19';}
 window.addEventListener('load',function(){setTimeout(_initThemeBtn,40);});
+function refreshMyAlt(){var v=document.getElementById('myAltVal');var ch=document.getElementById('myAltChip');if(!v)return;if(!navigator.geolocation){v.textContent='n/a';return;}v.textContent='\u2026';navigator.geolocation.getCurrentPosition(function(p){var a=p.coords.altitude;if(a==null||isNaN(a)){v.textContent='n/a';if(ch)ch.title='Perangkat tidak menyediakan data ketinggian GPS';return;}var m=Math.round(a);v.textContent=m.toLocaleString('id-ID');if(ch)ch.title='Ketinggianmu (GPS) \u00b1'+Math.round(p.coords.altitudeAccuracy||0)+' m \u2014 ketuk untuk perbarui';},function(e){v.textContent='off';if(ch)ch.title='Aktifkan izin lokasi untuk melihat ketinggianmu';},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
+window.addEventListener('load',function(){setTimeout(refreshMyAlt,1500);});
 var SOS_CONTACTS=[{n:'Basecamp RC',p:'6282320124040'},{n:'Tim SAR',p:'6282320124040'}];
 function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)u=o.name;}}catch(e){}return u;}
 function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}navigator.geolocation.getCurrentPosition(function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);},function(e){sosShareUI(null,null,null);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
