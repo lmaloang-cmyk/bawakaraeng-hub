@@ -828,7 +828,7 @@
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 21</div>
+    <div class="appver">Bawakaraeng Hub · Versi 22</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1692,7 +1692,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 21</div>
+    <div class="login-ver">Versi 22</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -1845,7 +1845,7 @@ function sbInsert(table,row){var c=_sbClient();if(!c)return Promise.resolve({ok:
 window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
-function _fromGoogle(su){try{var m=su.user_metadata||{};var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
+function _fromGoogle(su){try{var m=su.user_metadata||{};var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var _own='';try{_own=localStorage.getItem('bwkOwner')||'';}catch(e){}if(email&&_own&&_own!==email){try{['bwkMyReports','bwkMyJurnal','bwkMyTrees','bwkMyEvents','bwkReports','bwkJurnal','bwkSimaksi','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});localStorage.setItem('bwkOwner',email);localStorage.setItem('bwkUser',JSON.stringify({name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:Date.now(),google:true}));}catch(e){}location.reload();return;}if(email){try{localStorage.setItem('bwkOwner',email);}catch(e){}}var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
 try{initAuth();}catch(e){}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
