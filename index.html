@@ -517,7 +517,7 @@
   html.dark .seg button.on{background:#26314d;color:var(--ink)}
   html.dark .subnav .sn-home{background:#22304d;color:var(--ink)}
   html.dark .node .lbl{background:#161f33;color:var(--ink)}
-  html.dark .chip{color:var(--ink)}
+  html.dark .chip{color:var(--ink)}html.dark .q span,html.dark .bdg2 span,html.dark .rcard .who span,html.dark .sheet p.body,html.dark .tdesc,html.dark .catbtn{color:var(--sub)}html.dark label.fld,html.dark .catopt,html.dark .catdesc b,html.dark .liveinfo b,html.dark .wquake b{color:var(--ink)}
   #themeBtn{font-size:17px}
   .locate-btn{width:100%;margin-top:10px;padding:12px;border:none;border-radius:14px;background:var(--g-blue);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:6px}
   .locate-btn:active{transform:scale(.98)}
@@ -629,7 +629,7 @@
 .abt.no{background:rgba(229,72,77,.15);color:#e5484d}
 .abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#8b98ad}
 .aempty{text-align:center;color:#8b98ad;padding:46px 10px;font-size:13px}
-.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}</style>
+.login-ver{font-size:10px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}.appver{font-size:10.5px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -828,6 +828,7 @@
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
+    <div class="appver">Bawakaraeng Hub · Versi 19</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1691,6 +1692,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
+    <div class="login-ver">Versi 19</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
