@@ -72,7 +72,7 @@
   .brand h1{font-size:15px;font-weight:800;letter-spacing:.01em}
   .hicons{display:flex;gap:9px}
   .hbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
-  .hbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:#ffe14d;border-radius:50%;border:2px solid #ff5a4d}
+  .hbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:#ffe14d;border-radius:50%;border:2px solid #ff5a4d}.hbtn .dot.num{width:auto;height:auto;min-width:15px;padding:0 4px;border-radius:9px;font-size:10px;font-weight:800;line-height:15px;color:#3a2a00;display:inline-flex;align-items:center;justify-content:center;top:2px;right:2px;background:#ffe14d}
 
   /* Views */
   .view{display:none;padding:16px 16px 120px;animation:fade .35s ease}
@@ -629,7 +629,7 @@
 .abt.no{background:rgba(229,72,77,.15);color:#e5484d}
 .abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#8b98ad}
 .aempty{text-align:center;color:#8b98ad;padding:46px 10px;font-size:13px}
-.login-ver{font-size:10px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}.appver{font-size:10.5px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}</style>
+.login-ver{font-size:10px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}.appver{font-size:10.5px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 6px}.afil{flex:none;padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#9fb0c9;font-weight:700;font-size:12px;cursor:pointer}.afil.on{background:#22304a;color:#fff;border-color:#3a4d72}#cnt-baru{margin-left:1px;font-weight:800}</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -641,7 +641,7 @@
     </div>
     <div class="hicons">
       <button class="hbtn" id="themeBtn" onclick="toggleTheme()" title="Mode malam">🌙</button>
-      <button class="hbtn" onclick="openNotif()">🔔<span class="dot"></span></button>
+      <button class="hbtn" onclick="openNotif()">🔔<span class="dot" id="bellDot" style="display:none"></span></button>
       <button class="hbtn" onclick="go('profil')">👤</button>
     </div>
   </div>
@@ -772,10 +772,12 @@
       <button class="on" id="seg-lead" onclick="segKom('lead')">🏆 Peringkat</button>
       <button id="seg-gal" onclick="segKom('gal')">🖼️ Galeri</button>
       <button id="seg-eve" onclick="segKom('eve')">📅 Event</button>
+      <button id="seg-lap" onclick="segKom('lap')">📢 Laporan</button>
     </div>
     <div id="kom-lead"></div>
     <div id="kom-gal" style="display:none"></div>
     <div id="kom-eve" style="display:none"></div>
+    <div id="kom-lap" style="display:none"></div>
   </section>
 
   <!-- TRIP / SIMAKSI -->
@@ -828,7 +830,7 @@
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 23</div>
+    <div class="appver">Bawakaraeng Hub · Versi 24</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1134,6 +1136,26 @@ function segKom(s){
   document.getElementById('kom-lead').style.display=s==='lead'?'block':'none';
   document.getElementById('kom-gal').style.display=s==='gal'?'block':'none';
   document.getElementById('kom-eve').style.display=s==='eve'?'block':'none';
+  var _sl=document.getElementById('seg-lap');if(_sl)_sl.classList.toggle('on',s==='lap');
+  var _kl=document.getElementById('kom-lap');if(_kl)_kl.style.display=s==='lap'?'block':'none';
+  if(s==='lap'){renderKomLap();}
+}
+function renderKomLap(){
+  var b=document.getElementById('kom-lap');if(!b)return;
+  var em='text-align:center;color:#8b98ad;padding:30px 12px;font-size:13px';
+  var c=(typeof _sbClient==='function')?_sbClient():null;
+  if(!c){b.innerHTML='<div style="'+em+'">Sambungkan internet untuk melihat laporan komunitas.</div>';return;}
+  b.innerHTML='<div style="'+em+'">Memuat…</div>';
+  c.from('reports').select('*').eq('astatus','disetujui').order('created_at',{ascending:false}).then(function(res){
+    if(res.error){b.innerHTML='<div style="'+em+'">Gagal memuat laporan.<br><small>'+(res.error.message||'')+'</small></div>';return;}
+    var rows=res.data||[];
+    if(!rows.length){b.innerHTML='<div style="'+em+'">Belum ada laporan yang disetujui admin.</div>';return;}
+    b.innerHTML=rows.map(function(r){
+      var who=r.user_name||r.name||'Warga';
+      var when=r.created_at?(''+r.created_at).slice(0,10):'';
+      return '<div class="rcard"><div class="who"><div class="avatar" style="background:#2b6fff">'+initials(who)+'</div><span>'+who+'</span><time>'+when+'</time></div><h4>'+(r.title||'Laporan')+'</h4><p>'+(r.description||r.desc||'')+'</p><div class="tag ok">✅ Terverifikasi Admin RC</div></div>';
+    }).join('');
+  }).catch(function(e){b.innerHTML='<div style="'+em+'">Gagal memuat laporan.</div>';});
 }
 function renderKom(){
   document.getElementById('kom-lead').innerHTML=leaders.map(function(l,i){var rk=i===0?'rk g':i===1?'rk s':i===2?'rk b':'rk';var med=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);return '<div class="lead"><div class="'+rk+'">'+med+'</div><div class="av" style="background:'+l.c+'">'+initials(l.n)+'</div><div class="nm"><b>'+l.n+'</b><small>'+l.t+'</small></div><div class="pts">'+l.p+' pts</div></div>'}).join('');
@@ -1692,7 +1714,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 23</div>
+    <div class="login-ver">Versi 24</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -1711,7 +1733,8 @@ function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
 function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
 function skipLogin(){hideLogin();}
-function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}var pe=document.getElementById('profEmail');if(pe){pe.textContent=(u.email?('✉️ '+u.email):'')+((u.role==='Admin')?('  ·  🛡️ Admin'):'');}try{_adminToggle(u&&u.role);}catch(e){}}
+function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}var pe=document.getElementById('profEmail');if(pe){pe.textContent=(u.email?('✉️ '+u.email):'')+((u.role==='Admin')?('  ·  🛡️ Admin'):'');}try{_adminToggle(u&&u.role);}catch(e){}try{refreshBellBadge();}catch(e){}}
+function refreshBellBadge(){var b=document.getElementById("bellDot");if(!b)return;var u=(typeof bwkUser==="function")?bwkUser():null;var isAdmin=u&&u.role==="Admin";if(!isAdmin){b.style.display="none";b.className="dot";return;}var c=(typeof _sbClient==="function")?_sbClient():null;if(!c){b.style.display="none";return;}var tbls=["reports","simaksi","jurnal"];var total=0,done=0;tbls.forEach(function(t){c.from(t).select("id",{count:"exact",head:true}).eq("astatus","baru").then(function(res){if(!res.error&&typeof res.count==="number")total+=res.count;done++;if(done===tbls.length){if(total>0){b.textContent=total>99?"99+":String(total);b.className="dot num";b.style.display="inline-flex";}else{b.style.display="none";b.className="dot";}}}).catch(function(){done++;});});}
 function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
 window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
@@ -1858,10 +1881,17 @@ if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEven
     <button class="admin-tab" onclick="adminTab('simaksi',this)">🎫 SIMAKSI</button>
     <button class="admin-tab" onclick="adminTab('jurnal',this)">📖 Jurnal</button>
   </div>
+  <div class="admin-filters" id="adminFilters">
+    <button class="afil on" onclick="adminFilter('baru',this)">🟡 Baru<span id="cnt-baru"></span></button>
+    <button class="afil" onclick="adminFilter('all',this)">Semua</button>
+    <button class="afil" onclick="adminFilter('disetujui',this)">🟢 Disetujui</button>
+    <button class="afil" onclick="adminFilter('ditolak',this)">🔴 Ditolak</button>
+  </div>
   <div class="admin-body" id="adminBody"></div>
 </div>
 <script>
-var _curAdmin='lapor';
+var _curAdmin='lapor';var _adminStatus='baru';
+function adminFilter(st,el){_adminStatus=st;var f=document.getElementById('adminFilters');if(f){var bs=f.querySelectorAll('.afil');for(var i=0;i<bs.length;i++)bs[i].classList.remove('on');}if(el)el.classList.add('on');renderAdmin(_curAdmin);}
 var _ADMIN_TBL={lapor:'reports',simaksi:'simaksi',jurnal:'jurnal'};
 function _adminToggle(role){var on=(role==='Admin');var f=document.getElementById('adminFab');if(f){f.style.display=on?'flex':'none';}var pl=document.getElementById('profAdminLink');if(pl){pl.style.display=on?'flex':'none';}}
 function openAdmin(){var p=document.getElementById('adminPanel');if(p){p.style.display='flex';renderAdmin(_curAdmin);}}
@@ -1871,8 +1901,8 @@ function _aArr(key){var v=(typeof _lsGet==='function')?_lsGet(key,null):null;if(
 function _stBadge(st){st=st||'baru';var m={baru:['#e9a100','Baru'],disetujui:['#08b96f','Disetujui'],ditolak:['#e5484d','Ditolak']};var c=m[st]||m.baru;return '<span class="ast" style="background:'+c[0]+'22;color:'+c[0]+'">'+c[1]+'</span>';}
 function _aCard2(k,ref,cloud,title,sub,st){var cb=cloud?'true':'false';return '<div class="acard"><div class="acard-h"><b>'+title+'</b>'+_stBadge(st)+'</div>'+(sub?'<div class="acard-s">'+sub+'</div>':'')+'<div class="acts"><button class="abt ok" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'disetujui\')">✓ Setujui</button><button class="abt no" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'ditolak\')">✕ Tolak</button><button class="abt del" onclick="adminDelX(\''+k+'\','+ref+','+cb+')">🗑️</button></div></div>';}
 function _localRows(k){if(k==='lapor')return _aArr('bwkReports');if(k==='simaksi')return (typeof _lsGet==='function')?_lsGet('bwkSimaksi',[]):[];if(k==='jurnal')return _aArr('bwkJurnal');return [];}
-function _renderRows(k,rows,cloud){var b=document.getElementById('adminBody');if(!b)return;var note='<div class="amode">'+(cloud?'☁️ Data server — semua pengguna':'📴 Data lokal — perangkat ini saja')+'</div>';if(!rows||!rows.length){b.innerHTML=note+'<div class="aempty">Belum ada data.</div>';return;}var html=note;rows.forEach(function(r,i){var ref=cloud?("'"+r.id+"'"):i;var title,sub,st=r.astatus;if(k==='lapor'){title=r.title||'Laporan';sub=(r.description||r.desc||'')+'<br><small>Oleh: '+(r.user_name||r.name||'-')+'</small>';}else if(k==='simaksi'){title='Pengajuan SIMAKSI';sub='Ketua: <b>'+(r.nama||'-')+'</b> · '+(r.jml||'-')+' org<br><small>'+(r.org||'-')+' · Naik '+(r.naik||'-')+' → Turun '+(r.turun||'-')+' · '+(r.code||'')+'</small>';}else{title='Jurnal Pendakian';sub='Jalur: '+(r.jalur||'-')+' · '+(r.jdate||r.date||'')+'<br><small>Durasi '+(r.durasi||0)+' jam · '+(r.alt||0)+' mdpl · '+(r.cuaca||'-')+'</small>';}html+=_aCard2(k,ref,cloud,title,sub,st);});b.innerHTML=html;}
-function renderAdmin(k){k=k||_curAdmin;_curAdmin=k;var b=document.getElementById('adminBody');if(!b)return;var c=(typeof _sbClient==='function')?_sbClient():null;var tbl=_ADMIN_TBL[k];if(c&&tbl){b.innerHTML='<div class="aempty">Memuat…</div>';c.from(tbl).select('*').order('created_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat dari server.<br><small>'+(res.error.message||'')+'</small><br>Pastikan SQL Supabase sudah dijalankan.</div>';return;}_renderRows(k,res.data||[],true);}).catch(function(e){_renderRows(k,_localRows(k),false);});}else{_renderRows(k,_localRows(k),false);}}
+function _renderRows(k,rows,cloud){var b=document.getElementById('adminBody');if(!b)return;var note='<div class="amode">'+(cloud?'☁️ Data server — semua pengguna':'📴 Data lokal — perangkat ini saja')+'</div>';if(!rows||!rows.length){b.innerHTML=note+'<div class="aempty">Belum ada data.</div>';return;}var cntBaru=(rows||[]).filter(function(rr){return (rr.astatus||'baru')==='baru';}).length;var _cb=document.getElementById('cnt-baru');if(_cb)_cb.textContent=cntBaru?(' '+cntBaru):'';var _fst=(typeof _adminStatus!=='undefined'&&_adminStatus)?_adminStatus:'baru';var _list=(rows||[]).map(function(rr,ii){return {r:rr,i:ii};}).filter(function(o){return _fst==='all'||((o.r.astatus||'baru')===_fst);});var html=note;if(!_list.length){var _lbl={baru:'Baru',disetujui:'Disetujui',ditolak:'Ditolak'}[_fst]||'';b.innerHTML=note+'<div class="aempty">Belum ada data'+(_lbl?(' “'+_lbl+'”'):'')+'.</div>';return;}_list.forEach(function(o){var r=o.r;var i=o.i;var ref=cloud?("'"+r.id+"'"):i;var title,sub,st=r.astatus;if(k==='lapor'){title=r.title||'Laporan';sub=(r.description||r.desc||'')+'<br><small>Oleh: '+(r.user_name||r.name||'-')+'</small>';}else if(k==='simaksi'){title='Pengajuan SIMAKSI';sub='Ketua: <b>'+(r.nama||'-')+'</b> · '+(r.jml||'-')+' org<br><small>'+(r.org||'-')+' · Naik '+(r.naik||'-')+' → Turun '+(r.turun||'-')+' · '+(r.code||'')+'</small>';}else{title='Jurnal Pendakian';sub='Jalur: '+(r.jalur||'-')+' · '+(r.jdate||r.date||'')+'<br><small>Durasi '+(r.durasi||0)+' jam · '+(r.alt||0)+' mdpl · '+(r.cuaca||'-')+'</small>';}html+=_aCard2(k,ref,cloud,title,sub,st);});b.innerHTML=html;}
+function renderAdmin(k){k=k||_curAdmin;_curAdmin=k;var b=document.getElementById('adminBody');if(!b)return;try{refreshBellBadge();}catch(e){}var c=(typeof _sbClient==='function')?_sbClient():null;var tbl=_ADMIN_TBL[k];if(c&&tbl){b.innerHTML='<div class="aempty">Memuat…</div>';c.from(tbl).select('*').order('created_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat dari server.<br><small>'+(res.error.message||'')+'</small><br>Pastikan SQL Supabase sudah dijalankan.</div>';return;}_renderRows(k,res.data||[],true);}).catch(function(e){_renderRows(k,_localRows(k),false);});}else{_renderRows(k,_localRows(k),false);}}
 function adminAct(k,ref,cloud,st){if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).update({astatus:st}).eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);if(a[ref]){a[ref].astatus=st;if(typeof _lsSet==='function')_lsSet(key,a);}renderAdmin(k);if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');}}
 function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).delete().eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast('Dihapus','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);a.splice(ref,1);if(typeof _lsSet==='function')_lsSet(key,a);renderAdmin(k);if(window.toast)toast('Dihapus','ok');}}
 (function(){try{var u=(typeof bwkUser==='function')?bwkUser():null;_adminToggle(u&&u.role);}catch(e){}})();
