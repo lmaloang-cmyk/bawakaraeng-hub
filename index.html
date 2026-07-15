@@ -828,7 +828,7 @@
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 20</div>
+    <div class="appver">Bawakaraeng Hub · Versi 21</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1692,7 +1692,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 20</div>
+    <div class="login-ver">Versi 21</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -1837,7 +1837,7 @@ function saveProfile(){
 <script>
 var SB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
 var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
-var ROLE_MAP={'songkrangveo@gmail.com':'Admin','upik.zulkiflie@gmail.com':'Admin'};
+var ROLE_MAP={'songkranveo@gmail.com':'Admin','songkrangveo@gmail.com':'Admin','upik.zulkiflie@gmail.com':'Admin'};
 var _sb=null;
 function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
 function _sbUser(){var c=_sbClient();if(!c)return Promise.resolve(null);return c.auth.getUser().then(function(r){return (r&&r.data)?r.data.user:null;}).catch(function(){return null;});}
