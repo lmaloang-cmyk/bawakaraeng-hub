@@ -453,6 +453,11 @@
 .catbtn:active{transform:scale(.96)}
 .catdesc{font-size:12px;color:var(--sub);margin:2px 2px 13px;font-weight:600;line-height:1.5}
 .catdesc b{color:#20263a;font-weight:800}
+.subcatbar{display:flex;gap:8px;margin:0 2px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.subcatbar::-webkit-scrollbar{display:none}
+.subcatbtn{flex:none;border:1px solid var(--line,#e6e9ef);background:var(--card,#fff);border-radius:20px;padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--sub,#667);cursor:pointer;white-space:nowrap}
+.subcatbtn.on{background:var(--g-violet);color:#fff;border-color:transparent}
+html.dark .subcatbtn{color:var(--sub)}
 
 .intro-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;opacity:1;transition:opacity .42s;background:#12213b;padding:max(18px,env(safe-area-inset-top)) 0 max(20px,env(safe-area-inset-bottom))}
 .intro-ov.hide{opacity:0;pointer-events:none}
@@ -745,6 +750,7 @@
     <div class="legend"><span><i style="background:#08a35f"></i>Aman</span><span><i style="background:#d5803b"></i>Waspada</span><span><i style="background:#ff2d55"></i>Bahaya</span></div>
     <div class="jhint">Titik pos jalur via Lembanna (perkiraan koordinat). Ketinggian dari peta resmi Gunungbagging 2020.</div>
     <div class="elevwrap"><div class="li-hd">📈 Profil Ketinggian (Via Lembanna)</div><div id="elevProfile"></div></div>
+    <div class="elevwrap" style="margin-top:14px"><div class="li-hd">💧 Sumber Air di Jalur</div><div id="waterList"></div></div>
     <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
     <div class="trailwrap" id="jalurTrails"></div>
   </section>
@@ -1070,7 +1076,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1333,6 +1339,12 @@ var jalurPos=[
   {n:'Pos 9',f:0.833,el:2610,st:'danger',d:'Perpotongan jalur Sinjai. Trek menanjak & tebing curam menuju puncak.'},
   {n:'Puncak Bawakaraeng',f:1,el:2830,st:'danger',d:'⛰️ Puncak 2.830 mdpl. Hati-hati cuaca cepat berubah.'}
 ];
+var waterPos=[
+  {n:'Sumber Air Pos 2',f:0.225,el:1810,type:'Mata air / aliran',note:'Aliran air kecil dekat Pos 2. Cocok untuk isi ulang & area mendirikan tenda.'},
+  {n:'Sumber Air Pos 5',f:0.499,el:2170,type:'Mata air (TERAKHIR)',note:'Titik air TERAKHIR sebelum puncak - WAJIB isi penuh semua persediaan di sini.'}
+];
+function openWater(w){var c=_jc(w.f);if(jalurMap){jalurMap.setView(c,15);}var b=document.getElementById('sheetBody');if(b){b.innerHTML='<span class="pill" style="background:#2b6fff22;color:#2b6fff">💧 Sumber Air</span><h2 style="margin-top:8px">'+w.n+'</h2><div class="info-row"><div class="info"><b>'+w.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body"><b>'+w.type+'</b><br>'+w.note+'</p><div style="margin-top:10px;font-size:12px;color:#8a94a6;line-height:1.5">Ketersediaan air bergantung musim. Selalu bawa cadangan & alat filter/rebus air.</div>';}if(typeof openSheet==='function')openSheet();}
+function renderWater(){var el=document.getElementById('waterList');if(!el||typeof waterPos==='undefined')return;el.innerHTML=waterPos.map(function(w,i){return '<button class="wrow" onclick="openWater(waterPos['+i+'])"><span class="wro-ic">💧</span><span class="wro-tx"><b>'+w.n+'</b><small>'+w.type+' · '+w.el+' m</small></span><span class="wro-go">›</span></button>';}).join('')+'<div class="jhint" style="margin-top:6px">⚠️ Setelah Pos 5 tidak ada sumber air sampai puncak. Rencanakan kebutuhan air dengan cermat.</div>';}
 var _jzc={ok:'#08a35f',warn:'#d5803b',danger:'#ff2d55'};
 var _jzt={ok:'Aman',warn:'Waspada',danger:'Bahaya'};
 function initJalur(){
@@ -1347,6 +1359,7 @@ function initJalur(){
       var c=_jc(p.f);
       L.circleMarker(c,{radius:8,color:'#fff',weight:2,fillColor:_jzc[p.st],fillOpacity:1}).addTo(jalurMap).on('click',function(){openPos(i);}).bindTooltip(p.n+' · '+p.el+' m',{direction:'top'});
     });
+    if(window.waterPos){waterPos.forEach(function(w){var wc=_jc(w.f);var wi=L.divIcon({html:'<div class="wdrop">💧</div>',className:'wdrop-wrap',iconSize:[28,28],iconAnchor:[14,14]});L.marker(wc,{icon:wi,zIndexOffset:500}).addTo(jalurMap).bindTooltip('💧 '+w.n,{direction:'top'}).on('click',function(){openWater(w);});});}
     jalurMap.fitBounds(pts,{padding:[30,30]});
   }
   setTimeout(function(){jalurMap.invalidateSize();},130);
@@ -1609,44 +1622,57 @@ function renderEkosistem(){
 <script>
 /* ===== Beranda 4 Kategori: KLH, Kehutanan, SAR, Adventure ===== */
 var catData=[
- {id:'klh',name:'KLH',full:'Kementerian Lingkungan Hidup',emoji:'🏛️',grad:'var(--g-violet)',desc:'Tata kelola, kebijakan, kesehatan ekosistem & transparansi dana.',tiles:[
-   {a:"go('ekosistem')",ic:'g-green',e:'🌳',l:'Kesehatan'},
-   {a:"go('biodiv')",ic:'g-teal',e:'🔬',l:'Biodiversitas'},
-   {a:"go('arsip')",ic:'g-indigo',e:'📚',l:'Publikasi'},
-   {a:"go('regulasi')",ic:'g-violet',e:'⚖️',l:'Regulasi'},
-   {a:"go('donasi')",ic:'g-brand',e:'💚',l:'Donasi'}
+ {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'🛰️',grad:'var(--g-violet)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
+   {id:'klh',name:'KLH',emoji:'🏛️',tiles:[
+     {a:"go('ekosistem')",ic:'g-green',e:'🌳',l:'Kesehatan'},
+     {a:"go('biodiv')",ic:'g-teal',e:'🔬',l:'Biodiversitas'},
+     {a:"go('arsip')",ic:'g-indigo',e:'📚',l:'Publikasi'},
+     {a:"go('regulasi')",ic:'g-violet',e:'⚖️',l:'Regulasi'},
+     {a:"go('donasi')",ic:'g-brand',e:'💚',l:'Donasi'}
+   ]},
+   {id:'hut',name:'Kehutanan',emoji:'🌲',tiles:[
+     {a:"go('pantau')",ic:'g-teal',e:'🌳',l:'Pantau Pohon'},
+     {a:"go('adopsi')",ic:'g-green',e:'🌱',l:'Adopsi Pohon'},
+     {a:"go('eksplor')",ic:'g-green',e:'🌿',l:'Flora & Fauna'},
+     {a:"go('bandingkan')",ic:'g-teal',e:'🌗',l:'Before-After'}
+   ]}
  ]},
- {id:'hut',name:'Kehutanan',full:'Kehutanan',emoji:'🌲',grad:'var(--g-green)',desc:'Reboisasi, pemantauan tutupan hutan & keanekaragaman hayati.',tiles:[
-   {a:"go('pantau')",ic:'g-teal',e:'🌳',l:'Pantau Pohon'},
-   {a:"go('adopsi')",ic:'g-green',e:'🌱',l:'Adopsi Pohon'},
-   {a:"go('eksplor')",ic:'g-green',e:'🌿',l:'Flora & Fauna'},
-   {a:"go('bandingkan')",ic:'g-teal',e:'🌗',l:'Before-After'}
- ]},
- {id:'sar',name:'SAR',full:'SAR & Keselamatan',emoji:'🚨',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
+ {id:'sos',name:'SOS',full:'SOS & Keselamatan',emoji:'🚨',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
    {a:'openSOS()',ic:'g-brand',e:'🆘',l:'SOS Darurat'},
    {a:"go('lapor')",ic:'g-amber',e:'📷',l:'Lapor Insiden'},
    {a:"go('checklist')",ic:'g-green',e:'🎒',l:'Checklist'},
    {a:"go('peta')",ic:'g-blue',e:'🗺️',l:'Peta Jalur'}
  ]},
- {id:'adv',name:'Adventure',full:'Adventure',emoji:'⛰️',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, izin SIMAKSI, agenda & komunitas.',tiles:[
+ {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'⛰️',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
    {a:"go('jurnal')",ic:'g-blue',e:'🧭',l:'Jurnal Pendaki'},
    {a:"go('agenda')",ic:'g-amber',e:'📅',l:'Agenda'},
    {a:"go('komunitas')",ic:'g-pink',e:'👥',l:'Komunitas'}
  ]}
 ];
-var curCat='klh';
-function setCat(id){curCat=id;renderCat();}
+var curCat='pantau';
+var curSub='klh';
+function _catById(id){return catData.filter(function(x){return x.id===id;})[0];}
+function _curTiles(c){if(c.subs){var s=c.subs.filter(function(x){return x.id===curSub;})[0]||c.subs[0];return s.tiles;}return c.tiles;}
+function setCat(id){curCat=id;var c=_catById(id);if(c&&c.subs){var has=c.subs.filter(function(s){return s.id===curSub;})[0];if(!has)curSub=c.subs[0].id;}renderCat();}
+function setSub(id){curSub=id;renderCat();}
 function renderCat(){
  var bar=document.getElementById('catbar');if(!bar)return;
  bar.innerHTML=catData.map(function(c){return '<button class="catbtn'+(c.id===curCat?' on':'')+'" style="'+(c.id===curCat?'background:'+c.grad+';':'')+'" onclick="setCat(\''+c.id+'\')"><span class="ce">'+c.emoji+'</span>'+c.name+'</button>';}).join('');
- var c=catData.filter(function(x){return x.id===curCat;})[0];if(!c)return;
+ var c=_catById(curCat);if(!c)return;
  var d=document.getElementById('catdesc');if(d)d.innerHTML='<b>'+c.emoji+' '+c.full+'</b> — '+c.desc;
- var g=document.getElementById('catGrid');if(g)g.innerHTML=c.tiles.map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
+ var g=document.getElementById('catGrid');
+ var sc=document.getElementById('subcatbar');
+ if(c.subs){
+   if(!sc){sc=document.createElement('div');sc.id='subcatbar';sc.className='subcatbar';if(g&&g.parentNode)g.parentNode.insertBefore(sc,g);}
+   sc.style.display='flex';
+   sc.innerHTML=c.subs.map(function(s){return '<button class="subcatbtn'+(s.id===curSub?' on':'')+'" onclick="setSub(\''+s.id+'\')"><span>'+s.emoji+'</span> '+s.name+'</button>';}).join('');
+ }else if(sc){sc.style.display='none';sc.innerHTML='';}
+ if(g)g.innerHTML=_curTiles(c).map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
 }
 window.addEventListener('load',function(){setTimeout(function(){try{renderCat();}catch(e){}},60);});
 /* ===== Sub-navigasi antar tab (Beranda / sebelumnya / berikutnya) ===== */
 var NAV_SEQ=[];
-function buildNavSeq(){NAV_SEQ=[];catData.forEach(function(c){c.tiles.forEach(function(t){var m=/^go\('([a-z]+)'\)$/.exec(t.a);if(m){NAV_SEQ.push({view:m[1],label:t.l,emoji:t.e,cat:c.name,catEmoji:c.emoji});}});});}
+function buildNavSeq(){NAV_SEQ=[];catData.forEach(function(c){var gr=c.subs?c.subs:[{tiles:c.tiles}];gr.forEach(function(gp){(gp.tiles||[]).forEach(function(t){var m=/^go\('([a-z]+)'\)$/.exec(t.a);if(m){NAV_SEQ.push({view:m[1],label:t.l,emoji:t.e,cat:c.name,catEmoji:c.emoji});}});});});}
 function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getElementById(id);if(!view){return;}var old=view.querySelector(':scope > .subnav');if(old){old.remove();}var idx=-1;for(var i=0;i<NAV_SEQ.length;i++){if(NAV_SEQ[i].view===id){idx=i;break;}}if(idx<0){return;}var cur=NAV_SEQ[idx];var prev=NAV_SEQ[(idx-1+NAV_SEQ.length)%NAV_SEQ.length];var next=NAV_SEQ[(idx+1)%NAV_SEQ.length];var bar=document.createElement('div');bar.className='subnav';bar.innerHTML='<button class="sn-home" onclick="go(\'beranda\')" title="Beranda">\ud83c\udfe0</button><div class="sn-mid"><span class="sn-cat">'+cur.catEmoji+' '+cur.cat+'</span><span class="sn-cur">'+cur.emoji+' '+cur.label+'</span></div><div class="sn-arrows"><button class="sn-btn" onclick="go(\''+prev.view+'\')" title="'+prev.label+'">\u2039 <span>'+prev.label+'</span></button><button class="sn-btn sn-next" onclick="go(\''+next.view+'\')" title="'+next.label+'"><span>'+next.label+'</span> \u203a</button></div>';view.insertBefore(bar,view.firstChild);}
 </script>
 <div id="introOverlay" class="intro-ov">
@@ -1774,7 +1800,7 @@ window.addEventListener('load',function(){setTimeout(_initThemeBtn,40);});
 var SOS_CONTACTS=[{n:'Basecamp RC',p:'6282320124040'},{n:'Tim SAR',p:'6282320124040'}];
 function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)u=o.name;}}catch(e){}return u;}
 function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}navigator.geolocation.getCurrentPosition(function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);},function(e){sosShareUI(null,null,null);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
-function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);var head=hasLoc?('<div class="sos-loc ok">\ud83d\udccd Lokasi terkunci<br><b>'+coordTxt+'</b><small>akurasi \u00b1'+Math.round(acc||0)+' m</small></div>'):'<div class="sos-loc warn">\u26a0\ufe0f GPS gagal \u2014 aktifkan izin lokasi. Kamu tetap bisa kirim pesan manual di bawah.</div>';var btns='';SOS_CONTACTS.forEach(function(c){btns+='<a class="sos-share wa" href="https://wa.me/'+c.p+'?text='+emsg+'" target="_blank" rel="noopener">\ud83d\udfe2 WhatsApp '+c.n+'</a>';});btns+='<a class="sos-share sms" href="sms:?&body='+emsg+'">\u2709\ufe0f Kirim via SMS</a>';if(hasLoc){btns+='<a class="sos-share map" href="'+maps+'" target="_blank" rel="noopener">\ud83d\uddfa\ufe0f Buka di Google Maps</a>';}btns+='<button class="sos-share copy" onclick="sosCopy(&#39;'+coordTxt+'&#39;)">\ud83d\udccb Salin koordinat</button>';s.innerHTML=head+'<div class="sos-actions">'+btns+'</div>';}
+function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);if(hasLoc&&window._sosPublish){try{_sosPublish(lat,lng,u);}catch(e){}}var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);var head=hasLoc?('<div class="sos-loc ok">\ud83d\udccd Lokasi terkunci<br><b>'+coordTxt+'</b><small>akurasi \u00b1'+Math.round(acc||0)+' m</small></div>'):'<div class="sos-loc warn">\u26a0\ufe0f GPS gagal \u2014 aktifkan izin lokasi. Kamu tetap bisa kirim pesan manual di bawah.</div>';var btns='';SOS_CONTACTS.forEach(function(c){btns+='<a class="sos-share wa" href="https://wa.me/'+c.p+'?text='+emsg+'" target="_blank" rel="noopener">\ud83d\udfe2 WhatsApp '+c.n+'</a>';});btns+='<a class="sos-share sms" href="sms:?&body='+emsg+'">\u2709\ufe0f Kirim via SMS</a>';if(hasLoc){btns+='<a class="sos-share map" href="'+maps+'" target="_blank" rel="noopener">\ud83d\uddfa\ufe0f Buka di Google Maps</a>';}btns+='<button class="sos-share copy" onclick="sosCopy(&#39;'+coordTxt+'&#39;)">\ud83d\udccb Salin koordinat</button>';s.innerHTML=head+'<div class="sos-actions">'+btns+'</div>';}
 function sosCopy(t){try{navigator.clipboard.writeText(t);toast('Koordinat disalin','ok');}catch(e){toast('Salin manual: '+t,'ok');}}
 function locateMe(){if(!navigator.geolocation){toast('GPS tidak tersedia di perangkat ini','err');return;}toast('Mencari lokasi kamu\u2026','ok');navigator.geolocation.getCurrentPosition(function(p){var la=p.coords.latitude,ln=p.coords.longitude,ac=p.coords.accuracy;if(window.jalurMap&&window.L){if(window._meMarker){jalurMap.removeLayer(_meMarker);}if(window._meCirc){jalurMap.removeLayer(_meCirc);}window._meCirc=L.circle([la,ln],{radius:ac||30,color:'#2b6fff',fillColor:'#2b6fff',fillOpacity:.15,weight:1}).addTo(jalurMap);window._meMarker=L.circleMarker([la,ln],{radius:7,color:'#fff',weight:3,fillColor:'#2b6fff',fillOpacity:1}).addTo(jalurMap).bindTooltip('Lokasi Anda',{direction:'top'}).openTooltip();jalurMap.setView([la,ln],14);toast('Lokasi ditemukan (\u00b1'+Math.round(ac||0)+' m)','ok');}else{toast('Koordinat: '+la.toFixed(5)+', '+ln.toFixed(5),'ok');}},function(e){toast('Gagal ambil lokasi. Aktifkan izin GPS.','err');},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
 function renderElevProfile(){var host=document.getElementById('elevProfile');if(!host)return;var pts=(typeof jalurPos!=='undefined'&&jalurPos)?jalurPos:[];if(!pts.length)return;var W=320,H=126,pad=8,base=H-18;var els=pts.map(function(p){return p.el;});var mn=Math.min.apply(null,els),mx=Math.max.apply(null,els);var n=pts.length;function X(i){return pad+i*((W-pad*2)/(n-1));}function Y(v){return 12+(base-12)*(1-(v-mn)/((mx-mn)||1));}var line='',area='M'+X(0).toFixed(1)+' '+base,dots='';pts.forEach(function(p,i){var x=X(i),y=Y(p.el);line+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';area+=' L'+x.toFixed(1)+' '+y.toFixed(1);var col=p.st==='danger'?'#ff2d55':(p.st==='warn'?'#e5951c':'#08a35f');dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.4" fill="'+col+'" stroke="#fff" stroke-width="1.4"><title>'+p.n+' \u00b7 '+p.el+' m</title></circle>';});area+=' L'+X(n-1).toFixed(1)+' '+base+' Z';var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="egr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b6fff" stop-opacity="0.32"/><stop offset="1" stop-color="#2b6fff" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#egr)"/><path d="'+line+'" fill="none" stroke="#2b6fff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'+dots+'<text x="'+X(0).toFixed(1)+'" y="'+(base+13)+'" font-size="8" fill="#8a94a6">'+els[0]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(base+13)+'" font-size="8" text-anchor="end" fill="#8a94a6">'+els[n-1]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(Y(mx)-4).toFixed(1)+'" font-size="8.5" text-anchor="end" font-weight="700" fill="#e0154a">\u25b2 '+mx+'m</text></svg>';host.innerHTML=svg;}
@@ -1899,5 +1925,6 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 (function(){try{var u=(typeof bwkUser==='function')?bwkUser():null;_adminToggle(u&&u.role);}catch(e){}})();
 </script>
 <script src="sk.js"></script>
+<script src="sos.js"></script>
 </body>
 </html>
