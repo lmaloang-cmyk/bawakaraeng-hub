@@ -693,6 +693,7 @@
     </div>
 
     <div id="alertBox" class="alertbox"></div>
+    <button class="skbanner" onclick="go(&#39;simaksi&#39;)"><span class="skb-ic">🎫</span><span class="skb-tx"><b>SIMAKSI Online</b><small>Ajukan izin pendakian resmi — unggah berkas, bayar PNBP, dokumen terbit &amp; dikirim via WhatsApp</small></span><span class="skb-go">›</span></button>
 
     <div class="catbar" id="catbar"></div>
     <div class="catdesc" id="catdesc"></div>
@@ -824,7 +825,7 @@
     <div class="plist">
       <div class="pli" id="profAdminLink" style="display:none" onclick="openAdmin()"><div class="pi g-brand">🛡️</div><b>Panel Admin</b><span class="chev">›</span></div>
       <div class="pli" onclick="openEditProfile()"><div class="pi g-brand">✏️</div><b>Edit Profil</b><span class="chev">›</span></div>
-      <div class="pli" onclick="go('trip')"><div class="pi g-indigo">🎫</div><b>SIMAKSI Saya</b><span class="chev">›</span></div>
+      <div class="pli" onclick="go('simaksi');setTimeout(function(){skGo('status')},50)"><div class="pi g-indigo">🎫</div><b>SIMAKSI Saya</b><span class="chev">›</span></div>
       <div class="pli" onclick="go('regulasi')"><div class="pi g-violet">⚖️</div><b>Regulasi &amp; Aturan</b><span class="chev">›</span></div>
       <div class="pli" onclick="openSettings()"><div class="pi g-blue">⚙️</div><b>Pengaturan</b><span class="chev">›</span></div>
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
@@ -854,19 +855,13 @@
     <p class="note">Lokasi ilustratif: longsor kaldera 2004, kebakaran 2019–2020 &amp; sedimentasi hulu Jeneberang. Peta citra satelit Esri (butuh internet).</p>
   </section>
 
-  <!-- SIMAKSI ONLINE -->
+  <!-- SIMAKSI ONLINE (standalone) -->
   <section id="simaksi" class="view">
+    <div class="subnav"><button class="sn-home" onclick="go('beranda')" title="Beranda">🏠</button><div class="sn-mid"><span class="sn-cat">🎫 Layanan Izin</span><span class="sn-cur">SIMAKSI Online</span></div></div>
     <div class="sec-title">SIMAKSI Online 🎫</div>
-    <div class="sec-sub">Ajukan Surat Izin Masuk Kawasan Konservasi langsung dari aplikasi.</div>
-    <div class="form-card">
-      <div class="fld"><label>Nama Ketua Rombongan</label><input id="sk-nama" placeholder="Nama lengkap"/></div>
-      <div class="frow"><div class="fld"><label>Jumlah Anggota</label><input id="sk-jml" type="number" min="1" value="1"/></div><div class="fld"><label>Asal / Organisasi</label><input id="sk-org" placeholder="Komunitas / kampus"/></div></div>
-      <div class="frow"><div class="fld"><label>Tanggal Naik</label><input id="sk-naik" type="date" onchange="var t=document.getElementById(&#39;sk-turun&#39;);t.min=this.value;if(t.value&&t.value&lt;=this.value){t.value=&#39;&#39;;}"/></div><div class="fld"><label>Tanggal Turun</label><input id="sk-turun" type="date"/></div></div>
-      <div class="fld"><label>No. HP / Kontak Darurat</label><input id="sk-hp" placeholder="08xx"/></div>
-      <button class="btn g-indigo" onclick="ajukanSimaksi()">📝 Ajukan SIMAKSI</button>
-    </div>
-    <div id="sk-result"></div>
-    <p class="note">Pengajuan diverifikasi Tim Reichas Chelebes &amp; petugas kawasan sebelum berlaku.</p>
+    <div class="sec-sub">Surat Izin Masuk Kawasan Konservasi Gunung Bawakaraeng. Ajukan, unggah berkas, bayar PNBP, lalu dokumen resmi terbit — setiap status dikirim via WhatsApp.</div>
+    <div class="sktabs"><button id="sktab-ajukan" class="sktab on" onclick="skGo('ajukan')">📝 Ajukan</button><button id="sktab-status" class="sktab" onclick="skGo('status')">🔎 Cek Status</button><button id="sktab-info" class="sktab" onclick="skGo('info')">ℹ️ Alur &amp; Syarat</button></div>
+    <div id="skApp"></div>
   </section>
 
   <!-- ADOPSI POHON -->
@@ -1075,7 +1070,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1635,7 +1630,6 @@ var catData=[
  ]},
  {id:'adv',name:'Adventure',full:'Adventure',emoji:'⛰️',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, izin SIMAKSI, agenda & komunitas.',tiles:[
    {a:"go('jurnal')",ic:'g-blue',e:'🧭',l:'Jurnal Pendaki'},
-   {a:"go('simaksi')",ic:'g-indigo',e:'🎫',l:'SIMAKSI'},
    {a:"go('agenda')",ic:'g-amber',e:'📅',l:'Agenda'},
    {a:"go('komunitas')",ic:'g-pink',e:'👥',l:'Komunitas'}
  ]}
@@ -1898,11 +1892,12 @@ function _aArr(key){var v=(typeof _lsGet==='function')?_lsGet(key,null):null;if(
 function _stBadge(st){st=st||'baru';var m={baru:['#e9a100','Baru'],disetujui:['#08b96f','Disetujui'],ditolak:['#e5484d','Ditolak']};var c=m[st]||m.baru;return '<span class="ast" style="background:'+c[0]+'22;color:'+c[0]+'">'+c[1]+'</span>';}
 function _aCard2(k,ref,cloud,title,sub,st){var cb=cloud?'true':'false';return '<div class="acard"><div class="acard-h"><b>'+title+'</b>'+_stBadge(st)+'</div>'+(sub?'<div class="acard-s">'+sub+'</div>':'')+'<div class="acts"><button class="abt ok" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'disetujui\')">✓ Setujui</button><button class="abt no" onclick="adminAct(\''+k+'\','+ref+','+cb+',\'ditolak\')">✕ Tolak</button><button class="abt del" onclick="adminDelX(\''+k+'\','+ref+','+cb+')">🗑️</button></div></div>';}
 function _localRows(k){if(k==='lapor')return _aArr('bwkReports');if(k==='simaksi')return (typeof _lsGet==='function')?_lsGet('bwkSimaksi',[]):[];if(k==='jurnal')return _aArr('bwkJurnal');return [];}
-function _renderRows(k,rows,cloud){var b=document.getElementById('adminBody');if(!b)return;var note='<div class="amode">'+(cloud?'☁️ Data server — semua pengguna':'📴 Data lokal — perangkat ini saja')+'</div>';if(!rows||!rows.length){b.innerHTML=note+'<div class="aempty">Belum ada data.</div>';return;}var cntBaru=(rows||[]).filter(function(rr){return (rr.astatus||'baru')==='baru';}).length;var _cb=document.getElementById('cnt-baru');if(_cb)_cb.textContent=cntBaru?(' '+cntBaru):'';var _fst=(typeof _adminStatus!=='undefined'&&_adminStatus)?_adminStatus:'baru';var _list=(rows||[]).map(function(rr,ii){return {r:rr,i:ii};}).filter(function(o){return _fst==='all'||((o.r.astatus||'baru')===_fst);});var html=note;if(!_list.length){var _lbl={baru:'Baru',disetujui:'Disetujui',ditolak:'Ditolak'}[_fst]||'';b.innerHTML=note+'<div class="aempty">Belum ada data'+(_lbl?(' “'+_lbl+'”'):'')+'.</div>';return;}_list.forEach(function(o){var r=o.r;var i=o.i;var ref=cloud?("'"+r.id+"'"):i;var title,sub,st=r.astatus;if(k==='lapor'){title=r.title||'Laporan';sub=(r.description||r.desc||'')+'<br><small>Oleh: '+(r.user_name||r.name||'-')+'</small>'+(r.photo?'<img class="rimg" style="cursor:zoom-in" src="'+r.photo+'" onclick="openImg(this.src)"/>':'');}else if(k==='simaksi'){title='Pengajuan SIMAKSI';sub='Ketua: <b>'+(r.nama||'-')+'</b> · '+(r.jml||'-')+' org<br><small>'+(r.org||'-')+' · Naik '+(r.naik||'-')+' → Turun '+(r.turun||'-')+' · '+(r.code||'')+'</small>';}else{title='Jurnal Pendakian';sub='Jalur: '+(r.jalur||'-')+' · '+(r.jdate||r.date||'')+'<br><small>Durasi '+(r.durasi||0)+' jam · '+(r.alt||0)+' mdpl · '+(r.cuaca||'-')+'</small>';}html+=_aCard2(k,ref,cloud,title,sub,st);});b.innerHTML=html;}
+function _renderRows(k,rows,cloud){var b=document.getElementById('adminBody');if(!b)return;var note='<div class="amode">'+(cloud?'☁️ Data server — semua pengguna':'📴 Data lokal — perangkat ini saja')+'</div>';if(!rows||!rows.length){b.innerHTML=note+'<div class="aempty">Belum ada data.</div>';return;}var cntBaru=(rows||[]).filter(function(rr){return (rr.astatus||'baru')==='baru';}).length;var _cb=document.getElementById('cnt-baru');if(_cb)_cb.textContent=cntBaru?(' '+cntBaru):'';var _fst=(typeof _adminStatus!=='undefined'&&_adminStatus)?_adminStatus:'baru';var _list=(rows||[]).map(function(rr,ii){return {r:rr,i:ii};}).filter(function(o){return _fst==='all'||((o.r.astatus||'baru')===_fst);});var html=note;if(!_list.length){var _lbl={baru:'Baru',disetujui:'Disetujui',ditolak:'Ditolak'}[_fst]||'';b.innerHTML=note+'<div class="aempty">Belum ada data'+(_lbl?(' “'+_lbl+'”'):'')+'.</div>';return;}_list.forEach(function(o){var r=o.r;var i=o.i;var ref=cloud?("'"+r.id+"'"):i;var title,sub,st=r.astatus;if(k==='simaksi'){window._skRows=rows;html+=_skAdminCard(r,ref,cloud);return;}if(k==='lapor'){title=r.title||'Laporan';sub=(r.description||r.desc||'')+'<br><small>Oleh: '+(r.user_name||r.name||'-')+'</small>'+(r.photo?'<img class="rimg" style="cursor:zoom-in" src="'+r.photo+'" onclick="openImg(this.src)"/>':'');}else if(k==='simaksi'){title='Pengajuan SIMAKSI';sub='Ketua: <b>'+(r.nama||'-')+'</b> · '+(r.jml||'-')+' org<br><small>'+(r.org||'-')+' · Naik '+(r.naik||'-')+' → Turun '+(r.turun||'-')+' · '+(r.code||'')+'</small>';}else{title='Jurnal Pendakian';sub='Jalur: '+(r.jalur||'-')+' · '+(r.jdate||r.date||'')+'<br><small>Durasi '+(r.durasi||0)+' jam · '+(r.alt||0)+' mdpl · '+(r.cuaca||'-')+'</small>';}html+=_aCard2(k,ref,cloud,title,sub,st);});b.innerHTML=html;}
 function renderAdmin(k){k=k||_curAdmin;_curAdmin=k;var b=document.getElementById('adminBody');if(!b)return;try{refreshBellBadge();}catch(e){}var c=(typeof _sbClient==='function')?_sbClient():null;var tbl=_ADMIN_TBL[k];if(c&&tbl){b.innerHTML='<div class="aempty">Memuat…</div>';c.from(tbl).select('*').order('created_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat dari server.<br><small>'+(res.error.message||'')+'</small><br>Pastikan SQL Supabase sudah dijalankan.</div>';return;}_renderRows(k,res.data||[],true);}).catch(function(e){_renderRows(k,_localRows(k),false);});}else{_renderRows(k,_localRows(k),false);}}
 function adminAct(k,ref,cloud,st){if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).update({astatus:st}).eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);if(a[ref]){a[ref].astatus=st;if(typeof _lsSet==='function')_lsSet(key,a);}renderAdmin(k);if(window.toast)toast(st==='disetujui'?'Disetujui ✓':'Ditolak','ok');}}
 function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){var c=_sbClient();var tbl=_ADMIN_TBL[k];c.from(tbl).delete().eq('id',ref).then(function(res){if(res.error){if(window.toast)toast('Gagal: '+res.error.message,'err');}else{if(window.toast)toast('Dihapus','ok');renderAdmin(k);}});}else{var key=(k==='lapor')?'bwkReports':(k==='simaksi'?'bwkSimaksi':'bwkJurnal');var a=_aArr(key);a.splice(ref,1);if(typeof _lsSet==='function')_lsSet(key,a);renderAdmin(k);if(window.toast)toast('Dihapus','ok');}}
 (function(){try{var u=(typeof bwkUser==='function')?bwkUser():null;_adminToggle(u&&u.role);}catch(e){}})();
 </script>
+<script src="sk.js"></script>
 </body>
 </html>
