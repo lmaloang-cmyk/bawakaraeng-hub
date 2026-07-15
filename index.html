@@ -810,7 +810,7 @@
       <div class="pav" id="profAv">N</div>
       <h2 id="profName">Pendaki</h2>
       <div class="lv" id="profLevel">🏵️ Pendaki · Level 1</div>
-      <div class="pjoin" id="profJoin"></div>
+      <div class="pjoin" id="profJoin"></div><div class="pjoin" id="profEmail" style="opacity:.92;margin-top:3px;font-size:11px"></div>
     </div>
     <div class="pstats">
       <div class="pstat"><b id="statPendakian">0</b><small>Pendakian</small></div>
@@ -828,7 +828,7 @@
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 19</div>
+    <div class="appver">Bawakaraeng Hub · Versi 20</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1692,7 +1692,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 19</div>
+    <div class="login-ver">Versi 20</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -1711,7 +1711,7 @@ function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
 function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
 function skipLogin(){hideLogin();}
-function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}try{_adminToggle(u&&u.role);}catch(e){}}
+function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent='👤 '+u.role;rc.style.display='inline-flex';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}var pe=document.getElementById('profEmail');if(pe){pe.textContent=(u.email?('✉️ '+u.email):'')+((u.role==='Admin')?('  ·  🛡️ Admin'):'');}try{_adminToggle(u&&u.role);}catch(e){}}
 function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}localStorage.removeItem('bwkUser');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
 window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
@@ -1845,7 +1845,7 @@ function sbInsert(table,row){var c=_sbClient();if(!c)return Promise.resolve({ok:
 window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
-function _fromGoogle(su){try{var m=su.user_metadata||{};var email=su.email||'';var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
+function _fromGoogle(su){try{var m=su.user_metadata||{};var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
 try{initAuth();}catch(e){}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
