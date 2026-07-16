@@ -103,6 +103,8 @@
     _aiMsgs.push({id:'u'+Date.now(),name:_name(),body:t,mine:true,created_at:now});
     var wait={id:'wait',name:'AI Pendamping',body:'Sedang menyusun jawaban…',created_at:now,source:'Memproses'};_aiMsgs.push(wait);_aiRender();
     var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},14000):null;
+    var guest=false;try{var gu=(typeof bwkUser==='function')?bwkUser():null;guest=!!(gu&&gu.guest);}catch(e){}
+    if(guest){wait.body=_localAi(t);wait.source='Panduan lokal · mode tamu';if(timer)clearTimeout(timer);_saveAiHistory();_aiRender();return;}
     fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,context:_weatherContext()}),signal:ctrl?ctrl.signal:undefined})
       .then(function(r){if(!r.ok)throw new Error('AI cloud unavailable');return r.json();})
       .then(function(d){wait.body=(d&&d.answer)?d.answer:_localAi(t);wait.source=(d&&d.source)||'Gemini';})
@@ -130,6 +132,7 @@
   window.sendMsg=function(){
     var inp=document.getElementById('chatInput');if(!inp)return;var t=(inp.value||'').trim();if(!t)return;
     if(curCh==='ai'){inp.value='';inp.style.height='auto';_askAi(t.slice(0,600));return;}
+    try{var gu=(typeof bwkUser==='function')?bwkUser():null;if(gu&&gu.guest){if(typeof openGuestGate==='function')openGuestGate('mengirim pesan komunitas');return;}}catch(e){}
     var c=_sb();if(!c){if(window.toast)toast('Butuh koneksi internet','err');return;}
     inp.value='';inp.style.height='auto';
     var row={channel:curCh,name:_name(),device:_devId(),body:t.slice(0,1000)};
