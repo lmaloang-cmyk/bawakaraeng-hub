@@ -74,6 +74,7 @@ var _skKtp='';var _skKtpReady=false;var _skKtpFile=null;
 var _skDoc='';var _skDocReady=false;var _skDocFile=null;
 var _skRows=[];
 var _skPaymentDraft={};
+var _skStatusSyncing=false;
 
 function _waNorm(n){n=(''+(n||'')).replace(/[^0-9]/g,'');if(n.indexOf('62')===0)return n;if(n.indexOf('0')===0)return '62'+n.slice(1);if(n.indexOf('8')===0)return '62'+n;return n;}
 
@@ -81,7 +82,14 @@ function skGo(tab){_skTab=tab;['ajukan','status','info'].forEach(function(x){var
 
 function _skLastCode(){try{return localStorage.getItem('bwkLastSimaksiCode')||'';}catch(e){return '';}}
 
-function renderSimaksi(){var a=document.getElementById('skApp');if(!a)return;if(_skTab==='status'){a.innerHTML=_skStatusHtml();}else if(_skTab==='info'){a.innerHTML=_skInfoHtml();}else{a.innerHTML=_skStepHtml();}}
+function renderSimaksi(){var a=document.getElementById('skApp');if(!a)return;if(_skTab==='status'){a.innerHTML=_skStatusHtml();_skSyncMyStatus();}else if(_skTab==='info'){a.innerHTML=_skInfoHtml();}else{a.innerHTML=_skStepHtml();}}
+function _skMergeServerRows(serverRows){
+  try{var local=_lsGet('bwkSimaksi',[]),map={};local.forEach(function(r){if(r&&r.code)map[r.code]=r;});(serverRows||[]).forEach(function(r){if(r&&r.code)map[r.code]=Object.assign({},map[r.code]||{},r);});var merged=Object.keys(map).map(function(k){return map[k];});merged.sort(function(a,b){return String(b.created_at||b.ts||'').localeCompare(String(a.created_at||a.ts||''));});_lsSet('bwkSimaksi',merged);return merged;}catch(e){return serverRows||[];}
+}
+function _skSyncMyStatus(){
+  if(_skStatusSyncing)return;var c=(typeof _sbClient==='function')?_sbClient():null;if(!c)return;_skStatusSyncing=true;
+  c.auth.getUser().then(function(ur){var u=ur&&ur.data&&ur.data.user;if(!u)throw new Error('Belum login');return c.from('simaksi').select('*').order('created_at',{ascending:false});}).then(function(res){if(res&&res.error)throw res.error;_skMergeServerRows((res&&res.data)||[]);if(_skTab==='status'){var a=document.getElementById('skApp');if(a)a.innerHTML=_skStatusHtml();}}).catch(function(){}).finally(function(){_skStatusSyncing=false;});
+}
 
 function _skSave(){['nama','wa','jml','org','naik','turun'].forEach(function(id){var el=document.getElementById('sk-'+id);if(el)_skForm[id]=el.value;});}
 
