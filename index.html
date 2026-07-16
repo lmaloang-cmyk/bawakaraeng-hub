@@ -651,6 +651,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .home-tools .catdesc{min-height:30px!important;margin:0!important;padding:6px 2px 0!important}.home-tools .cathint{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;font-weight:700}.home-tools .cathint .svgi{width:17px;height:17px;color:#2d9d70}
 @media(max-width:899px){.home-tools{padding:15px!important;border-radius:19px!important}.home-tools .catbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.home-tools .catbtn{min-height:64px!important;flex-direction:row;justify-content:flex-start;padding:11px 12px!important;font-size:12px!important}.home-tools .catbtn .ce{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:rgba(45,157,112,.12)}.home-tools .catbtn.on .ce{background:rgba(255,255,255,.19)}}
 .reports-more{display:flex;align-items:center;justify-content:space-between;width:100%;margin:11px 0 1px;padding:12px 14px;border:1px solid rgba(70,201,147,.38);border-radius:13px;background:linear-gradient(135deg,#183e37,#1f735d);color:#f4fffa;font-size:12.5px;font-weight:850;box-shadow:0 7px 16px rgba(4,29,25,.18)}.reports-more span{font-size:19px;line-height:12px}.reports-more:active{transform:scale(.98)}html:not(.dark) .reports-more{background:linear-gradient(135deg,#e6f6ed,#cdebd9);color:#176044}
+.agency-logo{width:20px;height:20px;object-fit:contain;display:block}.subcatbtn span:has(.agency-logo){width:22px;height:22px;display:inline-grid;place-items:center;border-radius:6px;background:#fff;padding:1px}
 </style>
 <script>(function(){try{if(localStorage.getItem("bwkTheme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();</script>
 <style id="hxcss">
@@ -1939,13 +1940,13 @@ window.ic=ic;
 /* ===== Beranda 4 Kategori: KLH, Kehutanan, SAR, Adventure ===== */
 var catData=[
  {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'satellite',grad:'var(--g-green)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
-   {id:'klh',name:'KLH',emoji:'landmark',tiles:[
+   {id:'klh',name:'KLH',emoji:'landmark',logo:'/logo-klh.png',tiles:[
      {a:"go('ekosistem')",ic:'g-green',e:'tree',l:'Ekosistem'},
      {a:"go('biodiv')",ic:'g-teal',e:'flask',l:'Biodiversitas'},
      {a:"go('arsip')",ic:'g-indigo',e:'book',l:'Publikasi'},
      {a:"go('regulasi')",ic:'g-violet',e:'scale',l:'Regulasi'}
    ]},
-   {id:'hut',name:'Kehutanan',emoji:'pine',tiles:[
+   {id:'hut',name:'KEMENHUT',emoji:'pine',logo:'/logo-kemenhut.webp',tiles:[
      {a:"go('pantau')",ic:'g-teal',e:'tree',l:'Pantau Pohon'},
      {a:"go('eksplor')",ic:'g-green',e:'leaf',l:'Flora & Fauna'},
      {a:"go('bandingkan')",ic:'g-teal',e:'contrast',l:'Before-After'}
@@ -1987,7 +1988,7 @@ function renderCat(){
  if(c.subs){
    if(!sc){sc=document.createElement('div');sc.id='subcatbar';sc.className='subcatbar';if(g&&g.parentNode)g.parentNode.insertBefore(sc,g);}
    sc.style.display='flex';
-   sc.innerHTML=c.subs.map(function(s){return '<button class="subcatbtn'+(s.id===curSub?' on':'')+'" onclick="setSub(\''+s.id+'\')"><span>'+ic(s.emoji)+'</span> '+s.name+'</button>';}).join('');
+   sc.innerHTML=c.subs.map(function(s){return '<button class="subcatbtn'+(s.id===curSub?' on':'')+'" onclick="setSub(\''+s.id+'\')"><span>'+((s.logo)?'<img class="agency-logo" src="'+s.logo+'" alt="">':ic(s.emoji))+'</span> '+s.name+'</button>';}).join('');
  }else if(sc){sc.style.display='none';sc.innerHTML='';}
  if(g)g.innerHTML=_curTiles(c).map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+ic(t.e)+'</div><span>'+t.l+'</span></button>';}).join('');
 }
