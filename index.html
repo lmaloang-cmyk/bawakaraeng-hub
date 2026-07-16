@@ -479,7 +479,7 @@
 .subcatbar{display:flex;gap:8px;margin:0 2px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .subcatbar::-webkit-scrollbar{display:none}
 .subcatbtn{flex:none;border:1px solid var(--line,#e6e9ef);background:var(--card,#fff);border-radius:20px;padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--sub,#667);cursor:pointer;white-space:nowrap}
-.subcatbtn.on{background:var(--g-violet);color:#fff;border-color:transparent}
+.subcatbtn.on{background:var(--g-brand);color:#fff;border-color:transparent}
 html.dark .subcatbtn{color:var(--sub)}
 .cathint{font-size:12.5px;color:var(--sub);font-weight:600;padding:2px 2px}
 .catdesc-row{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
@@ -687,7 +687,87 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .holdbtn .big .svgi{width:62px;height:62px;stroke-width:1.6}
 .catbtn .ce .svgi{width:16px;height:16px}
 .sn-mid .svgi,.subcatbtn .svgi{width:16px;height:16px}
-.sn-home .svgi{width:18px;height:18px}</style>
+.sn-home .svgi{width:18px;height:18px}
+/* ===== Beranda v12: clear status, actions, and responsive desktop ===== */
+.g-danger{background:linear-gradient(135deg,#e97366,#c9443a)}
+.topbar{background:linear-gradient(135deg,#10243d,#26705a);box-shadow:0 4px 16px rgba(16,36,61,.22);border-radius:0 0 14px 14px}
+.tab.on{background:#e8f1ec;color:#26705a}
+.fab{box-shadow:0 10px 22px rgba(38,112,90,.32)}
+.home-overview{display:grid;gap:14px}
+.home-status{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow)}
+.home-status-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.home-status-head b{display:block;font-size:15px}
+.home-status-head small{display:block;color:var(--sub);font-size:12px;margin-top:1px}
+.status-pulse{width:11px;height:11px;border-radius:50%;background:#46a171;box-shadow:0 0 0 6px rgba(70,161,113,.12);flex:none}
+.home-status .alertbox{margin:0 0 12px}
+.home-status .alert{box-shadow:none;background:var(--canvas);border:1px solid var(--line);border-left-width:4px;padding:10px 11px}
+.home-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:100px;gap:9px}
+.home-action{height:100%;min-height:0;text-align:left;border:1px solid var(--line);border-radius:13px;padding:11px;background:var(--card);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;transition:transform .15s,border-color .15s,background .15s}
+.home-action:active{transform:scale(.97)}
+.home-action span{font-size:21px;margin-bottom:5px}
+.home-action b{font-size:13px}
+.home-action small{font-size:11px;color:var(--sub);margin-top:1px}
+.home-action.permit{background:#e8f1ec;border-color:#cfe3d8}.home-action.permit b{color:#26705a}
+.home-action.route{background:#eaf3fb;border-color:#d4e6f5}.home-action.route b{color:#216ca8}
+.home-action.report{background:#fbebde;border-color:#f2dbc8}.home-action.report b{color:#a86028}
+.home-action.emergency{background:#fce9e7;border-color:#f4d1cd}.home-action.emergency b{color:#c9443a}
+.home-tools,.home-section{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.home-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:14px}
+.home-section-title h3{font-size:19px;line-height:1.2;margin-top:2px}
+.home-section-title>small{color:var(--sub);font-size:12px;text-align:right;max-width:340px}
+.eyebrow{font-size:10.5px;letter-spacing:.12em;font-weight:900;color:#26705a}
+.text-action{font-size:12px;font-weight:800;color:#26705a;white-space:nowrap}
+.home-tools .catbar{margin-bottom:8px}
+.home-tools .catbtn{box-shadow:none;border-radius:11px;padding:9px 13px}
+.home-tools .catdesc{margin:5px 2px 13px}
+.home-tools .qgrid{margin-top:8px}
+.home-columns{display:grid;gap:0}
+.home-section .feed,.home-section .fcar{padding-bottom:3px}
+#beranda .rcard{box-shadow:none;border-radius:14px}
+#beranda .fc{border-radius:14px;box-shadow:none;border:1px solid var(--line)}
+html.dark .home-action{background:#202a3d;border-color:#34405a}html.dark .home-status .alert{background:#111a2b}
+@media(min-width:900px){
+  body{background:#eef1f0}
+  .phone{max-width:1180px;box-shadow:0 0 40px rgba(16,36,61,.12)}
+  .topbar{padding:14px 28px;border-radius:0}
+  .view{padding:24px 28px 120px}
+  .view:not(#beranda){max-width:760px;margin:0 auto}
+  #beranda{max-width:none}
+  .home-overview{grid-template-columns:minmax(0,1.7fr) minmax(310px,.75fr);align-items:stretch}
+  .herox{min-height:330px;margin:0;border-radius:18px}
+  .hx-body{min-height:330px;padding:78px 26px 26px;align-items:flex-end}
+  .hx-greet h2{font-size:30px}.hx-greet .k{font-size:12px}.hx-temp{font-size:42px}.hx-wx{min-width:180px;padding:16px}
+  .home-status{padding:18px}
+  .home-actions{margin-top:4px}
+  .home-tools{padding:20px;margin-top:20px}
+  .home-tools .qgrid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:700px}
+  .home-tools .q{background:var(--canvas);border:1px solid var(--line);border-radius:14px;padding:13px 8px}
+  .home-columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  .home-section{padding:20px;margin-top:18px;min-width:0}
+  .home-section .feed,.home-section .fcar{width:100%}
+  .home-section .rcard{min-width:calc(50% - 7px)}
+  .home-section .fc{min-width:calc(33.333% - 9px);height:210px}
+  .nav{max-width:640px;border-radius:18px 18px 0 0;box-shadow:0 -4px 18px rgba(16,36,61,.10)}
+  .sheet{max-width:620px}
+}
+@media(max-width:899px){
+  #beranda{padding-top:14px}
+  .home-status{margin-top:0}
+  .home-section-title>small{display:none}
+  .hx-body{gap:10px}
+  .hx-greet{min-width:0;flex:1}
+  .hx-greet .k{font-size:11px;letter-spacing:1.15px}
+  .hx-greet h2{font-size:24px;line-height:1.15}
+  .hx-wx{flex:0 0 152px;min-width:152px;max-width:152px;padding:10px}
+  .hx-area{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:420px){
+  .home-action{min-height:86px}
+  .home-tools,.home-section{padding:14px;border-radius:16px}
+  .home-section-title h3{font-size:17px}
+}
+
+</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -706,63 +786,69 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 
   <!-- BERANDA -->
   <section id="beranda" class="view active">
-    <div class="herox loading" id="herox">
-      <div class="hx-bg">
-        <div class="hx-slide on" style="background-image:url('bg-fajar.svg')"></div>
-        <div class="hx-slide" style="background-image:url('bg-siang.svg')"></div>
-        <div class="hx-slide" style="background-image:url('bg-senja.svg')"></div>
-      </div>
-      <div class="hx-ov"></div>
-      <div class="hx-top">
-        <div class="live"><span class="b"></span>LIVE</div>
-        <div class="hx-top-r">
-          <span class="hx-clock" id="clock">--:--</span>
+    <div class="home-overview">
+      <div class="herox loading" id="herox">
+        <div class="hx-bg">
+          <div class="hx-slide on" style="background-image:url('bg-fajar.svg')"></div>
+          <div class="hx-slide" style="background-image:url('bg-siang.svg')"></div>
+          <div class="hx-slide" style="background-image:url('bg-senja.svg')"></div>
         </div>
-      </div>
-      <div class="hx-body">
-        <div class="hx-greet">
-          <div class="k">GUNUNG BAWAKARAENG</div>
-          <h2>Halo, <span id="heroName">Pendaki</span> 👋</h2>
-          <div class="chips">
-            <span class="hc" id="heroRoleChip" style="display:none"></span>
-            <span class="hc">⛰️ 2.845 mdpl</span>
-            <span class="hc myalt" id="myAltChip" onclick="refreshMyAlt()" title="Ketuk untuk memperbarui ketinggianmu">📍 <span id="myAltVal">--</span> mdpl</span>
+        <div class="hx-ov"></div>
+        <div class="hx-top">
+          <div class="live"><span class="b"></span>LANGSUNG</div>
+          <div class="hx-top-r"><span class="hx-clock" id="clock">--:--</span></div>
+        </div>
+        <div class="hx-body">
+          <div class="hx-greet">
+            <div class="k">GUNUNG BAWAKARAENG</div>
+            <h2>Halo, <span id="heroName">Pendaki</span></h2>
+            <div class="chips">
+              <span class="hc" id="heroRoleChip" style="display:none"></span>
+              <span class="hc">⛰️ 2.845 mdpl</span>
+              <span class="hc myalt" id="myAltChip" onclick="refreshMyAlt()" title="Ketuk untuk memperbarui ketinggianmu">📍 <span id="myAltVal">--</span> mdpl</span>
+            </div>
+          </div>
+          <div class="hx-wx loading" id="wcard" onclick="wxPulse(this)">
+            <div class="hx-wx-main"><span class="hx-temp" id="wTemp">--°</span><span class="hx-ic wicon-fallback" id="wIcon">🌤️</span></div>
+            <div class="hx-desc" id="wDesc">Memuat cuaca…</div>
+            <div class="hx-meta"><span>💧 <span id="wHum">--</span></span><span>💨 <span id="wWind">--</span></span></div>
+            <div class="hx-area" id="wArea">Gunung Bawakaraeng</div>
+            <div class="hx-src" id="wSrc">Sumber: BMKG</div>
           </div>
         </div>
-        <div class="hx-wx loading" id="wcard" onclick="wxPulse(this)">
-          <div class="hx-wx-main">
-            <span class="hx-temp" id="wTemp">--°</span>
-            <span class="hx-ic wicon-fallback" id="wIcon">🌤️</span>
-          </div>
-          <div class="hx-desc" id="wDesc">Memuat cuaca…</div>
-          <div class="hx-meta"><span>💧 <span id="wHum">--</span></span><span>💨 <span id="wWind">--</span></span></div>
-          <div class="hx-area" id="wArea">Kawasan Gunung Bawakaraeng</div>
-          <div class="hx-src" id="wSrc">Sumber: BMKG</div>
+        <div class="hx-quake" id="wQuake" style="display:none"><span class="qk-ic">📍</span><div><b id="wqMag">—</b><small id="wqLoc">—</small></div></div>
+        <div class="hx-dots"><i class="on" onclick="hxGo(0,event)"></i><i onclick="hxGo(1,event)"></i><i onclick="hxGo(2,event)"></i></div>
+      </div>
+
+      <aside class="home-status" aria-label="Kondisi dan tindakan cepat">
+        <div class="home-status-head"><span class="status-pulse"></span><div><b>Kondisi kawasan</b><small>Peringatan cuaca dan keselamatan</small></div></div>
+        <div id="alertBox" class="alertbox"></div>
+        <div class="home-actions">
+          <button class="home-action permit" onclick="go('simaksi')"><span>🎫</span><b>SIMAKSI</b><small>Ajukan izin</small></button>
+          <button class="home-action route" onclick="go('peta')"><span>🗺️</span><b>Peta jalur</b><small>Pos & sumber air</small></button>
+          <button class="home-action report" onclick="go('lapor')"><span>📷</span><b>Buat laporan</b><small>Kondisi lapangan</small></button>
+          <button class="home-action emergency" onclick="openSOS()"><span>🆘</span><b>SOS</b><small>Mode darurat</small></button>
         </div>
-      </div>
-      <div class="hx-quake" id="wQuake" style="display:none">
-        <span class="qk-ic">📍</span>
-        <div><b id="wqMag">—</b><small id="wqLoc">—</small></div>
-      </div>
-      <div class="hx-dots">
-        <i class="on" onclick="hxGo(0,event)"></i>
-        <i onclick="hxGo(1,event)"></i>
-        <i onclick="hxGo(2,event)"></i>
-      </div>
+      </aside>
     </div>
 
-    <div id="alertBox" class="alertbox"></div>
-    <button class="skbanner" onclick="go(&#39;simaksi&#39;)"><span class="skb-ic">🎫</span><span class="skb-tx"><b>SIMAKSI Online</b><small>Ajukan izin pendakian resmi — unggah berkas, bayar PNBP, dokumen terbit &amp; dikirim via WhatsApp</small></span><span class="skb-go">›</span></button>
+    <section class="home-tools" aria-label="Layanan Bawakaraeng">
+      <div class="home-section-title"><div><span class="eyebrow">JELAJAHI LAYANAN</span><h3>Pilih kebutuhanmu</h3></div><small>Pemantauan, keselamatan, pendakian, dan kontribusi</small></div>
+      <div class="catbar" id="catbar"></div>
+      <div class="catdesc" id="catdesc"></div>
+      <div class="qgrid" id="catGrid"></div>
+    </section>
 
-    <div class="catbar" id="catbar"></div>
-    <div class="catdesc" id="catdesc"></div>
-    <div class="qgrid" id="catGrid"></div>
-
-    <div class="sh"><span class="bar"></span><h3>Laporan Terkini</h3><span class="link" onclick="openAllReports()">Semua</span></div>
-    <div class="feed" id="feed"></div>
-
-    <div class="sh"><span class="bar" style="background:var(--g-green)"></span><h3>Spesies Unggulan</h3><span class="link" onclick="go('eksplor')">Jelajahi</span></div>
-    <div class="fcar" id="fcar"></div>
+    <div class="home-columns">
+      <section class="home-section" aria-label="Laporan lapangan terbaru">
+        <div class="home-section-title compact"><div><span class="eyebrow">DARI LAPANGAN</span><h3>Laporan terkini</h3></div><button class="text-action" onclick="openAllReports()">Lihat semua →</button></div>
+        <div class="feed" id="feed"></div>
+      </section>
+      <section class="home-section" aria-label="Spesies unggulan">
+        <div class="home-section-title compact"><div><span class="eyebrow">KENALI ALAM</span><h3>Spesies unggulan</h3></div><button class="text-action" onclick="go('eksplor')">Jelajahi →</button></div>
+        <div class="fcar" id="fcar"></div>
+      </section>
+    </div>
   </section>
 
   <!-- EKSPLOR -->
@@ -907,7 +993,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 11</div>
+    <div class="appver">Bawakaraeng Hub · Versi 12</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1684,7 +1770,7 @@ function openPub(url){if(!url){if(window.toast)toast('Tautan belum tersedia');re
 function _rcWA(){try{return (SOS_CONTACTS&&SOS_CONTACTS[0]&&SOS_CONTACTS[0].p)||'6282320124040';}catch(e){return '6282320124040';}}
 function openNotif(){var items=[{ic:'\U0001F331',t:'Ajakan tanam bibit',d:'Agenda penghijauan terdekat ada di menu Agenda.',tm:'Hari ini'},{ic:'\u26C5',t:'Prakiraan cuaca diperbarui',d:'Cek tab Cuaca untuk kondisi puncak terbaru.',tm:'Baru'}];try{if(typeof reports!=='undefined'&&reports){reports.slice(0,5).forEach(function(r){items.push({ic:'\U0001F4CD',t:r.title||'Laporan',d:(r.desc||'').slice(0,70),tm:r.time||''});});}}catch(e){}var html='<h2 style="margin:0 0 12px">\U0001F514 Notifikasi</h2>'+items.map(function(n){return `<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eef1f5"><div style="font-size:20px">${n.ic}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${n.t}</div><div style="color:#667;font-size:12px">${n.d}</div></div><div style="color:#99a;font-size:12px;white-space:nowrap">${n.tm}</div></div>`;}).join('');document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openAllReports(){var html='<h2 style="margin:0 0 12px">📋 Semua Laporan</h2>';try{if(_feedRows&&_feedRows.length){html+=_feedRows.map(function(r,i){var who=r.user_name||r.name||'Warga';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'');return '<div onclick="closeSheet();openFeedReport('+i+')" style="padding:11px 0;border-bottom:1px solid #eef1f5;cursor:pointer"><div style="font-weight:700;font-size:14px">'+(r.title||'Laporan')+'</div><div style="color:#667;font-size:12px">'+(r.description||r.desc||'')+'</div><div style="color:#99a;font-size:12px;margin-top:3px">'+who+' · '+when+(r.photo?' · 📷 lihat foto':'')+'</div></div>';}).join('');}else{html+='<p style="color:#889">Belum ada laporan.</p>';}}catch(e){html+='<p style="color:#889">Belum ada laporan.</p>';}document.getElementById('sheetBody').innerHTML=html;openSheet();}
-function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Bawakaraeng Hub \u00b7 Reichas Chelebes<br>PWA v11 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
+function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Bawakaraeng Hub \u00b7 Reichas Chelebes<br>PWA v12 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openHelp(){var wa='https://wa.me/'+_rcWA();var faq=[['Cara lapor temuan/insiden?','Buka menu Lapor, unggah foto, isi deskripsi & lokasi, lalu kirim.'],['Apa itu SIMAKSI?','Surat Izin Masuk Kawasan Konservasi \u2014 ajukan lewat menu SIMAKSI sebelum mendaki.'],['Cara kerja tombol SOS?','Tahan tombol 3 detik; aplikasi menyiapkan lokasi GPS untuk dibagikan ke tim & panggilan darurat.'],['Apakah data saya tersimpan?','Laporan & jurnal tersimpan di perangkat Anda.']];var html='<h2 style="margin:0 0 12px">\u2753 Bantuan</h2>'+faq.map(function(f){return `<details style="border-bottom:1px solid #eef1f5;padding:10px 0"><summary style="font-weight:700;font-size:14px;cursor:pointer">${f[0]}</summary><div style="color:#667;font-size:13px;margin-top:6px">${f[1]}</div></details>`;}).join('');html+=`<a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:14px" href="${wa}" target="_blank" rel="noopener">\U0001F4F2 Hubungi Tim Reichas Chelebes</a><a class="btn" style="display:block;text-decoration:none;text-align:center;margin-top:8px" href="mailto:${RC_EMAIL}">\u2709\ufe0f ${RC_EMAIL}</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function kirimRiset(){var body=document.getElementById('sheetBody');var vals=[];if(body){var fs=body.querySelectorAll('input,textarea,select');for(var i=0;i<fs.length;i++){var f=fs[i];var v=(f.value||'').trim();if(v){var lab=f.getAttribute('placeholder')||f.name||('Isian '+(i+1));vals.push(lab+': '+v);}}}var txt=vals.length?vals.join('\n'):'(form belum diisi)';var subj=encodeURIComponent('Pengajuan Riset \u2014 Bawakaraeng Hub');var mb=encodeURIComponent('Halo Tim Reichas Chelebes,\n\nSaya mengajukan riset/kolaborasi:\n\n'+txt+'\n\nTerima kasih.');closeSheet();window.location.href='mailto:'+RC_EMAIL+'?subject='+subj+'&body='+mb;if(window.toast)toast('Membuka email pengajuan\u2026','ok');}
 function openRisetForm(){
@@ -1719,7 +1805,7 @@ window.ic=ic;
 <script>
 /* ===== Beranda 4 Kategori: KLH, Kehutanan, SAR, Adventure ===== */
 var catData=[
- {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'satellite',grad:'var(--g-violet)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
+ {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'satellite',grad:'var(--g-green)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
    {id:'klh',name:'KLH',emoji:'landmark',tiles:[
      {a:"go('ekosistem')",ic:'g-green',e:'tree',l:'Ekosistem'},
      {a:"go('biodiv')",ic:'g-teal',e:'flask',l:'Biodiversitas'},
@@ -1732,24 +1818,24 @@ var catData=[
      {a:"go('bandingkan')",ic:'g-teal',e:'contrast',l:'Before-After'}
    ]}
  ]},
- {id:'sos',name:'SOS',full:'SOS & Keselamatan',emoji:'alert',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
-   {a:'openSOS()',ic:'g-brand',e:'lifebuoy',l:'SOS Darurat'},
+ {id:'sos',name:'SOS',full:'SOS & Keselamatan',emoji:'alert',grad:'linear-gradient(135deg,#e97366,#c9443a)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
+   {a:'openSOS()',ic:'g-danger',e:'lifebuoy',l:'SOS Darurat'},
    {a:"go('lapor')",ic:'g-amber',e:'camera',l:'Lapor Insiden'},
    {a:"go('checklist')",ic:'g-green',e:'backpack',l:'Checklist'},
    {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'}
  ]},
- {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'mountain',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
+ {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'mountain',grad:'var(--g-amber)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
    {a:"go('survival')",ic:'g-sunset',e:'shield',l:'Survival Kit'},
    {a:"go('jurnal')",ic:'g-blue',e:'compass',l:'Jurnal Pendaki'},
    {a:"go('agenda')",ic:'g-amber',e:'calendar',l:'Agenda'},
    {a:"go('komunitas')",ic:'g-pink',e:'users',l:'Komunitas'}
  ]},
- {id:'aku',name:'AKU',full:'Aku & Kontribusi',emoji:'heart',grad:'var(--g-brand)',desc:'Kontribusi personalmu untuk Bawakaraeng — donasi & adopsi pohon.',tiles:[
+ {id:'aku',name:'AKU',full:'Aku & Kontribusi',emoji:'heart',grad:'var(--g-green)',desc:'Kontribusi personalmu untuk Bawakaraeng — donasi & adopsi pohon.',tiles:[
    {a:"go('donasi')",ic:'g-brand',e:'heart',l:'Donasi'},
    {a:"go('adopsi')",ic:'g-green',e:'sprout',l:'Adopsi Pohon'}
  ]}
 ];
-var curCat=null;
+var curCat='pantau';
 var curSub='klh';
 function _catById(id){return catData.filter(function(x){return x.id===id;})[0];}
 function _curTiles(c){if(c.subs){var s=c.subs.filter(function(x){return x.id===curSub;})[0]||c.subs[0];return s.tiles;}return c.tiles;}
@@ -1845,7 +1931,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     </div>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 11</div>
+    <div class="login-ver">Versi 12</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
