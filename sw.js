@@ -1,5 +1,5 @@
-const CACHE='bwk-v31-offline-hike';
-const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/hike.js','/PANDUAN.html','/guide-assets/01-login.png','/guide-assets/02-guest-home.png','/guide-assets/03-login-gate.png','/guide-assets/04-ai-pendamping.png','/species-macaca.jpg','/og.jpg'];
+const CACHE='bwk-v32-instansi-logos';
+const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/hike.js','/logo-klh.png','/logo-kemenhut.webp','/PANDUAN.html','/guide-assets/01-login.png','/guide-assets/02-guest-home.png','/guide-assets/03-login-gate.png','/guide-assets/04-ai-pendamping.png','/species-macaca.jpg','/og.jpg'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
