@@ -64,6 +64,9 @@ begin
  end if;
 
  if to_regclass('public.messages') is not null then
+  -- Beberapa instalasi lama belum memiliki kolom pemilik pesan.
+  -- Tambahkan kolom ini sebelum policy yang menggunakan auth.uid() dibuat.
+  execute 'alter table public.messages add column if not exists user_id uuid';
   execute 'alter table public.messages enable row level security';
   execute 'drop policy if exists "messages public read" on public.messages';
   execute 'drop policy if exists "messages authenticated insert" on public.messages';
@@ -76,3 +79,38 @@ end $$;
 
 -- Disarankan: tambahkan indeks bila belum ada.
 create index if not exists app_admins_email_idx on public.app_admins(email);
+
+
+-- SIMAKSI: unggah bukti pembayaran oleh pemohon.
+-- Simpan gambar terkompresi maksimum sekitar 1 MB. Untuk skala besar, pindahkan
+-- aset ini ke Supabase Storage private dan simpan path-nya, bukan data URI.
+alter table public.simaksi add column if not exists payment_proof text;
+alter table public.simaksi add column if not exists payment_submitted_at timestamptz;
+
+create or replace function public.submit_simaksi_payment(p_code text, p_payment_proof text)
+returns void language plpgsql security definer set search_path=public
+as $$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then raise exception 'Autentikasi diperlukan'; end if;
+  if coalesce(length(p_code),0) < 5 then raise exception 'Kode pengajuan tidak valid'; end if;
+  if coalesce(length(p_payment_proof),0) < 100 or length(p_payment_proof) > 1500000 then
+    raise exception 'Ukuran bukti pembayaran tidak valid';
+  end if;
+  if p_payment_proof !~ '^data:image/(jpeg|png|webp);base64,' then
+    raise exception 'Format bukti pembayaran harus JPEG, PNG, atau WebP';
+  end if;
+  update public.simaksi
+     set payment_proof=p_payment_proof,
+         payment_submitted_at=now(),
+         stage='menunggu_konfirmasi'
+   where code=upper(trim(p_code))
+     and user_id=v_uid
+     and stage='diverifikasi';
+  if not found then
+    raise exception 'Pengajuan tidak ditemukan atau belum siap menerima bukti pembayaran';
+  end if;
+end;
+$$;
+revoke all on function public.submit_simaksi_payment(text,text) from public;
+grant execute on function public.submit_simaksi_payment(text,text) to authenticated;

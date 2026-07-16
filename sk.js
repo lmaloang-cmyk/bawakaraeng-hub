@@ -46,6 +46,12 @@
   .skstat{background:var(--card,#fff);border:1px solid #eef1f5;border-radius:16px;padding:14px;margin:10px 0}
   .skstat-h{display:flex;justify-content:space-between;align-items:baseline}
   .skstat-h small{color:#8b98ad;font-size:11px}
+  .skmy-hero{background:linear-gradient(135deg,#3935cd,#6b5cff);color:#fff;border-radius:16px;padding:15px;margin:2px 0 12px;box-shadow:0 8px 20px rgba(75,71,230,.2)}
+  .skmy-hero h3{font-size:16px;margin:0 0 4px}.skmy-hero p{font-size:12px;line-height:1.45;margin:0;opacity:.92}
+  .skstat-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.skstat-meta div{background:#f4f7fb;border-radius:10px;padding:8px 9px}.skstat-meta small{display:block;color:#8b98ad;font-size:10px;margin-bottom:2px}.skstat-meta b{font-size:12px;color:#26334b;word-break:break-word}
+  .skstat-badge{font-size:11px;font-weight:800;padding:4px 8px;border-radius:20px;background:#eef1f6;color:#54617a}.skstat-badge.ok{background:#d8f5e6;color:#087e4b}.skstat-badge.wait{background:#fff0c9;color:#916300}.skstat-badge.no{background:#ffe0e3;color:#c0333c}
+  .sknotice{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12px;line-height:1.45}.sknotice.ok{background:#e8f8ef;color:#087e4b}.sknotice.warn{background:#fff7e8;color:#7c5800}.sknotice.err{background:#ffeef0;color:#b4232c}
+  .skproof{margin-top:10px;padding:12px;border:1px dashed #bac4d5;border-radius:12px;background:#f8faff}.skproof b{font-size:13px}.skproof p{font-size:11.5px;line-height:1.4;color:#65728a;margin:5px 0 9px}.skproof-preview{width:100%;max-height:220px;object-fit:contain;background:#fff;border-radius:9px;border:1px solid #e4e9f0;margin:8px 0}.skproof input{display:none}.skproof-label{display:flex;min-height:42px;align-items:center;justify-content:center;border-radius:10px;background:#e9edff;color:#3733c8;font-size:12px;font-weight:800;cursor:pointer;padding:0 12px;text-align:center}.skproof .btn{margin-top:8px}.skproof-admin{margin:10px 0 0}.skproof-admin img{width:100%;max-width:210px;max-height:240px;object-fit:contain;border-radius:10px;border:1px solid #e0e6ef;background:#fff;cursor:zoom-in}
   .skflow{margin-top:8px}
   .skflow-i{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #f0f2f6}
   .skflow-n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--g-indigo,#4b47e6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -67,10 +73,13 @@ var _skForm={};
 var _skKtp='';var _skKtpReady=false;var _skKtpFile=null;
 var _skDoc='';var _skDocReady=false;var _skDocFile=null;
 var _skRows=[];
+var _skPaymentDraft={};
 
 function _waNorm(n){n=(''+(n||'')).replace(/[^0-9]/g,'');if(n.indexOf('62')===0)return n;if(n.indexOf('0')===0)return '62'+n.slice(1);if(n.indexOf('8')===0)return '62'+n;return n;}
 
 function skGo(tab){_skTab=tab;['ajukan','status','info'].forEach(function(x){var b=document.getElementById('sktab-'+x);if(b)b.classList.toggle('on',x===tab);});renderSimaksi();}
+
+function _skLastCode(){try{return localStorage.getItem('bwkLastSimaksiCode')||'';}catch(e){return '';}}
 
 function renderSimaksi(){var a=document.getElementById('skApp');if(!a)return;if(_skTab==='status'){a.innerHTML=_skStatusHtml();}else if(_skTab==='info'){a.innerHTML=_skInfoHtml();}else{a.innerHTML=_skStepHtml();}}
 
@@ -113,7 +122,7 @@ function skSubmit(){
   var cb=document.getElementById('sk-setuju');if(!cb||!cb.checked){toast('Centang persetujuan pernyataan dulu','err');return;}
   var code=_rid('SMK-');var jml=(+f.jml||1);var tar=SK_TARIF[f.jalur]||SK_TARIF.lembanna;var amount=tar.price*jml;
   var row={code:code,nama:f.nama,wa:_waNorm(f.wa),jml:jml,org:f.org||'-',jalur:tar.label,naik:f.naik,turun:f.turun,ktp:_skKtp,doc:_skDoc||'',stage:'diajukan',astatus:'baru',pnbp_amount:amount,pnbp_code:''};
-  try{if(typeof _lsSet==='function'){var arr=_lsGet('bwkSimaksi',[]);arr.unshift(Object.assign({ts:Date.now()},row));_lsSet('bwkSimaksi',arr);}}catch(e){}
+  try{if(typeof _lsSet==='function'){var arr=_lsGet('bwkSimaksi',[]);arr.unshift(Object.assign({ts:Date.now()},row));_lsSet('bwkSimaksi',arr);}localStorage.setItem('bwkLastSimaksiCode',code);}catch(e){}
   var btn=document.getElementById('skSubmitBtn');if(btn){btn.disabled=true;btn.textContent='Mengirim...';}
   function after(ok,err){
     _skForm={};_skKtp='';_skDoc='';_skKtpReady=false;_skDocReady=false;_skStep=1;_skTab='status';
@@ -121,21 +130,27 @@ function skSubmit(){
     var a=document.getElementById('skApp');if(!a)return;
     var msg='Halo Tim Reichas Chelebes, saya mengajukan SIMAKSI. Kode: '+code+' - Ketua: '+f.nama+' - '+jml+' org - '+tar.label+' - Naik '+f.naik+' s/d '+f.turun+' - WA saya: '+_waNorm(f.wa)+'. Mohon verifikasi. Terima kasih.';
     var waAdmin='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent(msg);
-    var warn=ok?'':`<p class='note' style='color:#e5484d'>Catatan: gagal simpan ke server (${err||''}). Pengajuan tersimpan di perangkat ini - kirim detail via WhatsApp agar tetap diproses.</p>`;
-    a.innerHTML=`<div class='permit sk-ok'><h4>✅ Pengajuan Terkirim</h4><small>Simpan kode registrasi ini</small><div class='code'>${code}</div><div class='pdet'><span>Status</span><b>Menunggu Verifikasi</b></div><div class='pdet'><span>Ketua</span><b>${f.nama}</b></div><div class='pdet'><span>Jalur</span><b>${tar.label}</b></div><div class='pdet'><span>Estimasi PNBP</span><b>${_rupiah(amount)}</b></div></div>${warn}<a class='btn' style='background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:10px' href='${waAdmin}' target='_blank' rel='noopener'>📲 Kirim Detail ke Petugas via WhatsApp</a><p class='note'>Verifikasi maksimal 1x24 jam (hari kerja). Kode pembayaran PNBP dan status persetujuan dikirim ke WhatsApp ${_waNorm(f.wa)}.</p><button class='btn gh' onclick='skGo(&#39;status&#39;)'>🔎 Lihat Status Pengajuan</button>`;
-    if(window.toast)toast('Pengajuan SIMAKSI terkirim!','ok');
+    var sync=ok?`<div class='sknotice ok'>✅ Pengajuan berhasil tersimpan di server. Kami akan mengirim pembaruan ke WhatsApp ${_skEsc(_waNorm(f.wa))}.</div>`:`<div class='sknotice warn'>⚠️ Pengajuan tersimpan di perangkat ini, tetapi belum tersinkron ke server${err?': '+_skEsc(err):''}. Kirim detail ke petugas via WhatsApp agar tetap diproses.</div>`;
+    a.innerHTML=`<div class='permit sk-ok'><h4>${ok?'✅ Pengajuan Berhasil Dikirim':'⚠️ Pengajuan Belum Tersinkron'}</h4><small>Nomor pengajuan — simpan atau screenshot</small><div class='code'>${_skEsc(code)}</div><div class='pdet'><span>Status awal</span><b>Menunggu Verifikasi</b></div><div class='pdet'><span>Ketua</span><b>${_skEsc(f.nama)}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(tar.label)}</b></div><div class='pdet'><span>Estimasi PNBP</span><b>${_skEsc(_rupiah(amount))}</b></div></div>${sync}<a class='btn' style='background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:10px' href='${waAdmin}' target='_blank' rel='noopener'>📲 Kirim Detail ke Petugas via WhatsApp</a><p class='note'>Verifikasi maksimal 1×24 jam pada hari kerja. Kode PNBP dan dokumen terbit dapat dilihat di menu SIMAKSI Saya.</p><button class='btn gh' onclick='skGo(&#39;status&#39;)'>👤 Buka SIMAKSI Saya</button>`;
+    if(window.toast)toast(ok?'Pengajuan berhasil dikirim.':'Pengajuan tersimpan lokal — hubungi petugas. ',ok?'ok':'err');
   }
   if(typeof sbInsert==='function'){sbInsert('simaksi',row).then(function(res){after(res&&res.ok,res&&res.error&&res.error.message);}).catch(function(e){after(false,(e&&e.message)||'');});}else{after(false,'offline');}
 }
 
-function _skStageIdx(s){var m={diajukan:0,diverifikasi:1,dibayar:2,terbit:3};return (m[s]===undefined)?0:m[s];}
+function _skStageIdx(s){var m={diajukan:0,diverifikasi:1,menunggu_konfirmasi:1,dibayar:2,terbit:3};return (m[s]===undefined)?0:m[s];}
+
+function _skLocalPatch(code,patch){try{var rows=_lsGet('bwkSimaksi',[]);for(var i=0;i<rows.length;i++){if(rows[i]&&rows[i].code===code){Object.assign(rows[i],patch);_lsSet('bwkSimaksi',rows);return rows[i];}}}catch(e){}return null;}
+function skPaymentPick(inp,code){if(!(inp&&inp.files&&inp.files[0]))return;var f=inp.files[0],ok=['image/jpeg','image/png','image/webp'].indexOf((f.type||'').toLowerCase())>=0;if(!ok){inp.value='';toast('Bukti harus berupa JPEG, PNG, atau WebP','err');return;}if(f.size>5*1024*1024){inp.value='';toast('Ukuran bukti maksimal 5 MB','err');return;}toast('Memproses bukti pembayaran...','ok');_compressImg(f,function(data){if(!data){toast('Bukti pembayaran tidak dapat diproses','err');return;}if(data.length>1500000){toast('Bukti terlalu besar. Gunakan foto yang lebih jelas dan ringkas','err');return;}_skPaymentDraft[code]=data;renderSimaksi();});}
+function skPaymentSubmit(code){var proof=_skPaymentDraft[code];if(!proof){toast('Pilih foto bukti pembayaran terlebih dahulu','err');return;}var c=(typeof _sbClient==='function')?_sbClient():null;var done=function(ok,msg){if(ok){_skLocalPatch(code,{stage:'menunggu_konfirmasi',payment_proof:proof,payment_submitted_at:new Date().toISOString()});delete _skPaymentDraft[code];renderSimaksi();toast('Bukti dikirim. Menunggu konfirmasi petugas','ok');}else{toast(msg||'Gagal mengirim bukti. Coba lagi atau hubungi petugas','err');}};if(!c){done(true);return;}c.rpc('submit_simaksi_payment',{p_code:code,p_payment_proof:proof}).then(function(res){if(res&&res.error){done(false,res.error.message);return;}done(true);}).catch(function(){done(false);});}
+
 
 function _skStatusHtml(){
   var arr=[];try{arr=_lsGet('bwkSimaksi',[]);}catch(e){}
-  var lookup=`<div class='form-card'><div class='fld'><label>Cek dengan Kode Registrasi</label><div class='frow' style='gap:8px'><input id='sk-cek' placeholder='SMK-XXXXX' style='flex:1'/><button class='btn g-indigo' style='width:auto;padding:0 16px' onclick='skCek()'>Cek</button></div></div><div id='skCekRes'></div>`;
+  var last=_skLastCode();
+  var lookup=`<div class='skmy-hero'><h3>👤 SIMAKSI Saya</h3><p>Lihat nomor pengajuan, status terbaru, kode PNBP, dan dokumen SIMAKSI yang sudah terbit.</p></div><div class='form-card'><div class='fld'><label>Cari Nomor Pengajuan</label><div class='frow' style='gap:8px'><input id='sk-cek' value='${_skEsc(last)}' placeholder='SMK-XXXXX' style='flex:1;text-transform:uppercase'/><button class='btn g-indigo' style='width:auto;padding:0 16px' onclick='skCek()'>Cek</button></div><small class='fhint'>Masukkan nomor pengajuan jika membuka aplikasi dari perangkat lain.</small></div><div id='skCekRes'></div></div>`;
   var list='';
-  if(arr&&arr.length){list=`<div class='sh'><span class='bar' style='background:var(--g-indigo,#4b47e6)'></span><h3>Pengajuan Saya</h3></div>`+arr.map(function(r){return _skStatusCard(r);}).join('');}
-  else{list=`<div class='aempty' style='text-align:center;color:#8b98ad;padding:20px'>Belum ada pengajuan di perangkat ini. Gunakan kode registrasi untuk mengecek status.</div>`;}
+  if(arr&&arr.length){list=`<div class='sh'><span class='bar' style='background:var(--g-indigo,#4b47e6)'></span><h3>Pengajuan di Perangkat Ini</h3></div>`+arr.map(function(r){return _skStatusCard(r);}).join('');}
+  else{list=`<div class='aempty' style='text-align:center;color:#8b98ad;padding:20px'>Belum ada SIMAKSI tersimpan di perangkat ini. Masukkan nomor pengajuan untuk melihat status.</div>`;}
   return lookup+list;
 }
 
@@ -154,13 +169,16 @@ function _skStatusCard(r){
   var cur=_skStageIdx(stage);
   var tl=`<div class='sktl'>`+steps.map(function(sp,i){var st=rej?'':(i<cur?'done':(i===cur?'on':''));return `<div class='sktl-i ${st}'><span class='sktl-d'>${i<cur?'✓':sp[2]}</span><span class='sktl-l'>${sp[1]}</span></div>`;}).join('')+`</div>`;
   var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';var body='';
-  if(rej){body=`<div class='skbox err'>❌ Pengajuan ditolak. Silakan hubungi petugas via WhatsApp untuk info lanjutan.</div>`;}
-  else if(stage==='diverifikasi'){body=`<div class='skbox pay'><b>💰 Menunggu Pembayaran PNBP</b><div class='pdet'><span>Kode Pembayaran</span><b>${r.pnbp_code||'-'}</b></div><div class='pdet'><span>Jumlah</span><b>${amt}</b></div><div class='pdet'><span>Tujuan</span><b>GoPay 082320124040 a.n Reichas Chelebes</b></div><small>Transfer sesuai jumlah, cantumkan kode pembayaran, lalu kirim bukti ke WhatsApp petugas. Dokumen terbit setelah pembayaran dikonfirmasi.</small></div>`;}
-  else if(stage==='dibayar'){body=`<div class='skbox pay'>🔎 Pembayaran sedang dikonfirmasi petugas. Dokumen SIMAKSI akan segera diterbitkan.</div>`;}
-  else if(stage==='terbit'){var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+r.code+' | '+(r.nama||'')+' | '+(r.jml||'')+' org');body=`<div id='sk-doc-${r.code||'x'}'><div class='permit'><h4>🎫 SIMAKSI Resmi</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class='code'>${r.code||''}</div><div class='qr'><img src='${qurl}' onerror='this.parentNode.innerHTML=&#39;📄&#39;'/></div><div class='pdet'><span>Ketua</span><b>${r.nama||''}</b></div><div class='pdet'><span>Anggota</span><b>${r.jml||''} orang</b></div><div class='pdet'><span>Jalur</span><b>${r.jalur||'-'}</b></div><div class='pdet'><span>Berlaku</span><b>${r.naik||''} s/d ${r.turun||''}</b></div><div class='tag ok'>✅ Sah dan Terverifikasi</div></div></div><button class='pdf-btn' onclick='printCard(&#39;sk-doc-${r.code||'x'}&#39;)'>⬇️ Simpan / Cetak PDF</button>`;}
-  else{body=`<div class='skbox'>📨 Pengajuan diterima, menunggu verifikasi petugas (maks 1x24 jam hari kerja). Notifikasi dikirim ke WhatsApp ${r.wa||'-'}.</div>`;}
+  var statusText=rej?'Ditolak':(stage==='terbit'?'Dokumen Terbit':(stage==='dibayar'?'Pembayaran Dikonfirmasi':(stage==='menunggu_konfirmasi'?'Bukti Sedang Dicek':(stage==='diverifikasi'?'Menunggu Pembayaran':'Menunggu Verifikasi'))));
+  var statusClass=rej?'no':(stage==='terbit'?'ok':(stage==='diverifikasi'||stage==='menunggu_konfirmasi'||stage==='dibayar'?'wait':''));
+  if(rej){body=`<div class='sknotice err'>❌ Pengajuan belum dapat disetujui. Hubungi petugas via WhatsApp untuk mengetahui dokumen atau data yang perlu diperbaiki.</div>`;}
+  else if(stage==='diverifikasi'){var draft=_skPaymentDraft[r.code||''];var preview=draft?`<img class='skproof-preview' src='${_skEsc(draft)}' alt='Pratinjau bukti pembayaran'/>`:'';var inputId='sk-pay-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');body=`<div class='skbox pay'><b>💰 Menunggu Pembayaran PNBP</b><div class='pdet'><span>Kode Pembayaran</span><b>${_skEsc(r.pnbp_code||'-')}</b></div><div class='pdet'><span>Jumlah</span><b>${_skEsc(amt)}</b></div><div class='pdet'><span>Tujuan</span><b>GoPay 082320124040 a.n Reichas Chelebes</b></div><small>Transfer sesuai jumlah dan kode pembayaran. Setelah itu, unggah bukti di bawah agar petugas dapat memeriksa pembayaran.</small></div><div class='skproof'><b>📎 Unggah Bukti Pembayaran</b><p>Gunakan screenshot atau foto bukti transfer yang jelas. Format JPEG, PNG, atau WebP · maksimal 5 MB.</p>${preview}<label class='skproof-label' for='${inputId}'>${draft?'↻ Ganti Foto Bukti':'📷 Pilih Foto Bukti'}</label><input id='${inputId}' type='file' accept='image/jpeg,image/png,image/webp' onchange='skPaymentPick(this,${JSON.stringify(String(r.code||''))})'/><button class='btn g-indigo' ${draft?'':'disabled'} onclick='skPaymentSubmit(${JSON.stringify(String(r.code||''))})'>${draft?'📤 Kirim Bukti ke Petugas':'Pilih Foto Terlebih Dahulu'}</button></div>`;}
+  else if(stage==='menunggu_konfirmasi'){var proof=_skAsset(r.payment_proof||'');body=`<div class='sknotice warn'>🔎 Bukti pembayaran sudah dikirim dan sedang diperiksa petugas. Dokumen SIMAKSI akan tersedia di kartu ini setelah pembayaran dikonfirmasi.</div>${proof?`<img class='skproof-preview' src='${_skEsc(proof)}' alt='Bukti pembayaran terkirim'/>`:''}`;}
+  else if(stage==='dibayar'){body=`<div class='sknotice ok'>✅ Pembayaran telah dikonfirmasi. Petugas sedang menyiapkan dokumen SIMAKSI resmi Anda.</div>`;}
+  else if(stage==='terbit'){var safeCode=_skEsc(r.code||'');var docId='sk-doc-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent('SIMAKSI '+r.code+' | '+(r.nama||'')+' | '+(r.jml||'')+' org');body=`<div id='${docId}'><div class='permit'><h4>🎫 Dokumen SIMAKSI Resmi</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class='code'>${safeCode}</div><div class='qr'><img src='${qurl}' onerror='this.parentNode.innerHTML=&#39;📄&#39;'/></div><div class='pdet'><span>Ketua</span><b>${_skEsc(r.nama||'')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'')} orang</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Berlaku</span><b>${_skEsc(r.naik||'')} s/d ${_skEsc(r.turun||'')}</b></div><div class='tag ok'>✅ Sah dan Terverifikasi</div></div></div><button class='pdf-btn' onclick='printCard(&#39;${docId}&#39;)'>⬇️ Simpan / Cetak Dokumen</button>`;}
+  else{body=`<div class='sknotice ok'>📨 Pengajuan diterima. Petugas akan memverifikasi maksimal 1×24 jam pada hari kerja. Pembaruan dikirim ke WhatsApp ${_skEsc(r.wa||'-')}.</div>`;}
   var wa='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent('Halo, saya menanyakan status SIMAKSI kode '+(r.code||'')+' a.n '+(r.nama||'')+'.');
-  return `<div class='skstat'><div class='skstat-h'><b>${r.code||''}</b><small>${r.jalur||''} · ${r.jml||''} org</small></div>${tl}${body}<a class='btn gh' style='text-decoration:none;text-align:center;display:block;margin-top:8px' href='${wa}' target='_blank' rel='noopener'>💬 Tanya Petugas via WhatsApp</a></div>`;
+  return `<div class='skstat'><div class='skstat-h'><div><b>Nomor Pengajuan</b><div style='font-size:16px;margin-top:2px'>${_skEsc(r.code||'-')}</div></div><span class='skstat-badge ${statusClass}'>${statusText}</span></div><div class='skstat-meta'><div><small>Status</small><b>${statusText}</b></div><div><small>Kode PNBP</small><b>${_skEsc(r.pnbp_code||'Belum tersedia')}</b></div><div><small>Jalur</small><b>${_skEsc(r.jalur||'-')}</b></div><div><small>Jadwal</small><b>${_skEsc(r.naik||'-')} – ${_skEsc(r.turun||'-')}</b></div></div>${tl}${body}<a class='btn gh' style='text-decoration:none;text-align:center;display:block;margin-top:8px' href='${wa}' target='_blank' rel='noopener'>💬 Tanya Petugas via WhatsApp</a></div>`;
 }
 
 function _skInfoHtml(){
@@ -173,24 +191,27 @@ function _skFindRow(ref,cloud){var rows=_skRows||[];if(cloud){for(var i=0;i<rows
 
 function _skAdminCard(r,ref,cloud){
   var stage=r.stage||'diajukan';var rej=(stage==='ditolak'||r.astatus==='ditolak');
-  var badge=rej?`<span class='abadge no'>Ditolak</span>`:(stage==='terbit'?`<span class='abadge ok'>Terbit</span>`:(stage==='dibayar'?`<span class='abadge'>Dibayar</span>`:(stage==='diverifikasi'?`<span class='abadge'>Menunggu Bayar</span>`:`<span class='abadge'>Baru</span>`)));
+  var badge=rej?`<span class='abadge no'>Ditolak</span>`:(stage==='terbit'?`<span class='abadge ok'>Terbit</span>`:(stage==='dibayar'?`<span class='abadge'>Dibayar</span>`:(stage==='menunggu_konfirmasi'?`<span class='abadge'>Bukti Dicek</span>`:(stage==='diverifikasi'?`<span class='abadge'>Menunggu Bayar</span>`:`<span class='abadge'>Baru</span>`))));
   var docs='';
   var ktp=_skAsset(r.ktp),doc=_skAsset(r.doc);
   if(ktp)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;margin-right:6px;border-radius:8px' src='${_skEsc(ktp)}' alt='Lampiran identitas' loading='lazy' onclick='openImg(this.src)'/>`;
   if(doc)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;border-radius:8px' src='${_skEsc(doc)}' alt='Lampiran dokumen' loading='lazy' onclick='openImg(this.src)'/>`;
   if(!docs)docs=`<small style='color:#8b98ad'>Tidak ada berkas terlampir</small>`;
   var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';
-  var pnbp=r.pnbp_code?`<div class='pdet'><span>Kode PNBP</span><b>${r.pnbp_code}</b></div>`:'';
+  var paymentProof=_skAsset(r.payment_proof||'');
+  var proofHtml=paymentProof?`<div class='skproof-admin'><small style='color:#8b98ad'>Bukti pembayaran pemohon</small><img src='${_skEsc(paymentProof)}' alt='Bukti pembayaran' loading='lazy' onclick='openImg(this.src)'/></div>`:'';
+  var pnbp=r.pnbp_code?`<div class='pdet'><span>Kode PNBP</span><b>${_skEsc(r.pnbp_code)}</b></div>`:'';
   var rf=cloud?(`&#39;`+String(ref).replace(/'/g,'')+`&#39;`):ref;
   var cf=cloud?'true':'false';
   var btns='';
   var del=`<button class='btn gh sk-del' onclick='skAdminDelete(${rf},${cf})'>🗑️ Hapus Aktivitas</button>`;
   if(!rej&&stage==='diajukan'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;verif&#39;)'>✅ Verifikasi + Terbitkan Kode PNBP</button><button class='btn gh' onclick='skAdminAct(${rf},${cf},&#39;tolak&#39;)'>❌ Tolak</button>`;}
   else if(!rej&&stage==='diverifikasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>💰 Tandai Sudah Bayar</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Kode via WA</button>`;}
+  else if(!rej&&stage==='menunggu_konfirmasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>✅ Konfirmasi Pembayaran</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Tanya Pemohon</button>`;}
   else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>`;}
   else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>`;}
   else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>`;}
-  return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='sk-delete-top'>${del}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
+  return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='sk-delete-top'>${del}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div>${proofHtml}</div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
 }
 
 function skAdminAct(ref,cloud,action){
