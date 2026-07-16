@@ -621,6 +621,17 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
   .cert-row{display:flex;gap:10px}
   .cert-row label{flex:1;min-width:0}
   @media print{.topbar,.nav,.subnav,.pdf-btn,.hero-logout,.prof-chip,.note{display:none!important}body{background:#fff!important}body *{visibility:hidden}.print-target,.print-target *{visibility:visible}.print-target{position:absolute!important;left:0;top:0;width:92%!important;margin:0 4%!important;box-shadow:none!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* Beranda HP: seluruh laporan & kategori tanpa geser */
+@media(max-width:899px){
+ .home-tools .catbar{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:7px}.home-tools .catbtn{min-width:0!important;justify-content:center;padding:9px 5px!important;font-size:11px;white-space:normal}.home-tools .catdesc{min-height:36px}
+ .home-section-title.compact{align-items:flex-start;flex-wrap:wrap}.home-section-title.compact .text-action{width:100%;padding:10px 12px;border:1px solid #2f8a70;border-radius:11px;background:#e8f5ef;text-align:center;margin-top:2px}
+ #beranda .feed{display:block!important;overflow:visible!important;padding-right:0!important;scroll-snap-type:none!important;width:100%!important;max-width:100%!important;min-width:0!important}#beranda .feed .rcard{width:100%!important;max-width:100%!important;min-width:0!important;margin:0 0 10px!important;scroll-snap-align:none!important}
+ .home-action.emergency{animation:sosGuardPulse 2.8s ease-in-out infinite}.home-action.emergency span{animation:sosIconBeat 2.8s ease-in-out infinite}
+}
+@keyframes sosGuardPulse{0%,100%{box-shadow:0 8px 18px rgba(0,0,0,.12)}50%{box-shadow:0 0 0 4px rgba(225,70,65,.18),0 10px 22px rgba(201,68,58,.22)}}
+@keyframes sosIconBeat{0%,72%,100%{transform:scale(1)}78%{transform:scale(1.14)}84%{transform:scale(.98)}}
+.support-fab{width:70px!important;height:70px!important;margin-top:-40px!important;flex-direction:column;gap:0;font-size:23px!important;background:linear-gradient(145deg,#0f8765,#26705a)!important;border-width:4px!important;box-shadow:0 10px 24px rgba(15,135,101,.38)!important}.support-fab span{line-height:23px}.support-fab small{display:block;font-size:9px;font-weight:900;letter-spacing:.04em;color:#fff;line-height:12px}.support-fab:active{transform:scale(.92)!important}@keyframes supportGlow{0%,100%{box-shadow:0 10px 24px rgba(15,135,101,.38)}50%{box-shadow:0 0 0 5px rgba(70,204,150,.18),0 11px 25px rgba(15,135,101,.42)}}.support-fab{animation:supportGlow 3.5s ease-in-out infinite}@media(prefers-reduced-motion:reduce){.support-fab{animation:none}}
 </style>
 <script>(function(){try{if(localStorage.getItem("bwkTheme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();</script>
 <style id="hxcss">
@@ -894,7 +905,7 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
           <button class="home-action permit" onclick="go('simaksi')"><span>🎫</span><b>SIMAKSI</b><small>Ajukan izin</small></button>
           <button class="home-action route" onclick="go('peta')"><span>🗺️</span><b>Peta jalur</b><small>Pos & sumber air</small></button>
           <button class="home-action report" onclick="go('lapor')"><span>📷</span><b>Buat laporan</b><small>Kondisi lapangan</small></button>
-          <button class="home-action emergency" onclick="openSOS()"><span>🆘</span><b>SOS</b><small>Mode darurat</small></button>
+          <button class="home-action emergency" onclick="sosGuard()"><span>🆘</span><b>SOS</b><small>Tahan 3 dtk · Darurat</small></button>
         </div>
       </aside>
     </div>
@@ -1236,7 +1247,7 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
   <div class="nav">
     <button class="tab on" data-tab="beranda" onclick="go('beranda')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v6"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Beranda</button>
     <button class="tab" data-tab="eksplor" onclick="go('eksplor')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg></span>Eksplor</button>
-    <button class="fab" onclick="go('lapor')" title="Lapor insiden" aria-label="Buat laporan"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true" style="width:26px;height:26px"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+    <button class="fab support-fab" onclick="openSupportHub()" title="Dukung Gunung: Adopsi & Donasi" aria-label="Dukung Gunung: Adopsi Pohon dan Donasi"><span>💚</span><small>Dukung</small></button>
     <button class="tab" data-tab="komunitas" onclick="go('komunitas')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Komunitas</button>
     <button class="tab" data-tab="profil" onclick="go('profil')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profil</button>
   </div>
@@ -1461,6 +1472,7 @@ var RC_EMAIL='songkrangveo@gmail.com';
 function _lsGet(k,d){try{var v=JSON.parse(localStorage.getItem(k));return (v==null)?d:v;}catch(e){return d;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 var holdTimer,holdStart;
+function sosGuard(){document.getElementById('sheetBody').innerHTML='<h2 style="margin:0 0 8px;color:#b83232">🆘 Konfirmasi keadaan darurat</h2><p style="color:#59627a;line-height:1.55">SOS hanya untuk ancaman keselamatan nyata: cedera serius, tersesat, hipotermia, atau kondisi yang membutuhkan bantuan segera.</p><div class="sknotice warn" style="margin:12px 0"><b>Setelah dibuka, tahan tombol SOS selama 3 detik</b><br>Lokasi GPS akan diminta sebelum pesan bantuan disiapkan.</div><button class="btn" style="background:#c9443a;color:#fff" onclick="closeSheet();openSOS()">Saya dalam keadaan darurat</button><button class="btn" style="margin-top:8px" onclick="closeSheet()">Batal</button>';openSheet();}
 function openSOS(){document.getElementById('sos').classList.add('show');document.getElementById('sosStatus').textContent='';document.getElementById('fill').style.height='0';}
 function closeSOS(){document.getElementById('sos').classList.remove('show');cancelHold();}
 function startHold(){holdStart=Date.now();holdTimer=setInterval(function(){var p=Math.min((Date.now()-holdStart)/3000,1);document.getElementById('fill').style.height=(p*100)+'%';if(p>=1){cancelHold();sosSent();}},40);}
@@ -2344,5 +2356,5 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="sos.js"></script>
 <script src="chat.js"></script>
 <script src="hike.js"></script>
-</body>
+<script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px" onclick="closeSheet();go(\'arsip\')">📜 Lihat sertifikat & riwayat</button>';openSheet();}</script></body>
 </html>
