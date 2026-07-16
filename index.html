@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Bawakaraeng Hub</title>
 <link rel="manifest" href="/manifest.json"/>
-<meta name="theme-color" content="#ff2d55"/>
+<meta name="theme-color" content="#10243D"/>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <link rel="icon" type="image/png" href="/icon-192.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -32,8 +32,8 @@
 <style>
   :root{
     --ink:#141a2c; --sub:#565f78; --line:#eceef4; --canvas:#f4f6fb; --card:#ffffff;
-    --brand:#ff2d55; --brand2:#ff6b6b;
-    --g-brand:linear-gradient(135deg,#ff6b6b,#ff2d55);
+    --brand:#26705a; --brand2:#2f8a70;
+    --g-brand:linear-gradient(135deg,#2f8a70,#26705a);
     --g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);
     --g-green:linear-gradient(135deg,#2af598,#08b96f);
     --g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);
@@ -492,20 +492,32 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .intro-ov.hide{opacity:0;pointer-events:none}
 .intro-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .intro-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(8,12,24,.95) 0%,rgba(8,12,24,.72) 55%,rgba(8,12,24,.5) 100%)}
-.intro-card{position:relative;z-index:2;max-width:430px;width:100%;margin:auto;text-align:center;color:#fff;padding:16px 24px;animation:introPop .6s ease}
+.intro-card{position:relative;z-index:2;max-width:520px;width:100%;margin:auto;text-align:center;color:#fff;padding:28px 24px;animation:introPop .6s ease}
 @keyframes introPop{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
-.intro-icon{width:122px;height:122px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.24),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.38);display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+.intro-icon{width:96px;height:96px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.24),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.38);display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.4)}
 .intro-icon span{position:relative;z-index:2;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
-.intro-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%;position:relative;z-index:2}
+.intro-icon img{width:100%;height:100%;object-fit:contain;padding:7px;border-radius:50%;position:relative;z-index:2;background:#fff;box-sizing:border-box}
 .intro-icon::before,.intro-icon::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(255,255,255,.55);animation:introPulse 2.4s ease-out infinite}
 .intro-icon::after{animation-delay:1.2s}
 @keyframes introPulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}
-.intro-title{font-size:34px;line-height:1.08;font-weight:900;letter-spacing:.5px;margin:0 0 14px;text-shadow:0 2px 18px rgba(0,0,0,.55)}
-.intro-sub{font-size:14px;line-height:1.6;color:#e9eef7;margin:0 auto 30px;max-width:330px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.intro-title{font-size:38px;line-height:1.08;font-weight:900;letter-spacing:.5px;margin:0 0 14px;text-shadow:0 2px 18px rgba(0,0,0,.55)}
+.intro-sub{font-size:14px;line-height:1.6;color:#e9eef7;margin:0 auto 20px;max-width:380px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
 .intro-eco{font-size:12px;letter-spacing:1.5px;font-weight:800;text-transform:uppercase;color:#ffd27a;margin:-4px auto 14px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
-.intro-btn{width:100%;max-width:360px;padding:16px;border:none;border-radius:16px;background:var(--g-brand);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(255,45,85,.5)}
+.intro-btn{width:100%;max-width:380px;padding:15px 18px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#26705a;color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(5,20,18,.34)}
 .intro-btn:active{transform:scale(.98)}
-.intro-tri{display:flex;flex-direction:column;gap:10px;text-align:left;margin:0 auto 26px;max-width:360px}
+.intro-actions{margin:0 auto 20px;max-width:380px}
+.intro-proof{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;color:#dce7ed;font-size:11.5px;font-weight:700}
+.tripartit-more{max-width:400px;margin:0 auto;text-align:left;border-top:1px solid rgba(255,255,255,.16);padding-top:14px}
+.tripartit-more>summary{list-style:none;text-align:center;color:#e9eef7;font-size:13px;font-weight:800;cursor:pointer;padding:10px;border-radius:10px}
+.tripartit-more>summary::-webkit-details-marker{display:none}
+.tripartit-more>summary::after{content:'  ↓';color:#ffd27a}
+.tripartit-more[open]>summary::after{content:'  ↑'}
+.login-benefits{display:grid;gap:8px;margin:0 auto 18px;max-width:338px;text-align:left}
+.login-benefit{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.05);color:#dce7f3;font-size:12.5px}
+.login-benefit b{color:#fff}
+@media(min-width:760px){.intro-card{padding:36px 28px}.intro-title{font-size:42px}.login-card{max-width:430px}}
+@media(max-width:420px){.intro-card{padding:22px 20px}.intro-title{font-size:32px}.intro-icon{width:88px;height:88px}.intro-proof{gap:8px;font-size:11px}}
+.intro-tri{display:flex;flex-direction:column;gap:10px;text-align:left;margin:14px auto 0;max-width:400px}
 .intro-node{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:15px;padding:12px 14px}
   .tri-lead{font-size:12.5px;line-height:1.55;color:#e9eef7;margin:0 auto 12px;max-width:360px}
   .intro-acc{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:15px;overflow:hidden}
@@ -895,7 +907,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Bawakaraeng Hub · Versi 25</div>
+    <div class="appver">Bawakaraeng Hub · Versi 11</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1672,7 +1684,7 @@ function openPub(url){if(!url){if(window.toast)toast('Tautan belum tersedia');re
 function _rcWA(){try{return (SOS_CONTACTS&&SOS_CONTACTS[0]&&SOS_CONTACTS[0].p)||'6282320124040';}catch(e){return '6282320124040';}}
 function openNotif(){var items=[{ic:'\U0001F331',t:'Ajakan tanam bibit',d:'Agenda penghijauan terdekat ada di menu Agenda.',tm:'Hari ini'},{ic:'\u26C5',t:'Prakiraan cuaca diperbarui',d:'Cek tab Cuaca untuk kondisi puncak terbaru.',tm:'Baru'}];try{if(typeof reports!=='undefined'&&reports){reports.slice(0,5).forEach(function(r){items.push({ic:'\U0001F4CD',t:r.title||'Laporan',d:(r.desc||'').slice(0,70),tm:r.time||''});});}}catch(e){}var html='<h2 style="margin:0 0 12px">\U0001F514 Notifikasi</h2>'+items.map(function(n){return `<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eef1f5"><div style="font-size:20px">${n.ic}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${n.t}</div><div style="color:#667;font-size:12px">${n.d}</div></div><div style="color:#99a;font-size:12px;white-space:nowrap">${n.tm}</div></div>`;}).join('');document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openAllReports(){var html='<h2 style="margin:0 0 12px">📋 Semua Laporan</h2>';try{if(_feedRows&&_feedRows.length){html+=_feedRows.map(function(r,i){var who=r.user_name||r.name||'Warga';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'');return '<div onclick="closeSheet();openFeedReport('+i+')" style="padding:11px 0;border-bottom:1px solid #eef1f5;cursor:pointer"><div style="font-weight:700;font-size:14px">'+(r.title||'Laporan')+'</div><div style="color:#667;font-size:12px">'+(r.description||r.desc||'')+'</div><div style="color:#99a;font-size:12px;margin-top:3px">'+who+' · '+when+(r.photo?' · 📷 lihat foto':'')+'</div></div>';}).join('');}else{html+='<p style="color:#889">Belum ada laporan.</p>';}}catch(e){html+='<p style="color:#889">Belum ada laporan.</p>';}document.getElementById('sheetBody').innerHTML=html;openSheet();}
-function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Bawakaraeng Hub \u00b7 Reichas Chelebes<br>PWA v10 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
+function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Bawakaraeng Hub \u00b7 Reichas Chelebes<br>PWA v11 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openHelp(){var wa='https://wa.me/'+_rcWA();var faq=[['Cara lapor temuan/insiden?','Buka menu Lapor, unggah foto, isi deskripsi & lokasi, lalu kirim.'],['Apa itu SIMAKSI?','Surat Izin Masuk Kawasan Konservasi \u2014 ajukan lewat menu SIMAKSI sebelum mendaki.'],['Cara kerja tombol SOS?','Tahan tombol 3 detik; aplikasi menyiapkan lokasi GPS untuk dibagikan ke tim & panggilan darurat.'],['Apakah data saya tersimpan?','Laporan & jurnal tersimpan di perangkat Anda.']];var html='<h2 style="margin:0 0 12px">\u2753 Bantuan</h2>'+faq.map(function(f){return `<details style="border-bottom:1px solid #eef1f5;padding:10px 0"><summary style="font-weight:700;font-size:14px;cursor:pointer">${f[0]}</summary><div style="color:#667;font-size:13px;margin-top:6px">${f[1]}</div></details>`;}).join('');html+=`<a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:14px" href="${wa}" target="_blank" rel="noopener">\U0001F4F2 Hubungi Tim Reichas Chelebes</a><a class="btn" style="display:block;text-decoration:none;text-align:center;margin-top:8px" href="mailto:${RC_EMAIL}">\u2709\ufe0f ${RC_EMAIL}</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function kirimRiset(){var body=document.getElementById('sheetBody');var vals=[];if(body){var fs=body.querySelectorAll('input,textarea,select');for(var i=0;i<fs.length;i++){var f=fs[i];var v=(f.value||'').trim();if(v){var lab=f.getAttribute('placeholder')||f.name||('Isian '+(i+1));vals.push(lab+': '+v);}}}var txt=vals.length?vals.join('\n'):'(form belum diisi)';var subj=encodeURIComponent('Pengajuan Riset \u2014 Bawakaraeng Hub');var mb=encodeURIComponent('Halo Tim Reichas Chelebes,\n\nSaya mengajukan riset/kolaborasi:\n\n'+txt+'\n\nTerima kasih.');closeSheet();window.location.href='mailto:'+RC_EMAIL+'?subject='+subj+'&body='+mb;if(window.toast)toast('Membuka email pengajuan\u2026','ok');}
 function openRisetForm(){
@@ -1803,32 +1815,43 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
   </svg>
   <div class="intro-scrim"></div>
   <div class="intro-card">
-    <div class="intro-icon"><img id="introLogo" alt="Reichas Chelebes"/></div>
+    <div class="intro-icon"><img id="introLogo" src="rc-logo.jpg" alt="Reichas Chelebes"/></div>
     <h1 class="intro-title">PANTAU<br/>BAWAKARAENG</h1>
     <div class="intro-eco">Ekosistem Gunung Bulu Bawakaraeng</div>
-    <p class="intro-sub">Konservasi lingkungan, tata kelola hutan dan keselamatan pendakian dalam satu aplikasi.</p>
-        <div class="intro-tri">
+    <p class="intro-sub">Pantau cuaca, jalur, keselamatan, dan aksi konservasi Bawakaraeng dalam satu aplikasi.</p>
+    <div class="intro-actions">
+      <button class="intro-btn" onclick="enterApp()">Mulai Pantau Bawakaraeng →</button>
+      <div class="intro-proof"><span>✓ Informasi jalur</span><span>✓ Laporan lapangan</span><span>✓ Respons darurat</span></div>
+    </div>
+    <details class="tripartit-more">
+      <summary>Pelajari kolaborasi Tripartit</summary>
+      <div class="intro-tri">
       <p class="tri-lead">Pendekatan <b>Tripartit</b> membagi peran secara taktis demi kelestarian kawasan. Ketuk tiap pilar untuk melihat tugas &amp; fungsinya (tusi).</p><div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-blue"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></svg></div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Pemegang kendali legalitas, kebijakan &amp; pendanaan — melalui BBKSDA, Dinas Kehutanan, atau Pemerintah Daerah setempat.</p><h5>⚖️ Regulasi (Kebijakan Terarah)</h5><ul><li>Menyusun payung hukum tata tertib pendakian, zona konservasi, perlindungan flora &amp; fauna endemik, serta sanksi bagi pelanggar lingkungan.</li><li>Menetapkan kuota harian pendakian (carrying capacity) agar ekosistem tidak tertekan akibat over-tourism.</li></ul><h5>📝 Perizinan (Sistem Kontrol)</h5><ul><li>Mengatur izin masuk kawasan hutan (SIMAKSI).</li><li>Mengontrol izin penelitian, wisata minat khusus, maupun kegiatan adat/budaya.</li></ul><h5>💰 Penganggaran (Budgeting)</h5><ul><li>Mengalokasikan dana APBD/APBN untuk fasilitas konservasi: pos registrasi, jalur evakuasi, rambu, shelter.</li><li>Mendanai pemulihan ekosistem — reboisasi pasca-kebakaran &amp; rehabilitasi lahan kritis.</li></ul></div></div>
       <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-green"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Ujung tombak &amp; eksekutor langsung di lapangan — pendaki, komunitas pencinta alam (KPA), relawan, SAR, serta warga lokal (Lembanna).</p><h5>🛖 Pengelola &amp; Keamanan Lokal (Warga Sekitar)</h5><ul><li>Garda terdepan pengawasan pintu masuk (Pos Lembanna) &amp; penyedia jasa pemandu (porter/guide) lokal yang paham etika konservasi.</li><li>Menerapkan hukum adat/kearifan lokal demi menjaga kesucian spiritual &amp; keasrian fisik gunung.</li></ul><h5>🌱 Eksekutor Pemulihan (Komunitas &amp; Relawan)</h5><ul><li>Bersih gunung (clean-up) berkala untuk meminimalkan sampah plastik dari pos hingga puncak.</li><li>Penanaman pohon swadaya di area tangkapan air &amp; jalur rawan erosi.</li></ul><h5>🥾 Penerap Aturan (Para Pendaki)</h5><ul><li>Mematuhi standar keselamatan &amp; zero waste hiking.</li><li>Mengawasi sesama pendaki untuk mencegah vandalisme, perburuan liar &amp; api unggun pemicu kebakaran.</li></ul></div></div>
-      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Konektor cerdas antara kebijakan pemerintah &amp; aksi masyarakat — fokus pada tata kelola informasi &amp; pemantauan Gunung Bawakaraeng.</p><h5>🔗 Jembatan Data (Digitalisasi &amp; Integrasi)</h5><ul><li>Menyediakan sistem registrasi &amp; pendataan pendaki terintegrasi untuk melacak siapa saja yang naik dan turun gunung.</li><li>Mengumpulkan data riil lapangan (volume sampah, kerusakan jalur, frekuensi evakuasi) sebagai bahan evaluasi kebijakan.</li></ul><h5>📡 Sistem Monitoring (Supervisi)</h5><ul><li>Pemantauan berkala kepatuhan pendaki &amp; pengelolaan pos pintu masuk.</li><li>Membangun sistem peringatan dini (early warning) &amp; koordinasi darurat saat cuaca ekstrem, kebakaran, atau pendaki hilang.</li></ul><h5>📣 Edukasi &amp; Advokasi</h5><ul><li>Menyosialisasikan regulasi rumit ke bahasa praktis yang mudah dipahami komunitas &amp; masyarakat awam.</li><li>Mengadvokasi hak masyarakat lokal &amp; kebutuhan lapangan agar diakomodasi dalam kebijakan/anggaran pemerintah.</li></ul></div></div><div class="tri-concl"><b>Sinergi Tripartit:</b> Pemerintah menyiapkan wadah hukum &amp; dana, Reichas Chelebes menyediakan sistem kendali informasi &amp; pengawasan data, sementara Masyarakat menggerakkan fisiknya merawat langsung ekosistem Gunung Bawakaraeng secara berkelanjutan.</div>
-    </div>
-    <button class="intro-btn" onclick="enterApp()">Masuk Aplikasi →</button>
+      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-brand"><img id="introLogo2" src="rc-logo.jpg" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Konektor cerdas antara kebijakan pemerintah &amp; aksi masyarakat — fokus pada tata kelola informasi &amp; pemantauan Gunung Bawakaraeng.</p><h5>🔗 Jembatan Data (Digitalisasi &amp; Integrasi)</h5><ul><li>Menyediakan sistem registrasi &amp; pendataan pendaki terintegrasi untuk melacak siapa saja yang naik dan turun gunung.</li><li>Mengumpulkan data riil lapangan (volume sampah, kerusakan jalur, frekuensi evakuasi) sebagai bahan evaluasi kebijakan.</li></ul><h5>📡 Sistem Monitoring (Supervisi)</h5><ul><li>Pemantauan berkala kepatuhan pendaki &amp; pengelolaan pos pintu masuk.</li><li>Membangun sistem peringatan dini (early warning) &amp; koordinasi darurat saat cuaca ekstrem, kebakaran, atau pendaki hilang.</li></ul><h5>📣 Edukasi &amp; Advokasi</h5><ul><li>Menyosialisasikan regulasi rumit ke bahasa praktis yang mudah dipahami komunitas &amp; masyarakat awam.</li><li>Mengadvokasi hak masyarakat lokal &amp; kebutuhan lapangan agar diakomodasi dalam kebijakan/anggaran pemerintah.</li></ul></div></div><div class="tri-concl"><b>Sinergi Tripartit:</b> Pemerintah menyiapkan wadah hukum &amp; dana, Reichas Chelebes menyediakan sistem kendali informasi &amp; pengawasan data, sementara Masyarakat menggerakkan fisiknya merawat langsung ekosistem Gunung Bawakaraeng secara berkelanjutan.</div>
+      </div>
+    </details>
   </div>
 </div>
 <div id="loginOverlay" class="login-ov">
   <div class="login-card">
-    <div class="login-ic"><img id="loginLogo" alt="RC"/></div>
+    <div class="login-ic"><img id="loginLogo" src="rc-logo.jpg" alt="Reichas Chelebes"/></div>
     <h2 class="login-h">Selamat Datang</h2>
-    <p class="login-p">Masuk untuk mulai memantau Ekosistem Gunung Bulu Bawakaraeng</p>
+    <p class="login-p">Satu akun untuk pemantauan, pelaporan, dan keselamatan pendakian.</p>
+    <div class="login-benefits">
+      <div class="login-benefit"><span>🌦️</span><span><b>Kondisi terkini</b> cuaca dan jalur</span></div>
+      <div class="login-benefit"><span>📍</span><span><b>Laporan lapangan</b> berbasis lokasi</span></div>
+      <div class="login-benefit"><span>🛡️</span><span><b>Data komunitas</b> tersimpan aman</span></div>
+    </div>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">🔒 Login hanya melalui akun Google demi keamanan data komunitas.</p>
-    <div class="login-ver">Versi 25</div>
+    <div class="login-ver">Versi 11</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
 <script>
 function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},420);}}
-window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='���️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
+window.addEventListener('load',function(){['introLogo','introLogo2','loginLogo'].forEach(function(id){var el=document.getElementById(id);if(el){el.src='rc-logo.jpg';}});});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
 <script>
@@ -1938,7 +1961,7 @@ var _SV_INNER="\n<div class=\"sv-hero\">\n  <h3>🧭 Aturan Bertahan Hidup</h3>\
 function renderSurvival(){var el=document.getElementById('sv-body');if(el)el.innerHTML=_SV_INNER;}
 window.renderSurvival=renderSurvival;
 function downloadSurvival(){
-  var css=":root{--g-amber:linear-gradient(135deg,#ffd15c,#ff9838);--g-blue:linear-gradient(135deg,#5e9dff,#2b6fff);--g-brand:linear-gradient(135deg,#ff6b6b,#ff2d55);--g-green:linear-gradient(135deg,#2af598,#08b96f);--g-indigo:linear-gradient(135deg,#7c8cff,#6a3ffb);--g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);--g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);--g-violet:linear-gradient(135deg,#c86bff,#8b3dff);--ink:#141a2c;--sub:#565f78;--card:#ffffff;--line:#e6e9f2;--shadow:0 4px 14px rgba(30,40,90,.08)}"
+  var css=":root{--g-amber:linear-gradient(135deg,#ffd15c,#ff9838);--g-blue:linear-gradient(135deg,#5e9dff,#2b6fff);--g-brand:linear-gradient(135deg,#2f8a70,#26705a);--g-green:linear-gradient(135deg,#2af598,#08b96f);--g-indigo:linear-gradient(135deg,#7c8cff,#6a3ffb);--g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);--g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);--g-violet:linear-gradient(135deg,#c86bff,#8b3dff);--ink:#141a2c;--sub:#565f78;--card:#ffffff;--line:#e6e9f2;--shadow:0 4px 14px rgba(30,40,90,.08)}"
    +"*{box-sizing:border-box}body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f6f8fc;color:var(--ink);line-height:1.5}"
    +".wrap{max-width:760px;margin:0 auto;padding:22px 18px 60px}"
    +".doc-head{display:flex;align-items:center;gap:14px;background:var(--g-sunset);color:#fff;border-radius:18px;padding:20px;margin-bottom:14px}"
