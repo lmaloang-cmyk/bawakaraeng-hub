@@ -1497,7 +1497,7 @@ async function loadLiveData(){
   box.innerHTML='<div class="li-skel"></div><div class="li-skel"></div><div class="li-skel"></div>';
   var html="";
   try{
-    var r=await fetch((window.API_BASE||"")+"/api/bmkg?adm4=73.06.04.1010");
+    var r=await fetch((window.API_BASE||"")+"/api/bmkg");
     if(r.ok){
       var d=await r.json();var c=d.cuaca,g=d.gempa;
       if(c){html+='<div class="li-row"><span class="li-ic">🌦️</span><div><b>'+(c.desc||"-")+(c.temp!=null?" · "+c.temp+"°C":"")+'</b><small>'+(c.area||"Kawasan Bawakaraeng")+'</small></div></div>';}
@@ -1700,7 +1700,7 @@ async function enrichSpecies(){
     if(done)return;done=true;
     var card=document.getElementById('wcard');
     try{
-      var r=await fetch((window.API_BASE||'')+'/api/bmkg?adm4=73.06.04.1010');
+      var r=await fetch((window.API_BASE||'')+'/api/bmkg');
       if(!r.ok)throw 0;
       var d=await r.json();var c=d.cuaca,g=d.gempa;
       if(card)card.classList.remove('loading');
@@ -1710,6 +1710,7 @@ async function enrichSpecies(){
         if(c.temp!=null)document.getElementById('wTemp').textContent=c.temp+'°';
         document.getElementById('wDesc').textContent=c.desc||'Cuaca terkini';
         document.getElementById('wArea').textContent=c.area||'Kawasan Gunung Bawakaraeng';
+        var src=document.getElementById('wSrc');if(src)src.textContent='Prakiraan BMKG · wilayah terdekat Bawakaraeng';
         if(c.humidity!=null)document.getElementById('wHum').textContent=c.humidity+'%';
         if(c.wind!=null)document.getElementById('wWind').textContent=c.wind+' km/j';
         if(c.image)setIcon(c.image);
