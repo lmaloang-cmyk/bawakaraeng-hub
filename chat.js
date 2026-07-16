@@ -53,15 +53,22 @@
   function _isAdmin(){try{var u=(typeof bwkUser==='function')?bwkUser():null;return !!(u&&u.role==='Admin');}catch(e){return false;}}
   function _name(){try{var n=localStorage.getItem('bwkChatName');if(n)return n;}catch(e){}try{var u=(typeof bwkUser==='function')?bwkUser():null;if(u&&u.name)return u.name;}catch(e){}return 'Pendaki';}
   function _esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-  function _fmtTime(iso){try{var d=new Date(iso);var now=new Date();var hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.toDateString()===now.toDateString())return hm;return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+hm;}catch(e){return '';}}
+  function _fmtTime(iso){try{var d=new Date(iso);var now=new Date();var hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');if(d.toDateString()===now.toDateString())return hm;return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}catch(e){return '';}}
+  function _blockedIds(){try{return JSON.parse(localStorage.getItem('bwkBlockedChatIds')||'[]')||[];}catch(e){return [];}}
+  function _isBlocked(m){return _blockedIds().indexOf(String((m&&m.user_id)||(m&&m.device)||''))>=0;}
+  function _messageIssue(text){var t=String(text||'').trim();if(!t)return 'Pesan tidak boleh kosong.';if(/(?:javascript|vbscript)\s*:/i.test(t)||/data:text\/html/i.test(t))return 'Tautan berbahaya tidak diizinkan.';if(/(?:bit\.ly|tinyurl\.com|t\.co|cutt\.ly)\//i.test(t))return 'Tautan pendek tidak diizinkan demi keamanan.';if(/(.)\1{11,}/.test(t))return 'Pesan terindikasi spam.';return '';}
+  function _marketNotice(){return curCh==='jualbeli'?'<div class="chat-ai-note">⚠️ <b>Jual-beli antar pengguna.</b> Transaksi, pembayaran, dan pengiriman dilakukan atas risiko masing-masing; bukan layanan resmi Reichas Chelebes.</div>':'';}
 
   function _tabsHtml(){return CHANNELS.map(function(ch){return `<button class='chtab${ch.id===curCh?' on':''}' onclick="chatGo('${ch.id}')">${ch.e} ${ch.n}</button>`;}).join('');}
   function _syncWho(){var e=document.getElementById('chatWhoName');if(e)e.textContent=_name();}
 
   function _rowHtml(m){
     var mine=(m.mine===true)||(m.device&&m.device===_devId());
-    var del=_isAdmin()?`<button class='chd' onclick="chatDel('${m.id}')" title='Hapus'>✕</button>`:'';
-    return `<div class='cmsg ${mine?'me':''}'><div class='cmb'><div class='cmh'><b>${_esc(m.name||'Pendaki')}</b><time>${_fmtTime(m.created_at)}</time>${del}</div><div class='cmt'>${_esc(m.body||'')}</div>${m.source?`<span class='chat-ai-source'>${_esc(m.source)}</span>`:''}</div></div>`;
+    if(!mine&&_isBlocked(m))return '<div class="cempty" style="padding:8px 12px;margin:0">Pesan dari pengguna yang diblokir disembunyikan.</div>';
+    var id=_esc(m.id||'');var actor=_esc((m.user_id||m.device||''));
+    var del=_isAdmin()&&id?`<button class='chd' onclick="chatDel('${id}')" title='Hapus pesan' aria-label='Hapus pesan'>✕</button>`:'';
+    var mod=!mine&&id?`<button class='chd' onclick="chatReport('${id}','${actor}')" title='Laporkan atau blokir' aria-label='Laporkan atau blokir pesan'>⚑</button>`:'';
+    return `<div class='cmsg ${mine?'me':''}'><div class='cmb'><div class='cmh'><b>${_esc(m.name||'Pendaki')}</b><time>${_fmtTime(m.created_at)}</time>${mod}${del}</div><div class='cmt'>${_esc(m.body||'')}</div>${m.source?`<span class='chat-ai-source'>${_esc(m.source)}</span>`:''}</div></div>`;
   }
 
   var _aiMsgs=[];
@@ -105,7 +112,8 @@
     var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},14000):null;
     var guest=false;try{var gu=(typeof bwkUser==='function')?bwkUser():null;guest=!!(gu&&gu.guest);}catch(e){}
     if(guest){wait.body=_localAi(t);wait.source='Panduan lokal · mode tamu';if(timer)clearTimeout(timer);_saveAiHistory();_aiRender();return;}
-    fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,context:_weatherContext()}),signal:ctrl?ctrl.signal:undefined})
+    var cli=_sb();var sessionP=cli?cli.auth.getSession():Promise.resolve({data:{session:null}});
+    sessionP.then(function(sr){var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;if(!token)throw new Error('Login required');return fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:t,context:_weatherContext()}),signal:ctrl?ctrl.signal:undefined});})
       .then(function(r){if(!r.ok)throw new Error('AI cloud unavailable');return r.json();})
       .then(function(d){wait.body=(d&&d.answer)?d.answer:_localAi(t);wait.source=(d&&d.source)||'Gemini';})
       .catch(function(){wait.body=_localAi(t);wait.source='Panduan lokal · gratis';})
@@ -117,29 +125,31 @@
   window.loadMsgs=function(force){
     if(curCh==='ai'){_aiRender();return;}
     var c=_sb();var box=document.getElementById('chatBody');if(!box)return;
-    if(!c){box.innerHTML='<div class="cempty">Sambungkan internet untuk memuat obrolan.</div>';return;}
+    if(!c){box.innerHTML=_marketNotice()+'<div class="cempty">Sambungkan internet untuk memuat obrolan.</div>';return;}
     c.from('messages').select('*').eq('channel',curCh).order('created_at',{ascending:true}).limit(300).then(function(res){
-      if(res.error){box.innerHTML='<div class="cempty">Gagal memuat obrolan.<br><small>'+(res.error.message||'')+'</small><br>Pastikan tabel <b>messages</b> sudah dibuat di Supabase.</div>';return;}
+      if(res.error){box.innerHTML=_marketNotice()+'<div class="cempty">Gagal memuat obrolan.<br><small>'+_esc(res.error.message||'')+'</small></div>';return;}
       var rows=res.data||[];var sig=rows.map(function(r){return r.id;}).join(',');
       if(!force&&sig===_lastSig)return;_lastSig=sig;
-      if(!rows.length){box.innerHTML='<div class="cempty">Belum ada pesan di channel ini.<br>Mulai obrolan! 👋</div>';return;}
+      if(!rows.length){box.innerHTML=_marketNotice()+'<div class="cempty">Belum ada pesan di channel ini.<br>Mulai obrolan! 👋</div>';return;}
       var atBottom=(box.scrollHeight-box.scrollTop-box.clientHeight)<90;
-      box.innerHTML=rows.map(_rowHtml).join('');
+      box.innerHTML=_marketNotice()+rows.map(_rowHtml).join('');
       if(atBottom||force)box.scrollTop=box.scrollHeight;
     }).catch(function(){});
   };
 
   window.sendMsg=function(){
-    var inp=document.getElementById('chatInput');if(!inp)return;var t=(inp.value||'').trim();if(!t)return;
+    var inp=document.getElementById('chatInput');if(!inp)return;var t=(inp.value||'').trim();if(!t)return;var issue=_messageIssue(t);if(issue){if(window.toast)toast(issue,'err');return;}
     if(curCh==='ai'){inp.value='';inp.style.height='auto';_askAi(t.slice(0,600));return;}
     try{var gu=(typeof bwkUser==='function')?bwkUser():null;if(gu&&gu.guest){if(typeof openGuestGate==='function')openGuestGate('mengirim pesan komunitas');return;}}catch(e){}
     var c=_sb();if(!c){if(window.toast)toast('Butuh koneksi internet','err');return;}
     inp.value='';inp.style.height='auto';
-    var row={channel:curCh,name:_name(),device:_devId(),body:t.slice(0,1000)};
-    c.from('messages').insert(row).select().then(function(res){if(res.error){if(window.toast)toast('Gagal kirim: '+res.error.message,'err');return;}_lastSig='';loadMsgs(true);}).catch(function(){if(window.toast)toast('Gagal kirim pesan','err');});
+    var now=Date.now();if(window._bwkLastChat&&now-window._bwkLastChat<3000){if(window.toast)toast('Tunggu sebentar sebelum mengirim lagi','err');return;}window._bwkLastChat=now;
+    var row={channel:curCh,name:_name().slice(0,24),device:_devId(),body:t.slice(0,1000)};
+    c.auth.getUser().then(function(ur){var user=ur&&ur.data&&ur.data.user;if(!user)throw new Error('Login required');row.user_id=user.id;return c.from('messages').insert(row).select();}).then(function(res){if(res.error){if(window.toast)toast('Pesan ditolak server','err');return;}_lastSig='';loadMsgs(true);}).catch(function(){if(window.toast)toast('Login diperlukan untuk mengirim','err');});
   };
 
   window.chatDel=function(id){if(!_isAdmin())return;if(!confirm('Hapus pesan ini?'))return;var c=_sb();if(!c)return;c.from('messages').delete().eq('id',id).then(function(res){if(res.error){if(window.toast)toast('Gagal hapus','err');return;}if(window.toast)toast('Pesan dihapus','ok');_lastSig='';loadMsgs(true);}).catch(function(){});};
+  window.chatReport=function(id,actor){var c=_sb();if(!c){if(window.toast)toast('Butuh koneksi untuk moderasi','err');return;}var reason=prompt('Alasan laporan (spam, penipuan, pelecehan, atau lainnya):','spam');if(reason===null)return;reason=String(reason).trim().slice(0,240)||'Laporan pengguna';var block=confirm('Blokir pengguna ini di perangkat Anda juga?');var saveBlock=function(){if(!block||!actor)return;var ids=_blockedIds();if(ids.indexOf(actor)<0){ids.push(actor);try{localStorage.setItem('bwkBlockedChatIds',JSON.stringify(ids.slice(-100)));}catch(e){}}};c.auth.getUser().then(function(ur){var u=ur&&ur.data&&ur.data.user;if(!u)throw new Error('Login required');return c.from('message_reports').insert({message_id:id,reporter_id:u.id,reason:reason});}).then(function(res){if(res.error)throw res.error;saveBlock();if(window.toast)toast(block?'Pesan dilaporkan dan pengguna diblokir':'Pesan dilaporkan ke admin','ok');loadMsgs(true);}).catch(function(){if(window.toast)toast('Login diperlukan untuk melaporkan pesan','err');});};
 
   window.chatName=function(){var cur=_name();var n=prompt('Nama tampil di chat:',cur);if(n==null)return;n=(n||'').trim().slice(0,24);if(!n)return;try{localStorage.setItem('bwkChatName',n);}catch(e){}_syncWho();};
 

@@ -59,6 +59,9 @@
 
 var SK_TARIF={lembanna:{label:'Via Lembanna',price:75000,dur:'2 hari 1 malam'},lembang:{label:'Via Lembang Bu ne',price:95000,dur:'3 hari 2 malam'}};
 var _skTab='ajukan';
+function _skEsc(v){return (typeof window.escapeHtml==='function'?window.escapeHtml(v):String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;'));}
+function _skAsset(v){return (typeof window.safeReportPhoto==='function'?window.safeReportPhoto(v):'');}
+
 var _skStep=1;
 var _skForm={};
 var _skKtp='';var _skKtpReady=false;var _skKtpFile=null;
@@ -172,8 +175,9 @@ function _skAdminCard(r,ref,cloud){
   var stage=r.stage||'diajukan';var rej=(stage==='ditolak'||r.astatus==='ditolak');
   var badge=rej?`<span class='abadge no'>Ditolak</span>`:(stage==='terbit'?`<span class='abadge ok'>Terbit</span>`:(stage==='dibayar'?`<span class='abadge'>Dibayar</span>`:(stage==='diverifikasi'?`<span class='abadge'>Menunggu Bayar</span>`:`<span class='abadge'>Baru</span>`)));
   var docs='';
-  if(r.ktp)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;margin-right:6px;border-radius:8px' src='${r.ktp}' onclick='openImg(this.src)'/>`;
-  if(r.doc)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;border-radius:8px' src='${r.doc}' onclick='openImg(this.src)'/>`;
+  var ktp=_skAsset(r.ktp),doc=_skAsset(r.doc);
+  if(ktp)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;margin-right:6px;border-radius:8px' src='${_skEsc(ktp)}' alt='Lampiran identitas' loading='lazy' onclick='openImg(this.src)'/>`;
+  if(doc)docs+=`<img class='rimg' style='cursor:zoom-in;max-width:82px;border-radius:8px' src='${_skEsc(doc)}' alt='Lampiran dokumen' loading='lazy' onclick='openImg(this.src)'/>`;
   if(!docs)docs=`<small style='color:#8b98ad'>Tidak ada berkas terlampir</small>`;
   var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';
   var pnbp=r.pnbp_code?`<div class='pdet'><span>Kode PNBP</span><b>${r.pnbp_code}</b></div>`:'';
@@ -185,7 +189,7 @@ function _skAdminCard(r,ref,cloud){
   else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>`;}
   else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>`;}
   else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>`;}
-  return `<div class='acard'><div class='ac-h'><b>🎫 ${r.code||''} · ${r.nama||'-'}</b>${badge}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${r.wa||'-'}</b></div><div class='pdet'><span>Jalur</span><b>${r.jalur||'-'}</b></div><div class='pdet'><span>Anggota</span><b>${r.jml||'-'} org · ${r.org||'-'}</b></div><div class='pdet'><span>Tanggal</span><b>${r.naik||'?'} s/d ${r.turun||'?'}</b></div><div class='pdet'><span>PNBP</span><b>${amt}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
+  return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
 }
 
 function skAdminAct(ref,cloud,action){
