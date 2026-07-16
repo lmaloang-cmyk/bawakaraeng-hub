@@ -632,6 +632,24 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 @keyframes sosGuardPulse{0%,100%{box-shadow:0 8px 18px rgba(0,0,0,.12)}50%{box-shadow:0 0 0 4px rgba(225,70,65,.18),0 10px 22px rgba(201,68,58,.22)}}
 @keyframes sosIconBeat{0%,72%,100%{transform:scale(1)}78%{transform:scale(1.14)}84%{transform:scale(.98)}}
 .support-fab{width:70px!important;height:70px!important;margin-top:-40px!important;flex-direction:column;gap:0;font-size:23px!important;background:linear-gradient(145deg,#0f8765,#26705a)!important;border-width:4px!important;box-shadow:0 10px 24px rgba(15,135,101,.38)!important}.support-fab span{line-height:23px}.support-fab small{display:block;font-size:9px;font-weight:900;letter-spacing:.04em;color:#fff;line-height:12px}.support-fab:active{transform:scale(.92)!important}@keyframes supportGlow{0%,100%{box-shadow:0 10px 24px rgba(15,135,101,.38)}50%{box-shadow:0 0 0 5px rgba(70,204,150,.18),0 11px 25px rgba(15,135,101,.42)}}.support-fab{animation:supportGlow 3.5s ease-in-out infinite}@media(prefers-reduced-motion:reduce){.support-fab{animation:none}}
+
+/* Header seksi beranda HP: tombol ringkas, tidak lagi kotak putih penuh */
+@media(max-width:899px){
+ #beranda .home-section-title.compact{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+ #beranda .home-section-title.compact>div{min-width:0}
+ #beranda .home-section-title.compact h3{font-size:18px;white-space:nowrap}
+ #beranda .home-section-title.compact .text-action{width:auto!important;margin:0!important;flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px!important;border-radius:999px!important;border:1px solid rgba(72,197,149,.42)!important;background:linear-gradient(135deg,#1b765d,#135548)!important;color:#f4fffa!important;font-size:11px!important;line-height:1!important;font-weight:850!important;box-shadow:0 5px 13px rgba(5,33,30,.24);white-space:nowrap}
+ #beranda .home-section-title.compact .text-action:active{transform:scale(.95)}
+ html:not(.dark) #beranda .home-section-title.compact .text-action{background:linear-gradient(135deg,#26705a,#175847)!important;color:#fff!important}
+}
+
+/* Menu layanan: keadaan awal tertutup, desain pemilih kategori */
+.home-tools{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--card),var(--canvas));border-color:rgba(86,171,140,.22)}
+.home-tools:before{content:'';position:absolute;width:180px;height:180px;right:-85px;top:-110px;border-radius:50%;background:radial-gradient(circle,rgba(44,163,119,.16),transparent 68%);pointer-events:none}
+.home-tools .catbar{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0 11px!important;overflow:visible!important}
+.home-tools .catbtn{min-width:0!important;min-height:58px!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:15px!important;border:1px solid var(--line)!important;background:var(--canvas)!important;color:var(--sub)!important;font-size:10.5px!important;font-weight:850!important;padding:7px 4px!important;transition:transform .18s,background .18s,box-shadow .18s!important}.home-tools .catbtn .ce{font-size:18px;line-height:1}.home-tools .catbtn .ce .svgi{width:18px;height:18px}.home-tools .catbtn.on{color:#fff!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(22,90,71,.25)!important;transform:translateY(-2px)}.home-tools .catbtn:active{transform:scale(.94)}
+.home-tools .catdesc{min-height:30px!important;margin:0!important;padding:6px 2px 0!important}.home-tools .cathint{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;font-weight:700}.home-tools .cathint .svgi{width:17px;height:17px;color:#2d9d70}
+@media(max-width:899px){.home-tools{padding:15px!important;border-radius:19px!important}.home-tools .catbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.home-tools .catbtn{min-height:64px!important;flex-direction:row;justify-content:flex-start;padding:11px 12px!important;font-size:12px!important}.home-tools .catbtn .ce{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:rgba(45,157,112,.12)}.home-tools .catbtn.on .ce{background:rgba(255,255,255,.19)}}
 </style>
 <script>(function(){try{if(localStorage.getItem("bwkTheme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();</script>
 <style id="hxcss">
@@ -1953,7 +1971,7 @@ var catData=[
    {a:"go('adopsi')",ic:'g-green',e:'sprout',l:'Adopsi Pohon'}
  ]}
 ];
-var curCat='pantau';
+var curCat=null;
 var curSub='klh';
 function _catById(id){return catData.filter(function(x){return x.id===id;})[0];}
 function _curTiles(c){if(c.subs){var s=c.subs.filter(function(x){return x.id===curSub;})[0]||c.subs[0];return s.tiles;}return c.tiles;}
