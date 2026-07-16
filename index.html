@@ -774,6 +774,18 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 #beranda .rcard{box-shadow:none;border-radius:14px}
 #beranda .fc{border-radius:14px;box-shadow:none;border:1px solid var(--line)}
 html.dark .home-action{background:#202a3d;border-color:#34405a}html.dark .home-status .alert{background:#111a2b}
+/* Kartu tindakan cepat — ukuran seragam, warna lebih hidup, dan respons sentuh. */
+.home-actions{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:'permit route' 'report emergency';grid-auto-rows:112px;align-items:stretch;gap:12px}
+.home-action{position:relative;overflow:hidden;isolation:isolate;border-radius:18px;padding:14px 15px;margin:0;justify-content:flex-end;gap:0;box-shadow:0 8px 18px rgba(16,36,61,.08);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;cursor:pointer}
+.home-action:nth-child(1){grid-area:permit}.home-action:nth-child(2){grid-area:route}.home-action:nth-child(3){grid-area:report}.home-action:nth-child(4){grid-area:emergency}
+.home-action::before{content:'';position:absolute;z-index:-1;width:125px;height:125px;right:-54px;top:-63px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.72),transparent 68%);opacity:.72}
+.home-action::after{content:'›';position:absolute;right:13px;bottom:12px;width:23px;height:23px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.5);color:rgba(22,38,61,.65);font-size:20px;line-height:1;font-weight:500;transition:transform .18s ease,background .18s ease}
+.home-action:hover{transform:translateY(-3px);box-shadow:0 13px 22px rgba(16,36,61,.16)}.home-action:hover::after{transform:translateX(2px);background:rgba(255,255,255,.76)}.home-action:active{transform:scale(.97)}
+.home-action span{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 0 auto;font-size:21px;background:rgba(255,255,255,.62);box-shadow:0 5px 12px rgba(16,36,61,.10)}
+.home-action b{font-size:14px;line-height:1.15;margin-top:7px}.home-action small{font-size:11.5px;line-height:1.2;margin-top:3px;padding-right:22px}
+.home-action.permit{background:linear-gradient(145deg,#e7f8ee,#d9eee3);border-color:#bfdfcb}.home-action.route{background:linear-gradient(145deg,#e7f5ff,#d7eafb);border-color:#bdd9ef}.home-action.report{background:linear-gradient(145deg,#fff0e1,#f8dfc7);border-color:#eed0b1}.home-action.emergency{background:linear-gradient(145deg,#ffebe9,#f9d9d5);border-color:#efc1bb}
+html.dark .home-action{border-color:rgba(255,255,255,.10);box-shadow:0 8px 18px rgba(0,0,0,.22)}html.dark .home-action::before{background:radial-gradient(circle,rgba(255,255,255,.16),transparent 68%)}html.dark .home-action::after{background:rgba(255,255,255,.12);color:#e8effa}html.dark .home-action span{background:rgba(255,255,255,.11);box-shadow:none}html.dark .home-action small{color:#bdc9dc}
+html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)}html.dark .home-action.permit b{color:#61d09b}html.dark .home-action.route{background:linear-gradient(145deg,#163a55,#152b46)}html.dark .home-action.route b{color:#78bdf0}html.dark .home-action.report{background:linear-gradient(145deg,#4a2e1c,#382319)}html.dark .home-action.report b{color:#ffa858}html.dark .home-action.emergency{background:linear-gradient(145deg,#4b2426,#371b22)}html.dark .home-action.emergency b{color:#ff7770}
 @media(min-width:900px){
   body{background:#eef1f0}
   .phone{max-width:1180px;box-shadow:0 0 40px rgba(16,36,61,.12)}
@@ -810,7 +822,8 @@ html.dark .home-action{background:#202a3d;border-color:#34405a}html.dark .home-s
   .hx-area{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:420px){
-  .home-action{min-height:86px}
+  .home-actions{grid-auto-rows:108px;gap:10px}
+  .home-action{min-height:0;padding:13px}
   .home-tools,.home-section{padding:14px;border-radius:16px}
   .home-section-title h3{font-size:17px}
 }
