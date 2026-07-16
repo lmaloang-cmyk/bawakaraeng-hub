@@ -184,11 +184,12 @@ function _skAdminCard(r,ref,cloud){
   var rf=cloud?(`&#39;`+String(ref).replace(/'/g,'')+`&#39;`):ref;
   var cf=cloud?'true':'false';
   var btns='';
-  if(!rej&&stage==='diajukan'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;verif&#39;)'>✅ Verifikasi + Terbitkan Kode PNBP</button><button class='btn gh' onclick='skAdminAct(${rf},${cf},&#39;tolak&#39;)'>❌ Tolak</button>`;}
-  else if(!rej&&stage==='diverifikasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>💰 Tandai Sudah Bayar</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Kode via WA</button>`;}
-  else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>`;}
-  else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>`;}
-  else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>`;}
+  var del=`<button class='btn gh' style='color:#c0333c;border:1px solid #f2b9c0' onclick='skAdminDelete(${rf},${cf})'>🗑️ Hapus Aktivitas</button>`;
+  if(!rej&&stage==='diajukan'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;verif&#39;)'>✅ Verifikasi + Terbitkan Kode PNBP</button><button class='btn gh' onclick='skAdminAct(${rf},${cf},&#39;tolak&#39;)'>❌ Tolak</button>${del}`;}
+  else if(!rej&&stage==='diverifikasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>💰 Tandai Sudah Bayar</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Kode via WA</button>${del}`;}
+  else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>${del}`;}
+  else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>${del}`;}
+  else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>${del}`;}
   return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
 }
 
@@ -203,6 +204,19 @@ function skAdminAct(ref,cloud,action){
   var done=function(){try{if(typeof renderAdmin==='function')renderAdmin('simaksi');}catch(e){}try{if(typeof refreshBellBadge==='function')refreshBellBadge();}catch(e){}var wa='https://wa.me/'+_waNorm(r.wa)+'?text='+encodeURIComponent(stageMsg);try{window.open(wa,'_blank');}catch(e){}toast('Status diperbarui. Membuka WhatsApp ke pemohon...','ok');};
   if(cloud&&typeof _sbClient==='function'){var c=_sbClient();if(c){c.from('simaksi').update(patch).eq('id',ref).then(function(){done();}).catch(function(){toast('Gagal update server','err');});return;}}
   try{var arr=_lsGet('bwkSimaksi',[]);var idx=(typeof ref==='number')?ref:-1;if(idx<0){for(var i=0;i<arr.length;i++){if(arr[i].code===r.code){idx=i;break;}}}if(idx>=0){Object.assign(arr[idx],patch);_lsSet('bwkSimaksi',arr);}}catch(e){}
+  done();
+}
+
+function skAdminDelete(ref,cloud){
+  var r=_skFindRow(ref,cloud);if(!r){toast('Data tidak ditemukan','err');return;}
+  var stage=r.stage||'diajukan';
+  var label=(stage==='terbit')?'transaksi selesai':'aktivitas belum selesai/gagal';
+  if(!confirm('Hapus '+label+' SIMAKSI '+(r.code||'')+' secara permanen?'))return;
+  var done=function(){try{renderAdmin('simaksi');}catch(e){}toast('Aktivitas SIMAKSI dihapus','ok');};
+  if(cloud&&typeof _sbClient==='function'){
+    var c=_sbClient();if(c){c.from('simaksi').delete().eq('id',ref).then(function(res){if(res&&res.error){toast('Gagal menghapus aktivitas','err');return;}done();}).catch(function(){toast('Gagal menghapus aktivitas','err');});return;}
+  }
+  try{var arr=_lsGet('bwkSimaksi',[]);arr.splice(ref,1);_lsSet('bwkSimaksi',arr);}catch(e){}
   done();
 }
 
