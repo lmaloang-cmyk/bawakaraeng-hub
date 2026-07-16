@@ -1,11 +1,10 @@
-# Bawakaraeng Hub v15 — Panduan Visual
+# Bawakaraeng Hub v14 — Mode Tamu
 
-- Mendesain ulang PANDUAN.html sebagai panduan visual responsif.
-- Menambahkan alur mode tamu dan login Google.
-- Menjelaskan beranda, peta fitur, AI Pendamping, SIMAKSI, laporan, SOS, serta instalasi PWA.
-- Menggunakan tangkapan layar aplikasi agar langkah mudah diikuti.
-- Menambahkan checklist laporan dan FAQ interaktif.
-- Panduan siap dibuka offline, dicetak, atau disimpan sebagai PDF.
-- Menambahkan akses Panduan Penggunaan dari halaman Profil dan Bantuan.
-- Memasukkan panduan beserta seluruh gambar ke cache PWA.
-- Memperbarui versi aplikasi dan cache menjadi v15.
+- Menambahkan tombol Jelajahi sebagai Tamu pada halaman masuk.
+- Tamu dapat melihat beranda, cuaca, peta, spesies, regulasi, checklist, survival, komunitas baca-saja, dan informasi konservasi.
+- SOS tetap dapat digunakan tanpa login.
+- SIMAKSI, laporan, jurnal, adopsi, donasi, sertifikat, dan kirim pesan komunitas meminta login Google.
+- AI Pendamping untuk tamu selalu memakai panduan lokal gratis agar kuota Gemini terlindungi.
+- Menambahkan indikator Mode Tamu dan banner ajakan login.
+- Dialog login menjelaskan alasan identitas diperlukan tanpa mengeluarkan tamu dari halaman.
+- Versi dan cache PWA diperbarui ke v14.

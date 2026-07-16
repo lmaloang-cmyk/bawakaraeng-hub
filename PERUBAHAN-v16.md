@@ -1,12 +1,11 @@
-# Bawakaraeng Hub v16 — Pengamanan
+# Bawakaraeng Hub v15 — Panduan Visual
 
-- Menambahkan security headers Vercel dan Content Security Policy.
-- Membatasi origin, metode, payload, dan frekuensi request API.
-- AI cloud kini memverifikasi token pengguna Supabase.
-- Menambahkan timeout dan validasi parameter untuk BMKG serta hotspot.
-- Memvalidasi foto laporan (JPEG/PNG/WebP, maksimum 5 MB).
-- Membersihkan dan membatasi panjang input pengguna.
-- Mengamankan toast dari injeksi HTML dan menambahkan anti-spam chat.
-- Menambahkan `supabase-security.sql` untuk RLS database.
-- Menambahkan `SECURITY.md` dan `.env.example` untuk deployment aman.
-- Memperbarui aplikasi dan cache PWA ke v16.
+- Mendesain ulang PANDUAN.html sebagai panduan visual responsif.
+- Menambahkan alur mode tamu dan login Google.
+- Menjelaskan beranda, peta fitur, AI Pendamping, SIMAKSI, laporan, SOS, serta instalasi PWA.
+- Menggunakan tangkapan layar aplikasi agar langkah mudah diikuti.
+- Menambahkan checklist laporan dan FAQ interaktif.
+- Panduan siap dibuka offline, dicetak, atau disimpan sebagai PDF.
+- Menambahkan akses Panduan Penggunaan dari halaman Profil dan Bantuan.
+- Memasukkan panduan beserta seluruh gambar ke cache PWA.
+- Memperbarui versi aplikasi dan cache menjadi v15.
