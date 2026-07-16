@@ -1,27 +1,44 @@
-const CACHE='bwk-v19-live-gps';
-const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/PANDUAN.html','/guide-assets/01-login.png','/guide-assets/02-guest-home.png','/guide-assets/03-login-gate.png','/guide-assets/04-ai-pendamping.png','/species-macaca.jpg','/og.jpg'];
-self.addEventListener('install',function(e){
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
-});
-self.addEventListener('activate',function(e){
-  e.waitUntil(caches.keys().then(function(keys){return Promise.all(keys.map(function(k){if(k!==CACHE)return caches.delete(k);}));}));
-  self.clients.claim();
-});
-self.addEventListener('fetch',function(e){
-  const req=e.request;
-  if(req.method!=='GET'){return;}
-  const url=new URL(req.url);
-  // Jangan cache panggilan API (cuaca/hotspot) - selalu ambil dari jaringan
-  if(url.pathname.indexOf('/api/')===0){return;}
-  if(req.mode==='navigate'){
-    e.respondWith(fetch(req).then(function(res){
-      const copy=res.clone();caches.open(CACHE).then(function(c){c.put('/index.html',copy);});return res;
-    }).catch(function(){return caches.match('/index.html');}));
-    return;
-  }
-  e.respondWith(caches.match(req).then(function(hit){return hit||fetch(req).then(function(res){
-    if(res&&res.status===200&&url.origin===location.origin){const copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
-    return res;
-  }).catch(function(){return hit;});}));
-});
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 15
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), geolocation=(self), microphone=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://accounts.google.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+        }
+      ]
+    }
+  ]
+}

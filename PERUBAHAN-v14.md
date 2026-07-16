@@ -1,10 +1,10 @@
-# Bawakaraeng Hub v13 — AI Pendamping
+# Bawakaraeng Hub v14 — Mode Tamu
 
-- Menambahkan AI Pendamping sebagai tab utama pada fitur percakapan.
-- Mode lokal gratis menjawab keselamatan, cuaca, SIMAKSI, jalur, perlengkapan, pelaporan, dan konservasi.
-- Menambahkan endpoint `/api/ai.js` untuk Gemini melalui environment variable `GEMINI_API_KEY`.
-- Jika Gemini belum dikonfigurasi, kuota habis, atau jaringan gagal, jawaban otomatis memakai panduan lokal.
-- Riwayat AI disimpan lokal di perangkat, maksimal 40 pesan.
-- Pertanyaan dibatasi 600 karakter dan jawaban Gemini dibatasi 420 token.
-- Instruksi keselamatan mencegah AI mengarang status jalur, cuaca, izin, atau informasi darurat.
-- Versi dan cache PWA diperbarui ke v13.
+- Menambahkan tombol Jelajahi sebagai Tamu pada halaman masuk.
+- Tamu dapat melihat beranda, cuaca, peta, spesies, regulasi, checklist, survival, komunitas baca-saja, dan informasi konservasi.
+- SOS tetap dapat digunakan tanpa login.
+- SIMAKSI, laporan, jurnal, adopsi, donasi, sertifikat, dan kirim pesan komunitas meminta login Google.
+- AI Pendamping untuk tamu selalu memakai panduan lokal gratis agar kuota Gemini terlindungi.
+- Menambahkan indikator Mode Tamu dan banner ajakan login.
+- Dialog login menjelaskan alasan identitas diperlukan tanpa mengeluarkan tamu dari halaman.
+- Versi dan cache PWA diperbarui ke v14.
