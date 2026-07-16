@@ -137,7 +137,7 @@
 
   /* Search + chips */
   .search{position:relative;margin-top:14px}
-  .search input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px 14px 44px;font-size:14px;box-shadow:var(--shadow);outline:none}
+  .search input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px 14px 44px;font-size:14px;box-shadow:var(--shadow);outline:none;color:var(--ink)}
   .search input:focus{border-color:var(--brand)}
   .search .mag{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:#626b82}
   .chips{display:flex;gap:9px;overflow-x:auto;margin-top:13px;padding-bottom:4px}
@@ -172,7 +172,7 @@
   .gps .pin{width:38px;height:38px;border-radius:12px;background:var(--g-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
   .gps b{font-size:12px} .gps small{display:block;font-size:11.5px;color:var(--sub)}
   .gps button{font-size:12px;font-weight:800;color:#2b6fff;background:#eaf1ff;padding:7px 11px;border-radius:10px}
-  textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;font-size:14px;outline:none;resize:none;box-shadow:var(--shadow)}
+  textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;font-size:14px;outline:none;resize:none;box-shadow:var(--shadow);color:var(--ink)}
   textarea:focus{border-color:var(--brand)}
   .counter{font-size:11.5px;color:#626b82;text-align:right;margin-top:5px}
   .btn{width:100%;color:#fff;font-weight:800;padding:16px;border-radius:16px;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;box-shadow:var(--shadow-lg);transition:transform .12s}
@@ -373,6 +373,28 @@
   .cmp .lbl{background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;margin:10px}
   .cmp .divider{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.45);transform:translateX(-1px)}
   .cmp input[type=range]{position:absolute;bottom:10px;left:5%;width:90%;z-index:5}
+  .cmp-item{margin-top:16px}
+  .cmp-h{font-weight:800;font-size:14px;color:var(--ink);margin-bottom:2px}
+  .cmp-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .cmp-chip{font-size:11px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--sub);padding:4px 9px;border-radius:20px}
+  .cmp-chip.ok{background:#e9f9f0;color:#08843f;border-color:#bfeccd}
+  html.dark .cmp-chip.ok{background:#0f2a1c;color:#5bd07f;border-color:#1e4630}
+  .sv-hero{background:var(--g-sunset);color:#fff;border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:4px}
+  .sv-hero h3{margin:0 0 6px;font-size:16px;font-weight:800}
+  .sv-r3{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .sv-r3 span{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);padding:6px 10px;border-radius:12px;font-size:12px;font-weight:700}
+  .sv-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 16px;box-shadow:var(--shadow);margin-top:8px}
+  .sv-card p{margin:6px 0;font-size:13.5px;color:var(--ink);line-height:1.55}
+  .sv-card ul{margin:8px 0 2px;padding-left:20px}
+  .sv-card li{font-size:13.5px;margin:5px 0;line-height:1.5;color:var(--ink)}
+  .sv-grid{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .sv-chip{font-size:12px;font-weight:700;padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--sub)}
+  .sv-chip.good{background:#e9f9f0;color:#08843f;border-color:#bfeccd}
+  .sv-chip.bad{background:#fdeaea;color:#c0341d;border-color:#f4c2bb}
+  html.dark .sv-chip.good{background:#0f2a1c;color:#5bd07f;border-color:#1e4630}
+  html.dark .sv-chip.bad{background:#2a1414;color:#ff8a76;border-color:#4a1f18}
+  .sv-warn{background:#fff6e6;border:1px solid #ffe0a3;color:#8a5a00;border-radius:14px;padding:11px 13px;font-size:12.5px;margin-top:10px;line-height:1.5}
+  html.dark .sv-warn{background:#2a2110;color:#ffcf80;border-color:#4a3a12}
   .evt{display:flex;gap:12px;background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-top:12px;align-items:center}
   .evt .cal{background:var(--g-teal);color:#fff;border-radius:12px;padding:8px 10px;text-align:center;min-width:50px}
   .evt .cal b{font-size:20px;display:block;line-height:1}.evt .cal small{font-size:11.5px;font-weight:700}
@@ -442,7 +464,9 @@
   .ekm .kpi .lb{display:flex;justify-content:space-between;font-size:12px;font-weight:800;margin-bottom:5px}
   .ekm .track{height:8px;border-radius:5px;background:var(--line);overflow:hidden}
   .ekm .track i{display:block;height:100%;border-radius:5px}
-  .nt-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;background:var(--card);margin-bottom:10px;font-family:inherit}
+  .nt-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;background:var(--card);margin-bottom:10px;font-family:inherit;color:var(--ink)}
+  html.dark input,html.dark textarea,html.dark select{color:var(--ink)}
+  html.dark input::placeholder,html.dark textarea::placeholder{color:#6b779a}
 
 .catbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:2px 0 2px;-webkit-overflow-scrolling:touch}
 .catbar::-webkit-scrollbar{display:none}
@@ -787,6 +811,22 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     </div>
     <div class="sh"><span class="bar" style="background:var(--g-violet)"></span><h3>Regulasi Pendakian</h3></div>
     <div id="rules"></div>
+    <style>
+    .law-list{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+    .law-item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:11px 13px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);transition:transform .12s ease}
+    .law-item:active{transform:scale(.98)}
+    .law-tag{flex:0 0 auto;font-weight:800;font-size:12px;color:#fff;background:var(--g-blue);padding:5px 9px;border-radius:8px;white-space:nowrap}
+    .law-tx{flex:1;font-size:13.5px;font-weight:600;line-height:1.3}
+    .law-ex{flex:0 0 auto;color:var(--sub);font-weight:800;font-size:15px}
+    </style>
+    <p class="note" style="margin:8px 0 10px">Dasar hukum pengelolaan kawasan &amp; pendakian Gunung Bawakaraeng. Ketuk untuk membuka dokumen resmi.</p>
+    <div class="law-list">
+      <a class="law-item" href="https://peraturan.bpk.go.id/Details/46710/uu-no-5-tahun-1990" target="_blank" rel="noopener"><span class="law-tag">UU 5/1990</span><span class="law-tx">Konservasi Sumber Daya Alam Hayati &amp; Ekosistemnya</span><span class="law-ex">↗</span></a>
+      <a class="law-item" href="https://peraturan.bpk.go.id/Details/45373/uu-no-41-tahun-1999" target="_blank" rel="noopener"><span class="law-tag">UU 41/1999</span><span class="law-tx">Kehutanan</span><span class="law-ex">↗</span></a>
+      <a class="law-item" href="https://peraturan.bpk.go.id/Details/38771/uu-no-32-tahun-2009" target="_blank" rel="noopener"><span class="law-tag">UU 32/2009</span><span class="law-tx">Perlindungan &amp; Pengelolaan Lingkungan Hidup</span><span class="law-ex">↗</span></a>
+      <a class="law-item" href="https://peraturan.bpk.go.id/Details/5157" target="_blank" rel="noopener"><span class="law-tag">PP 28/2011</span><span class="law-tx">Pengelolaan Kawasan Suaka Alam &amp; Pelestarian Alam</span><span class="law-ex">↗</span></a>
+      <a class="law-item" href="https://bbksdasulsel.ksdae.kehutanan.go.id/ketentuan-baru-penerapan-pnbp-dan-simaksi-pada-kawasan-konservasi" target="_blank" rel="noopener"><span class="law-tag">PP 36/2024</span><span class="law-tx">Tarif PNBP &amp; SIMAKSI Kawasan Konservasi (BBKSDA Sulsel)</span><span class="law-ex">↗</span></a>
+    </div>
   </section>
 
   <!-- KOMUNITAS -->
@@ -896,6 +936,8 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     <div class="form-card"><div class="fld"><label>Nama untuk Sertifikat</label><input id="ad-nama" placeholder="Nama kamu / instansi"/></div>
       <button class="btn g-green" onclick="adopsiPohon()">🌳 Adopsi Sekarang</button></div>
     <div id="ad-result"></div>
+    <div class="sh"><span class="bar" style="background:var(--g-amber)"></span><h3>Unduh Sertifikat Resmi</h3></div>
+    <div class="cert-card" id="certCard"><div class="cert-head"><span class="cert-badge">🌳 SERTIFIKAT RESMI</span><h3>Sertifikat Adopsi Pohon</h3><p>Sudah mengadopsi pohon? Masukkan <b>kode adopsi</b>-mu (format POH-XXXXX) untuk mengunduh sertifikat resmi kualitas cetak.</p></div><div class="cert-form"><label>Kode Adopsi<input id="certCode" class="nt-input" placeholder="POH-XXXXX" autocomplete="off" oninput="onCertCode()"/></label><div id="certCodeMsg" class="note" style="margin:4px 0 0"></div></div><div class="cert-preview"><canvas id="certCanvas" width="2000" height="1414"></canvas></div><div class="cert-form"><label>Nama Penerima<input id="certName" class="nt-input" placeholder="Nama lengkap" oninput="buildCert()"/></label><div class="cert-row"><label>Jumlah Bibit<input id="certQty" class="nt-input" type="number" min="1" value="250" oninput="buildCert()"/></label><label>Lokasi / Zona<input id="certLoc" class="nt-input" value="Kawasan Gunung Bawakaraeng" oninput="buildCert()"/></label></div><button class="btn g-green" onclick="downloadCert()">⬇️ Unduh Sertifikat (PNG)</button><p class="note">File PNG resolusi tinggi (2000×1414). Wajib memasukkan kode adopsi yang valid.</p></div></div>
   </section>
 
   <!-- DONASI & TRANSPARANSI -->
@@ -960,6 +1002,15 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     <p class="note">Checklist lengkap disarankan sebelum SIMAKSI disetujui Tim Reichas Chelebes.</p>
   </section>
 
+  <section id="survival" class="view">
+    <div class="sec-title">Survival Kit 🎒⛰️</div>
+    <div class="sec-sub">Panduan bertahan hidup di alam bebas Gunung Bawakaraeng — bisa dibaca &amp; diunduh.</div>
+    <div id="sv-body"></div>
+    <button class="btn g-sunset" style="margin-top:16px" onclick="downloadSurvival()">⬇️ Unduh Panduan (HTML · siap cetak PDF)</button>
+    <a class="btn g-brand" style="margin-top:10px;text-decoration:none" href="https://wa.me/6282320124040?text=SOS!%20Saya%20butuh%20bantuan%20darurat%20di%20jalur%20pendakian%20Gunung%20Bawakaraeng.%20Lokasi%20saya%3A%20" target="_blank" rel="noopener">🚨 Darurat — Hubungi SOS Reichas Chelebes</a>
+    <p class="note">Dokumen edukasi. Sumber daya alam di kawasan konservasi hanya untuk keadaan darurat — selalu bawa perbekalan cukup &amp; ajukan SIMAKSI sebelum mendaki.</p>
+  </section>
+
   <!-- DASHBOARD BIODIVERSITAS -->
   <section id="biodiv" class="view">
     <div class="sec-title">Dashboard Biodiversitas ����</div>
@@ -982,7 +1033,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
   <!-- ARSIP PUBLIKASI ILMIAH -->
   <section id="arsip" class="view">
     <div class="sec-title">Arsip Publikasi Ilmiah 📚</div>
-    <div class="sec-sub">Kumpulan riset, skripsi &amp; laporan tentang Gunung Bawakaraeng.</div><div class="cert-card" id="certCard"><div class="cert-head"><span class="cert-badge">🌳 SERTIFIKAT RESMI</span><h3>Sertifikat Adopsi Pohon</h3><p>Penghargaan resmi &amp; bernilai bagi partisipan pemulihan ekosistem Bawakaraeng. Isi data lalu unduh sertifikatmu dalam kualitas cetak.</p></div><div class="cert-preview"><canvas id="certCanvas" width="2000" height="1414"></canvas></div><div class="cert-form"><label>Nama Penerima<input id="certName" class="nt-input" placeholder="Nama lengkap" oninput="buildCert()"/></label><div class="cert-row"><label>Jumlah Bibit<input id="certQty" class="nt-input" type="number" min="1" value="250" oninput="buildCert()"/></label><label>Lokasi / Zona<input id="certLoc" class="nt-input" value="Kawasan Gunung Bawakaraeng" oninput="buildCert()"/></label></div><button class="btn g-green" onclick="downloadCert()">⬇️ Unduh Sertifikat (PNG)</button><p class="note">File PNG resolusi tinggi (2000×1414) siap dibagikan atau dicetak.</p></div></div>
+    <div class="sec-sub">Kumpulan riset, skripsi &amp; laporan tentang Gunung Bawakaraeng.</div>
     <input id="arq" class="nt-input" placeholder="🔍 Cari judul, penulis, topik…" oninput="renderArsip()"/>
     <div id="arChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px"></div>
     <div id="arsipList"></div>
@@ -1080,13 +1131,14 @@ var events=[
   {d:'20',m:'JUL',bg:'var(--g-blue)',t:'Pelatihan Navigasi & SAR',p:'Belajar navigasi darat, evakuasi, & penanganan hipotermia.',meta:'📍 Sekretariat RC · 30 kuota'},
   {d:'02',m:'AGU',bg:'var(--g-violet)',t:'Sensus Flora Endemik',p:'Pendataan Edelweiss & Kantong Semar bareng peneliti.',meta:'📍 Pos 8 · 25 relawan'}
 ];
+var _WM='https://commons.wikimedia.org/wiki/Special:FilePath/';
 var galleryItems=[
-  {emoji:null,photo:MAC,cap:'Macaca maura — Pos 2'},
-  {emoji:'🌅',photo:null,bg:'var(--g-amber)',cap:'Sunrise Puncak'},
-  {emoji:'⛺',photo:null,bg:'var(--g-indigo)',cap:'Camp Pos 7'},
-  {emoji:'🩷',photo:null,bg:'var(--g-green)',cap:'Ladang Edelweiss'},
-  {emoji:'🌫️',photo:null,bg:'var(--g-teal)',cap:'Kabut Sabana'},
-  {emoji:'🦅',photo:null,bg:'var(--g-blue)',cap:'Elang Sulawesi'}
+  {emoji:'🐒',bg:'var(--g-green)',photo:MAC,cap:'Macaca maura — Pos 2'},
+  {emoji:'🌅',bg:'var(--g-amber)',photo:_WM+'Sunrise%20in%20Taman%20Hidup%20Argopuro.jpg?width=800',cap:'Sunrise Puncak'},
+  {emoji:'⛺',bg:'var(--g-indigo)',photo:_WM+'Tenda%20camping%20di%20Lau%20Kawar.jpg?width=800',cap:'Camp Pos 7'},
+  {emoji:'🌼',bg:'var(--g-green)',photo:_WM+'Bunga%20Edelweiss.jpg?width=800',cap:'Ladang Edelweiss'},
+  {emoji:'🌫️',bg:'var(--g-teal)',photo:_WM+'Hamparan%20Sabana%20di%20Kawasan%20Gunung%20Merbabu.jpg?width=800',cap:'Kabut Sabana'},
+  {emoji:'🦅',bg:'var(--g-blue)',photo:_WM+'Sulawesi%20Hawk%20Eagle%20%28Spizaetus%20lanceolatus%29%20Juvenile%20in%20a%20playful%20mood%20-%20peek-a-boo%20-%20Flickr%20-%20Lip%20Kee%20%281%29.jpg?width=800',cap:'Elang Sulawesi'}
 ];
 
 function go(id){
@@ -1094,7 +1146,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1173,7 +1225,7 @@ function renderKomLap(){
 }
 function renderKom(){
   document.getElementById('kom-lead').innerHTML=leaders.map(function(l,i){var rk=i===0?'rk g':i===1?'rk s':i===2?'rk b':'rk';var med=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);return '<div class="lead"><div class="'+rk+'">'+med+'</div><div class="av" style="background:'+l.c+'">'+initials(l.n)+'</div><div class="nm"><b>'+l.n+'</b><small>'+l.t+'</small></div><div class="pts">'+l.p+' pts</div></div>'}).join('');
-  document.getElementById('kom-gal').innerHTML='<div class="gal">'+galleryItems.map(function(g){var im=g.photo?'<img loading="lazy" decoding="async" src="'+g.photo+'"/>':'';var bg=g.photo?'':'background:'+g.bg;return '<div class="gt" style="'+bg+'">'+(g.photo?im:g.emoji)+'<div class="cap">'+g.cap+'</div></div>'}).join('')+'</div>';
+  document.getElementById('kom-gal').innerHTML='<div class="gal">'+galleryItems.map(function(g){var im=g.photo?'<img loading="lazy" decoding="async" src="'+g.photo+'" onerror="this.remove()"/>':'';return '<div class="gt" style="background:'+(g.bg||'var(--g-green)')+'">'+(g.emoji||'')+im+'<div class="cap">'+g.cap+'</div></div>'}).join('')+'</div>';
   document.getElementById('kom-eve').innerHTML=events.map(function(e){return '<div class="event"><div class="date" style="background:'+e.bg+'"><b>'+e.d+'</b><small>'+e.m+'</small></div><div class="ed"><h4>'+e.t+'</h4><p>'+e.p+'</p><div class="m">'+e.meta+'</div></div></div>'}).join('');
 }
 
@@ -1307,7 +1359,7 @@ function ajukanSimaksi(){
 }
 
 /* ADOPSI */
-var _pkgs=[{id:'bibit',e:'🌱',n:'Bibit',d:'1 bibit endemik + tanam',p:25000},{id:'pohon',e:'🌳',n:'Pohon',d:'1 pohon + perawatan 1 thn',p:100000},{id:'rumpun',e:'🌲',n:'Rumpun',d:'10 pohon + monitoring',p:500000}];
+var _pkgs=[{id:'bibit',e:'🌱',n:'Bibit',d:'1 bibit endemik + tanam',p:25000,q:1},{id:'pohon',e:'🌳',n:'Pohon',d:'1 pohon + perawatan 1 thn',p:100000,q:1},{id:'rumpun',e:'🌲',n:'Rumpun',d:'10 pohon + monitoring',p:500000,q:10}];
 var _pkgSel='pohon';
 function renderPkg(){document.getElementById('pkgList').innerHTML=_pkgs.map(function(p){return '<div class="pkgcard'+(p.id===_pkgSel?' on':'')+'" onclick="selPkg(&#39;'+p.id+'&#39;)"><span class="pemoji">'+p.e+'</span><div><b>'+p.n+'</b><small>'+p.d+'</small></div><span class="price">'+_rupiah(p.p)+'</span></div>';}).join('');}
 function selPkg(id){_pkgSel=id;renderPkg();}
@@ -1316,8 +1368,9 @@ function adopsiPohon(){
   if(!nama){toast('Isi nama untuk sertifikat','err');return;}
   var pk=_pkgs.filter(function(x){return x.id===_pkgSel;})[0];
   var id=_rid('POH-');
+  try{var _ac=(typeof _lsGet==='function')?_lsGet('bwkAdoptCodes',[]):[];_ac.unshift({code:id,name:nama,qty:(pk&&pk.q)||1,pkg:pk?pk.n:''});if(typeof _lsSet==='function')_lsSet('bwkAdoptCodes',_ac);}catch(e){}
   var tgl=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('ad-result').innerHTML='<div class="cert"><div class="seal">🌳</div><small>SERTIFIKAT ADOPSI POHON</small><h4>'+nama+'</h4><p style="font-size:12px;color:var(--sub);margin:4px 0">telah mengadopsi <b>'+pk.n+'</b> ('+_rupiah(pk.p)+') untuk restorasi Gunung Bawakaraeng</p><div class="cid">'+id+'</div><small>'+tgl+' · Reichas Chelebes</small></div><button class="pdf-btn" onclick="printCard(&#39;ad-result&#39;)">⬇️ Simpan / Cetak PDF</button>';
+  document.getElementById('ad-result').innerHTML='<div class="cert"><div class="seal">🌳</div><small>SERTIFIKAT ADOPSI POHON</small><h4>'+nama+'</h4><p style="font-size:12px;color:var(--sub);margin:4px 0">telah mengadopsi <b>'+pk.n+'</b> ('+_rupiah(pk.p)+') untuk restorasi Gunung Bawakaraeng</p><div class="cid">'+id+'</div><small>'+tgl+' · Reichas Chelebes</small></div><button class="pdf-btn" onclick="printCard(&#39;ad-result&#39;)">⬇️ Simpan / Cetak PDF</button><button class="btn g-green" style="margin-top:8px" onclick="useCertCode(&#39;'+id+'&#39;)">🌳 Unduh Sertifikat Resmi (PNG)</button><p class="note" style="margin-top:6px">Kode adopsimu <b>'+id+'</b> otomatis tersalin ke form sertifikat di bawah.</p>';
   toast('Terima kasih! Sertifikat terbit 🌱','ok');
   document.getElementById('ad-result').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1331,8 +1384,8 @@ function renderAlloc(){document.getElementById('allocList').innerHTML=_alloc.map
 function donasi(){var amt=_rupiah(_tierSel);var wa='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent('Halo Reichas Chelebes, saya ingin berdonasi '+amt+' untuk konservasi Gunung Bawakaraeng. Mohon info konfirmasi.');var html=`<h2 style="margin:0 0 4px">\U0001F49A Donasi ${amt}</h2><p style="color:#667;font-size:13px;margin:0 0 14px">Salurkan donasi via transfer/e-wallet, lalu konfirmasi ke tim RC.</p><div style="background:#f4f7fb;border-radius:14px;padding:14px;margin-bottom:14px"><div style="font-size:12px;color:#889">GoPay</div><div style="font-weight:800;font-size:15px">082320124040</div><div style="font-size:13px">a.n. Reichas Chelebes</div></div><a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center" href="${wa}" target="_blank" rel="noopener">\U0001F4F2 Konfirmasi Donasi via WhatsApp</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
 
 /* BEFORE-AFTER */
-var _cmps=[{t:'Lembah Ramma',b:'linear-gradient(135deg,#8a6d3b,#c9a227)',a:'linear-gradient(135deg,#0f9d58,#34c759)'},{t:'Pos 1–3 (pasca kebakaran)',b:'linear-gradient(135deg,#6b4f3a,#a5763f)',a:'linear-gradient(135deg,#0b8043,#5bd07f)'}];
-function renderCmp(){document.getElementById('cmpList').innerHTML=_cmps.map(function(c,i){return '<div class="cmp" id="cmp'+i+'"><div class="layer" style="background:'+c.b+'"><span class="lbl">SEBELUM · '+c.t+'</span></div><div class="layer after" id="cmpA'+i+'" style="background:'+c.a+';clip-path:inset(0 0 0 50%)"><span class="lbl">SESUDAH</span></div><div class="divider" id="cmpD'+i+'" style="left:50%"></div><input type="range" min="0" max="100" value="50" oninput="cmpMove('+i+',this.value)"/></div>';}).join('');}
+var _cmps=[{t:'Reboisasi Lembah Ramma',loc:'Zona Lembah Ramma · 1.850 mdpl',by:'2023',ay:'2025',date:'Mar 2023 → Jun 2025',trees:'4.500 bibit',area:'3,2 ha',survive:'88%',b:'url('+_WM+'Deforested%20hillside%20in%20Tweeddale%20-%20geograph.org.uk%20-%206915131.jpg?width=800) center/cover no-repeat',a:'url('+_WM+'Hutan%20Pinus%20Grenden.jpg?width=800) center/cover no-repeat'},{t:'Pemulihan Pasca-Kebakaran Pos 1–3',loc:'Jalur Lembanna · Pos 1–3',by:'2022',ay:'2025',date:'Ags 2022 → Jul 2025',trees:'7.200 bibit',area:'5,7 ha',survive:'81%',b:'url('+_WM+'Aftermath%20of%20Das%20Goat%20Fire%20in%20Texas%20%2820220402-OC-LSC-0115%29.jpg?width=800) center/cover no-repeat',a:'url('+_WM+'Reboisasi.jpg?width=800) center/cover no-repeat'}];
+function renderCmp(){document.getElementById('cmpList').innerHTML=_cmps.map(function(c,i){var chips='<span class="cmp-chip">📍 '+c.loc+'</span><span class="cmp-chip">🗓️ '+c.date+'</span><span class="cmp-chip">🌱 '+c.trees+'</span><span class="cmp-chip">📐 '+c.area+'</span><span class="cmp-chip ok">✅ Tumbuh '+c.survive+'</span>';return '<div class="cmp-item"><div class="cmp-h">'+c.t+'</div><div class="cmp" id="cmp'+i+'"><div class="layer" style="background:'+c.b+'"><span class="lbl">SEBELUM · '+c.by+'</span></div><div class="layer after" id="cmpA'+i+'" style="background:'+c.a+';clip-path:inset(0 0 0 50%)"><span class="lbl">SESUDAH · '+c.ay+'</span></div><div class="divider" id="cmpD'+i+'" style="left:50%"></div><input type="range" min="0" max="100" value="50" oninput="cmpMove('+i+',this.value)"/></div><div class="cmp-meta">'+chips+'</div></div>';}).join('');}
 function cmpMove(i,v){document.getElementById('cmpA'+i).style.clipPath='inset(0 0 0 '+v+'%)';document.getElementById('cmpD'+i).style.left=v+'%';}
 
 /* AGENDA */
@@ -1594,7 +1647,11 @@ function drawCert(cv,data){var ctx=cv.getContext('2d');var W=cv.width,H=cv.heigh
  ctx.fillStyle='rgba(223,238,231,.82)';ctx.font='22px Georgia,serif';ctx.fillText('No. '+data.no+'    \u00B7    Tanggal: '+data.date+'    \u00B7    Lokasi: '+data.loc,cx,H-92);
 }
 function buildCert(){var cv=document.getElementById('certCanvas');if(!cv)return;var nm=(document.getElementById('certName').value||'').trim();var qv=parseInt(document.getElementById('certQty').value||'250',10);if(!qv||qv<1)qv=250;var loc=(document.getElementById('certLoc').value||'').trim()||'Kawasan Gunung Bawakaraeng';if(_certNoName!==nm||!_certNo){_certNo=_certGenNo(nm);_certNoName=nm;}var date=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});_lastCertData={name:nm||'Sahabat Konservasi',qty:qv,loc:loc,no:_certNo,date:date};drawCert(cv,_lastCertData);_loadCertLogo(function(){drawCert(cv,_lastCertData);});}
-function downloadCert(){var el=document.getElementById('certName');var name=(el&&el.value||'').trim();if(!name){if(window.toast)toast('Isi nama penerima dulu ya');if(el)el.focus();return;}buildCert();var cv=document.getElementById('certCanvas');var done=false;function save(){if(done)return;done=true;drawCert(cv,_lastCertData);cv.toBlob(function(b){var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='Sertifikat-Adopsi-'+name.replace(/[^\w\- ]+/g,'').replace(/ +/g,'-')+'.png';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},1500);if(window.toast)toast('Sertifikat berhasil diunduh','ok');},'image/png');}if(_certLogoOK){save();}else{_loadCertLogo(save);setTimeout(save,1300);}}
+function _findAdoptCode(code){try{var a=(typeof _lsGet==='function')?_lsGet('bwkAdoptCodes',[]):[];for(var i=0;i<a.length;i++){if((a[i].code||'').toUpperCase()===(code||'').toUpperCase())return a[i];}}catch(e){}return null;}
+function _validAdoptCode(code){return /^POH-[A-Z0-9]{5}$/.test((code||'').toUpperCase())||!!_findAdoptCode(code);}
+function useCertCode(code){var cc=document.getElementById('certCode');if(cc){cc.value=code;onCertCode();}var card=document.getElementById('certCard');if(card){try{card.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}}}
+function onCertCode(){var el=document.getElementById('certCode');var msg=document.getElementById('certCodeMsg');if(!el)return;var code=(el.value||'').trim().toUpperCase();el.value=code;if(!code){if(msg)msg.textContent='';return;}var rec=_findAdoptCode(code);if(rec){var n=document.getElementById('certName');if(n&&!n.value.trim()&&rec.name)n.value=rec.name;if(rec.qty){var q=document.getElementById('certQty');if(q)q.value=rec.qty;}if(msg){msg.style.color='#08a35f';msg.textContent='\u2713 Kode valid'+(rec.name?' \u00b7 '+rec.name:'')+'. Isi nama bila perlu, lalu unduh.';}buildCert();}else if(msg){if(/^POH-[A-Z0-9]{5}$/.test(code)){msg.style.color='#08a35f';msg.textContent='\u2713 Format kode benar. Isi nama lalu unduh.';}else{msg.style.color='#d5803b';msg.textContent='Format kode: POH-XXXXX';}}}
+function downloadCert(){var cc=document.getElementById('certCode');var code=(cc&&cc.value||'').trim().toUpperCase();if(!code){if(window.toast)toast('Masukkan kode adopsi dulu','err');if(cc)cc.focus();return;}if(!_validAdoptCode(code)){if(window.toast)toast('Kode adopsi tidak valid (format POH-XXXXX)','err');if(cc)cc.focus();return;}var el=document.getElementById('certName');var name=(el&&el.value||'').trim();if(!name){if(window.toast)toast('Isi nama penerima dulu ya');if(el)el.focus();return;}buildCert();var cv=document.getElementById('certCanvas');var done=false;function save(){if(done)return;done=true;drawCert(cv,_lastCertData);cv.toBlob(function(b){var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='Sertifikat-Adopsi-'+name.replace(/[^\w\- ]+/g,'').replace(/ +/g,'-')+'.png';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},1500);if(window.toast)toast('Sertifikat berhasil diunduh','ok');},'image/png');}if(_certLogoOK){save();}else{_loadCertLogo(save);setTimeout(save,1300);}}
 function certSync(){var el=document.getElementById('certName');if(!el)return;if(!el.value){var u=(typeof bwkUser==='function')?bwkUser():null;if(u&&u.name)el.value=u.name;}buildCert();}
 window.addEventListener('load',function(){setTimeout(certSync,140);});
 /* --- Arsip Publikasi Ilmiah --- */
@@ -1652,15 +1709,13 @@ window.ic=ic;
 var catData=[
  {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'satellite',grad:'var(--g-violet)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
    {id:'klh',name:'KLH',emoji:'landmark',tiles:[
-     {a:"go('ekosistem')",ic:'g-green',e:'tree',l:'Kesehatan'},
+     {a:"go('ekosistem')",ic:'g-green',e:'tree',l:'Ekosistem'},
      {a:"go('biodiv')",ic:'g-teal',e:'flask',l:'Biodiversitas'},
      {a:"go('arsip')",ic:'g-indigo',e:'book',l:'Publikasi'},
-     {a:"go('regulasi')",ic:'g-violet',e:'scale',l:'Regulasi'},
-     {a:"go('donasi')",ic:'g-brand',e:'heart',l:'Donasi'}
+     {a:"go('regulasi')",ic:'g-violet',e:'scale',l:'Regulasi'}
    ]},
    {id:'hut',name:'Kehutanan',emoji:'pine',tiles:[
      {a:"go('pantau')",ic:'g-teal',e:'tree',l:'Pantau Pohon'},
-     {a:"go('adopsi')",ic:'g-green',e:'sprout',l:'Adopsi Pohon'},
      {a:"go('eksplor')",ic:'g-green',e:'leaf',l:'Flora & Fauna'},
      {a:"go('bandingkan')",ic:'g-teal',e:'contrast',l:'Before-After'}
    ]}
@@ -1672,9 +1727,14 @@ var catData=[
    {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'}
  ]},
  {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'mountain',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
+   {a:"go('survival')",ic:'g-sunset',e:'shield',l:'Survival Kit'},
    {a:"go('jurnal')",ic:'g-blue',e:'compass',l:'Jurnal Pendaki'},
    {a:"go('agenda')",ic:'g-amber',e:'calendar',l:'Agenda'},
    {a:"go('komunitas')",ic:'g-pink',e:'users',l:'Komunitas'}
+ ]},
+ {id:'aku',name:'AKU',full:'Aku & Kontribusi',emoji:'heart',grad:'var(--g-brand)',desc:'Kontribusi personalmu untuk Bawakaraeng — donasi & adopsi pohon.',tiles:[
+   {a:"go('donasi')",ic:'g-brand',e:'heart',l:'Donasi'},
+   {a:"go('adopsi')",ic:'g-green',e:'sprout',l:'Adopsi Pohon'}
  ]}
 ];
 var curCat=null;
@@ -1768,7 +1828,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
 <script>
 function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},420);}}
-window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='⛰️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
+window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='���️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
 <script>
@@ -1874,6 +1934,31 @@ function locateMe(){if(!navigator.geolocation){toast('GPS tidak tersedia di pera
 function renderElevProfile(){var host=document.getElementById('elevProfile');if(!host)return;var pts=(typeof jalurPos!=='undefined'&&jalurPos)?jalurPos:[];if(!pts.length)return;var W=320,H=126,pad=8,base=H-18;var els=pts.map(function(p){return p.el;});var mn=Math.min.apply(null,els),mx=Math.max.apply(null,els);var n=pts.length;function X(i){return pad+i*((W-pad*2)/(n-1));}function Y(v){return 12+(base-12)*(1-(v-mn)/((mx-mn)||1));}var line='',area='M'+X(0).toFixed(1)+' '+base,dots='';pts.forEach(function(p,i){var x=X(i),y=Y(p.el);line+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';area+=' L'+x.toFixed(1)+' '+y.toFixed(1);var col=p.st==='danger'?'#ff2d55':(p.st==='warn'?'#e5951c':'#08a35f');dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.4" fill="'+col+'" stroke="#fff" stroke-width="1.4"><title>'+p.n+' \u00b7 '+p.el+' m</title></circle>';});area+=' L'+X(n-1).toFixed(1)+' '+base+' Z';var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="egr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b6fff" stop-opacity="0.32"/><stop offset="1" stop-color="#2b6fff" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#egr)"/><path d="'+line+'" fill="none" stroke="#2b6fff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'+dots+'<text x="'+X(0).toFixed(1)+'" y="'+(base+13)+'" font-size="8" fill="#8a94a6">'+els[0]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(base+13)+'" font-size="8" text-anchor="end" fill="#8a94a6">'+els[n-1]+'m</text><text x="'+X(n-1).toFixed(1)+'" y="'+(Y(mx)-4).toFixed(1)+'" font-size="8.5" text-anchor="end" font-weight="700" fill="#e0154a">\u25b2 '+mx+'m</text></svg>';host.innerHTML=svg;}
 async function loadAlerts(){var box=document.getElementById('alertBox');if(!box)return;var al=[];var LA=-5.31694,LN=119.94444;try{var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+LA+'&longitude='+LN+'&current=weather_code,wind_speed_10m&daily=precipitation_probability_max&timezone=Asia%2FMakassar&forecast_days=1');var d=await r.json();var pp=(d.daily&&d.daily.precipitation_probability_max)?d.daily.precipitation_probability_max[0]:null;var wc=d.current?d.current.weather_code:null;var ws=d.current?d.current.wind_speed_10m:null;if(pp!=null&&pp>=70)al.push({lv:'warn',ic:'\ud83c\udf27\ufe0f',t:'Potensi hujan lebat',d:'Peluang hujan '+pp+'% hari ini. Pertimbangkan menunda pendakian.'});if(wc!=null&&wc>=95)al.push({lv:'danger',ic:'\u26c8\ufe0f',t:'Badai petir terdeteksi',d:'Hindari area terbuka, punggungan, dan puncak.'});if(ws!=null&&ws>=40)al.push({lv:'warn',ic:'\ud83d\udca8',t:'Angin kencang',d:'Kecepatan angin sekitar '+Math.round(ws)+' km/jam.'});}catch(e){}try{var ra=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LA+'&longitude='+LN+'&current=us_aqi&timezone=Asia%2FMakassar');var da=await ra.json();var aqi=da.current?da.current.us_aqi:null;if(aqi!=null&&aqi>100)al.push({lv:(aqi>150?'danger':'warn'),ic:'\ud83d\ude37',t:'Kualitas udara buruk (AQI '+aqi+')',d:'Bisa indikasi asap/kebakaran. Batasi aktivitas berat.'});}catch(e){}try{var stt=new Date(Date.now()-86400000).toISOString().slice(0,10);var rq=await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime='+stt+'&minmagnitude=4&latitude='+LA+'&longitude='+LN+'&maxradiuskm=350&orderby=time&limit=1');var dq=await rq.json();if(dq.features&&dq.features.length){var q=dq.features[0];var m=q.properties.mag||0;al.push({lv:(m>=5?'danger':'warn'),ic:'\ud83d\udcf3',t:'Gempa M'+m.toFixed(1)+' terkini',d:(q.properties.place||'dekat kawasan')+'. Tetap waspada saat mendaki.'});}}catch(e){}if(!al.length){box.innerHTML='<div class="alert ok"><span class="ai">\u2705</span><div><b>Kondisi relatif aman</b><small>Tidak ada peringatan cuaca ekstrem, gempa, atau titik api signifikan saat ini.</small></div></div>';return;}box.innerHTML=al.map(function(a){return '<div class="alert '+a.lv+'"><span class="ai">'+a.ic+'</span><div><b>'+a.t+'</b><small>'+a.d+'</small></div></div>';}).join('');}
 window.addEventListener('load',function(){setTimeout(function(){try{loadAlerts();}catch(e){}},700);});
+var _SV_INNER="\n<div class=\"sv-hero\">\n  <h3>🧭 Aturan Bertahan Hidup</h3>\n  <p style=\"margin:0;font-size:13px;opacity:.95;line-height:1.5\">Tetap tenang &amp; pakai metode <b>STOP</b> — <b>S</b>top · <b>T</b>hink (berpikir) · <b>O</b>bserve (amati) · <b>P</b>lan (rencana). Panik adalah bahaya nomor satu.</p>\n  <div class=\"sv-r3\">\n    <span>⏱️ 3 menit tanpa udara</span>\n    <span>🥶 3 jam tanpa shelter</span>\n    <span>💧 3 hari tanpa air</span>\n    <span>🍖 3 minggu tanpa makan</span>\n  </div>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-indigo)\"></span><h3>🏕️ Prioritas #1: Shelter &amp; Hangat</h3></div>\n<div class=\"sv-card\">\n  <p>Suhu Bawakaraeng bisa <b>di bawah 10°C</b> dan berkabut. <b>Hipotermia</b> membunuh lebih cepat daripada lapar.</p>\n  <ul>\n    <li>Cari tempat terlindung angin: balik batu besar, cekungan, atau rapatan vegetasi — hindari puncak terbuka &amp; jalur aliran air.</li>\n    <li>Beri alas isolasi dari tanah (ranting, daun kering, matras) — tanah dingin menyerap panas tubuh.</li>\n    <li>Bangun bivak sederhana dari poncho/jas hujan + tali; tutup rapat, sisakan lubang udara.</li>\n    <li>Jaga pakaian tetap kering, gunakan sistem lapis (layering), tetap bergerak ringan agar hangat.</li>\n  </ul>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-blue)\"></span><h3>💧 Air Bersih</h3></div>\n<div class=\"sv-card\">\n  <p>Sumber: mata air, hulu sungai kecil, air hujan, embun pagi (serap dengan kain), atau tampungan di pelepah daun.</p>\n  <ul>\n    <li>Selalu <b>saring lalu rebus 1–3 menit</b> (tambah waktu di ketinggian) untuk membunuh kuman.</li>\n    <li>Tanpa alat: saring lewat kain + arang + pasir, lalu jemur air di botol bening (metode SODIS) ±6 jam.</li>\n    <li>Hindari air tergenang berbau, berbusa, atau dekat bangkai/kotoran.</li>\n  </ul>\n  <div class=\"sv-warn\">⚠️ Jangan minum air laut, air seni, atau air keruh mentah — justru memperparah dehidrasi &amp; infeksi.</div>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-amber)\"></span><h3>🔥 Api</h3></div>\n<div class=\"sv-card\">\n  <p>Api memberi kehangatan, air matang, sinyal, &amp; rasa aman. Siapkan 3 hal: <b>pemantik</b>, <b>tinder</b> (bahan mudah tersulut), &amp; <b>kayu bertahap</b>.</p>\n  <ul>\n    <li>Tinder: serat kelapa/kulit kayu kering, kapas + vaselin, rumput/daun kering, getah pinus.</li>\n    <li>Susun piramida kecil→besar; lindungi dari angin &amp; lembap; nyalakan dari bawah searah angin.</li>\n    <li>Cadangan pemantik: korek tahan air, firesteel, atau lensa/kaca untuk memfokuskan sinar matahari.</li>\n  </ul>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-brand)\"></span><h3>🆘 Sinyal Darurat</h3></div>\n<div class=\"sv-card\">\n  <ul>\n    <li><b>Aturan 3</b> = tanda darurat internasional: 3 tiupan peluit / 3 kilatan cahaya / 3 kepulan asap.</li>\n    <li>Buat tanda besar di lahan terbuka: huruf <b>“SOS”</b> atau <b>“V”</b> (butuh bantuan) dari batu/ranting kontras.</li>\n    <li>Pantulkan sinar matahari dengan cermin/layar HP ke arah penyelamat atau helikopter.</li>\n    <li>Hemat baterai HP: mode hemat daya, matikan bila tak dipakai, kirim titik koordinat saat sinyal muncul.</li>\n  </ul>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-green)\"></span><h3>🌿 Tumbuhan yang Bisa Dikonsumsi</h3></div>\n<div class=\"sv-card\">\n  <p>Utamakan yang kamu <b>kenal pasti</b>. Bila ragu, lakukan <b>Uji Kelayakan Makan</b> (di bawah).</p>\n  <div class=\"sv-grid\">\n    <span class=\"sv-chip good\">🌱 Pucuk paku/pakis muda (rebus)</span>\n    <span class=\"sv-chip good\">🎋 Rebung bambu muda (rebus)</span>\n    <span class=\"sv-chip good\">🫐 Arbei/murbei gunung (Rubus)</span>\n    <span class=\"sv-chip good\">🍓 Buah cantigi matang</span>\n    <span class=\"sv-chip good\">🌼 Bunga &amp; daun begonia (asam, rebus)</span>\n    <span class=\"sv-chip good\">🌿 Semanggi &amp; daun talas muda (WAJIB rebus)</span>\n  </div>\n  <ul>\n    <li>Masak/rebus dulu untuk menghilangkan getah &amp; oksalat (mis. talas, pakis).</li>\n    <li>Cari di tepi sungai &amp; area terbuka; hindari tumbuhan dekat kotoran atau air tercemar.</li>\n  </ul>\n  <div class=\"sv-warn\">🧪 <b>Uji Kelayakan Makan (darurat):</b> cium → oles ke kulit → sentuh bibir → kunyah sedikit tanpa ditelan, tunggu reaksi. Hentikan bila terasa pahit/panas/gatal/mati rasa. Uji <b>satu jenis, satu bagian</b> dengan jeda beberapa jam.</div>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-teal)\"></span><h3>🍖 Hewan yang Bisa Dikonsumsi</h3></div>\n<div class=\"sv-card\">\n  <p>Protein paling mudah &amp; aman dari hewan kecil. <b>Masak sampai benar-benar matang.</b></p>\n  <div class=\"sv-grid\">\n    <span class=\"sv-chip good\">🦗 Belalang &amp; jangkrik (buang kaki, panggang)</span>\n    <span class=\"sv-chip good\">🐛 Larva/ulat kayu (panggang)</span>\n    <span class=\"sv-chip good\">🐟 Ikan sungai</span>\n    <span class=\"sv-chip good\">🐌 Keong/siput air (rebus matang)</span>\n    <span class=\"sv-chip good\">🐸 Katak sawah (kulit dibuang)</span>\n    <span class=\"sv-chip good\">🥚 Telur (ambil seperlunya)</span>\n  </div>\n  <ul>\n    <li>Serangga: hindari yang berwarna mencolok, berbau menyengat, berbulu, atau mati tanpa sebab jelas.</li>\n    <li>Ikan/keong: masak matang untuk cegah parasit. Jebakan &amp; pancing lebih hemat tenaga daripada mengejar.</li>\n  </ul>\n  <div class=\"sv-warn\">🛡️ <b>Etika konservasi:</b> Bawakaraeng kawasan lindung. Satwa dilindungi (mis. <b>monyet Macaca maura</b> &amp; <b>elang Sulawesi</b>) <b>dilarang diburu</b>. Manfaatkan sumber daya alam hanya saat benar-benar darurat.</div>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-brand)\"></span><h3>⛔ Hindari — Tanda Beracun</h3></div>\n<div class=\"sv-card\">\n  <div class=\"sv-grid\">\n    <span class=\"sv-chip bad\">🍄 Semua jamur liar</span>\n    <span class=\"sv-chip bad\">🥛 Bergetah putih seperti susu</span>\n    <span class=\"sv-chip bad\">🌰 Biji/umbi rasa sangat pahit</span>\n    <span class=\"sv-chip bad\">🧴 Bau almond/kimia</span>\n    <span class=\"sv-chip bad\">🐛 Ulat berbulu &amp; serangga warna cerah</span>\n    <span class=\"sv-chip bad\">🐍 Ular &amp; hewan tak dikenal</span>\n  </div>\n  <p>Buah putih &amp; kuning sering beracun; buah agregat (arbei) &amp; biru-kehitaman umumnya lebih aman — tetap uji dulu.</p>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-violet)\"></span><h3>🩹 P3K Kondisi Kritis</h3></div>\n<div class=\"sv-card\">\n  <ul>\n    <li><b>Hipotermia:</b> pindah ke tempat kering &amp; hangat, ganti baju basah, beri minuman hangat manis, dekap tubuh.</li>\n    <li><b>Dehidrasi:</b> istirahat di tempat teduh, minum bertahap (oralit: air + sedikit gula &amp; garam).</li>\n    <li><b>Luka/pendarahan:</b> tekan dengan kain bersih, posisikan lebih tinggi dari jantung, balut.</li>\n    <li><b>Keseleo/patah:</b> imobilisasi dengan bidai (ranting + kain), jangan dipaksa berjalan.</li>\n    <li><b>Tersesat:</b> berhenti, tetap di tempat terbuka, bunyikan sinyal, hemat energi &amp; baterai.</li>\n  </ul>\n</div>\n\n<div class=\"sh\"><span class=\"bar\" style=\"background:var(--g-amber)\"></span><h3>✅ Isi Tas Survival Ideal</h3></div>\n<div class=\"sv-card\">\n  <div class=\"sv-grid\">\n    <span class=\"sv-chip\">🔦 Headlamp + baterai</span>\n    <span class=\"sv-chip\">🔥 Korek tahan air/firesteel</span>\n    <span class=\"sv-chip\">🔪 Pisau lipat</span>\n    <span class=\"sv-chip\">🧭 Kompas + peta</span>\n    <span class=\"sv-chip\">📣 Peluit</span>\n    <span class=\"sv-chip\">🩹 P3K pribadi</span>\n    <span class=\"sv-chip\">🧵 Paracord 5m</span>\n    <span class=\"sv-chip\">🌡️ Emergency blanket</span>\n    <span class=\"sv-chip\">💧 Botol + filter/tablet</span>\n    <span class=\"sv-chip\">🍫 Makanan darurat tinggi kalori</span>\n    <span class=\"sv-chip\">☔ Poncho/jas hujan</span>\n    <span class=\"sv-chip\">🔋 Powerbank</span>\n  </div>\n</div>";
+function renderSurvival(){var el=document.getElementById('sv-body');if(el)el.innerHTML=_SV_INNER;}
+window.renderSurvival=renderSurvival;
+function downloadSurvival(){
+  var css=":root{--g-amber:linear-gradient(135deg,#ffd15c,#ff9838);--g-blue:linear-gradient(135deg,#5e9dff,#2b6fff);--g-brand:linear-gradient(135deg,#ff6b6b,#ff2d55);--g-green:linear-gradient(135deg,#2af598,#08b96f);--g-indigo:linear-gradient(135deg,#7c8cff,#6a3ffb);--g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);--g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);--g-violet:linear-gradient(135deg,#c86bff,#8b3dff);--ink:#141a2c;--sub:#565f78;--card:#ffffff;--line:#e6e9f2;--shadow:0 4px 14px rgba(30,40,90,.08)}"
+   +"*{box-sizing:border-box}body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f6f8fc;color:var(--ink);line-height:1.5}"
+   +".wrap{max-width:760px;margin:0 auto;padding:22px 18px 60px}"
+   +".doc-head{display:flex;align-items:center;gap:14px;background:var(--g-sunset);color:#fff;border-radius:18px;padding:20px;margin-bottom:14px}"
+   +".doc-logo{width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:28px;flex:none}"
+   +".doc-head h1{margin:0;font-size:20px}.doc-head p{margin:4px 0 0;font-size:13px;opacity:.95}"
+   +".sh{display:flex;align-items:center;gap:9px;margin:18px 0 2px}.sh .bar{width:5px;height:20px;border-radius:4px;display:inline-block}.sh h3{margin:0;font-size:15.5px}"
+   +".sv-hero{background:var(--g-sunset);color:#fff;border-radius:18px;padding:18px;margin-bottom:4px}.sv-hero h3{margin:0 0 6px;font-size:16px}"
+   +".sv-r3{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.sv-r3 span{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);padding:6px 10px;border-radius:12px;font-size:12px;font-weight:700}"
+   +".sv-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 16px;box-shadow:var(--shadow);margin-top:8px}"
+   +".sv-card p{margin:6px 0;font-size:14px}.sv-card ul{margin:8px 0 2px;padding-left:20px}.sv-card li{font-size:14px;margin:5px 0}"
+   +".sv-grid{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}"
+   +".sv-chip{font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--sub)}"
+   +".sv-chip.good{background:#e9f9f0;color:#08843f;border-color:#bfeccd}.sv-chip.bad{background:#fdeaea;color:#c0341d;border-color:#f4c2bb}"
+   +".sv-warn{background:#fff6e6;border:1px solid #ffe0a3;color:#8a5a00;border-radius:14px;padding:11px 13px;font-size:13px;margin-top:10px}"
+   +".btn{display:inline-block;color:#fff;font-weight:800;padding:12px 18px;border-radius:14px;text-decoration:none;margin-top:14px}.g-sunset{background:var(--g-sunset)}.g-brand{background:var(--g-brand)}"
+   +"footer{margin-top:26px;font-size:12px;color:var(--sub);border-top:1px solid var(--line);padding-top:14px}@media print{.btn{display:none}body{background:#fff}}";
+  var doc='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Survival Kit — Gunung Bawakaraeng</title><style>'+css+'</style></head><body><div class="wrap"><div class="doc-head"><div class="doc-logo">⛰️</div><div><h1>Survival Kit — Gunung Bawakaraeng</h1><p>Panduan bertahan hidup di alam bebas · Reichas Chelebes Rangers</p></div></div>'+_SV_INNER+'<footer>Dokumen edukasi Reichas Chelebes Rangers · Bukan pengganti pelatihan resmi. Utamakan SIMAKSI, pendamping berpengalaman, &amp; hubungi SOS bila darurat.</footer></div></body></html>';
+  try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download='Survival-Kit-Gunung-Bawakaraeng.html';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},1500);if(window.toast)toast('Panduan Survival Kit diunduh','ok');}catch(e){if(window.toast)toast('Gagal mengunduh','err');}
+}
+window.downloadSurvival=downloadSurvival;
 function printCard(cid){var host=document.getElementById(cid);if(!host)return;var card=host.querySelector('.permit,.cert');if(!card){toast('Belum ada dokumen untuk dicetak','err');return;}card.classList.add('print-target');function done(){card.classList.remove('print-target');window.removeEventListener('afterprint',done);}window.addEventListener('afterprint',done);setTimeout(function(){try{window.print();}catch(e){done();}},80);}
 </script>
 <script>
