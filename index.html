@@ -667,6 +667,12 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .pjoin{font-size:12px;font-weight:600;opacity:.85;margin-top:5px}
 .badges .bdg2.locked{opacity:.4;filter:grayscale(.9)}
 .badges .bdg2 span{transition:opacity .2s}
+.badge-panel{margin-top:12px;padding:14px;border-radius:18px;background:linear-gradient(135deg,#fff9e8,#f0f7ee);border:1px solid #e6dfbc;box-shadow:var(--shadow)}
+.badge-overview{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.badge-overview b{display:block;font-size:15px;color:#364331}.badge-overview small{display:block;font-size:11.5px;color:#687461;margin-top:2px}.badge-score{flex:none;border-radius:14px;padding:7px 10px;background:#fff;color:#ad7615;font-size:12px;font-weight:900;box-shadow:0 3px 10px rgba(143,109,22,.11)}
+.badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0;padding:0;overflow:visible}.badge-grid .bdg2{width:auto;min-width:0;text-align:left;border:1px solid rgba(38,112,90,.14);border-radius:14px;padding:10px;background:rgba(255,255,255,.74);display:flex;align-items:center;gap:9px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease;border-color .16s ease}.badge-grid .bdg2:last-child{grid-column:1/-1}.badge-grid .bdg2:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(45,66,38,.12)}.badge-grid .bdg2:active{transform:scale(.98)}
+.badge-grid .bdg2 .bi{width:38px;height:38px;border-radius:12px;margin:0;font-size:19px;flex:none;box-shadow:none}.badge-grid .bdg2 .badge-tx{min-width:0;flex:1}.badge-grid .bdg2 .badge-tx span{display:block;font-size:12px;font-weight:900;color:#34423b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.badge-grid .bdg2 .badge-tx small{display:block;font-size:10.5px;font-weight:700;color:#738078;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.badge-grid .bdg2 .badge-state{font-size:10px;font-weight:900;border-radius:10px;padding:3px 5px;background:#e7f6ed;color:#137a48}.badge-grid .bdg2.locked{opacity:.64;filter:grayscale(.82);background:rgba(245,246,244,.7)}.badge-grid .bdg2.locked .badge-state{background:#edf0ee;color:#718078}
+html.dark .badge-panel{background:linear-gradient(135deg,#1e2d28,#172320);border-color:#344b41}.dark .badge-overview b{color:#e5f1e9}.dark .badge-overview small{color:#aabbb0}.dark .badge-score{background:#283a32;color:#ffd98b}.dark .badge-grid .bdg2{background:#202e2a;border-color:#34483f}.dark .badge-grid .bdg2 .badge-tx span{color:#e4eee8}.dark .badge-grid .bdg2 .badge-tx small{color:#a8bbb0}.dark .badge-grid .bdg2.locked{background:#1c2724}
+
 .login-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid #dadce0;border-radius:12px;background:#fff;color:#3c4043;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0}
 .login-google:active{background:#f3f3f3}
 .login-divider{display:flex;align-items:center;gap:10px;color:#7f93ad;font-size:11.5px;margin:12px 0}.login-divider:before,.login-divider:after{content:'';height:1px;background:rgba(255,255,255,.16);flex:1}.login-guest{width:100%;padding:12px;border:1px solid rgba(255,255,255,.28);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;font-size:14px;font-weight:800;cursor:pointer}.login-guest:active{background:rgba(255,255,255,.13)}
@@ -950,6 +956,7 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
     <div class="sec-sub">Ketuk titik pos di peta untuk lihat ketinggian, sumber air &amp; area tenda.</div>
     <div id="jalurMap"></div>
     <button class="locate-btn" onclick="locateMe()">📍 Tunjukkan Lokasi Saya</button>
+    <div id="hikeTracker"></div>
     <div class="legend"><span><i style="background:#08a35f"></i>Aman</span><span><i style="background:#d5803b"></i>Waspada</span><span><i style="background:#ff2d55"></i>Bahaya</span></div>
     <div class="jhint">Titik pos jalur via Lembanna (perkiraan koordinat). Ketinggian dari peta resmi Gunungbagging 2020.</div>
     <div class="elevwrap"><div class="li-hd">📈 Profil Ketinggian (Via Lembanna)</div><div id="elevProfile"></div></div>
@@ -1045,8 +1052,8 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
       <div class="pstat"><b id="statLaporan">0</b><small>Laporan</small></div>
       <div class="pstat"><b id="statPoin">0</b><small>Poin</small></div>
     </div>
-    <div class="sh"><span class="bar" style="background:var(--g-amber)"></span><h3>Lencana</h3></div>
-    <div class="badges" id="profBadges"></div>
+    <div class="sh"><span class="bar" style="background:var(--g-amber)"></span><h3>Lencana Pendaki</h3></div>
+    <div class="badge-panel"><div class="badge-overview"><div><b>Jejak pendakianmu</b><small id="profBadgeHint">Selesaikan tantangan untuk membuka lencana.</small></div><span class="badge-score" id="profBadgeCount">0 / 5</span></div><div class="badges badge-grid" id="profBadges"></div></div>
     <div class="plist">
       <div class="pli" id="profAdminLink" style="display:none" onclick="openAdmin()"><div class="pi g-brand">🛡️</div><b>Panel Admin</b><span class="chev">›</span></div>
       <div class="pli" onclick="openEditProfile()"><div class="pi g-brand">✏️</div><b>Edit Profil</b><span class="chev">›</span></div>
@@ -2225,29 +2232,29 @@ document.addEventListener('visibilitychange',function(){if(document.hidden){if(h
 function _incStat(k,n){try{var v=(+localStorage.getItem(k)||0)+(n||1);localStorage.setItem(k,v);}catch(e){}}
 function _statN(k){var v=+localStorage.getItem(k);return isNaN(v)?0:v;}
 var PROF_BADGES=[
- {e:'\uD83C\uDF31',c:'g-green',l:'Penjaga Flora',ok:function(d){return d.trees>=250;}},
- {e:'\uD83D\uDCF8',c:'g-blue',l:'Reporter',ok:function(d){return d.rep>=1;}},
- {e:'\u26F0\uFE0F',c:'g-amber',l:'Summiteer',ok:function(d){return d.jur>=1;}},
- {e:'\u267B\uFE0F',c:'g-violet',l:'Zero Waste',ok:function(d){return d.rep>=3||d.ev>=1;}},
- {e:'\u2764\uFE0F',c:'g-pink',l:'Relawan',ok:function(d){return d.ev>=1;}}
+ {id:'checkin',e:'📍',c:'g-blue',l:'Tertib Check-in',desc:'Check-in pos menjaga keselamatan perjalanan.',need:'Lakukan 3 check-in pos saat pendakian.',ok:function(d){return d.checkin>=3;},prog:function(d){return d.checkin+'/3 check-in pos';}},
+ {id:'simaksi',e:'🎫',c:'g-indigo',l:'SIMAKSI Tuntas',desc:'Pengajuan SIMAKSI telah selesai sampai dokumen terbit.',need:'Selesaikan satu pengajuan SIMAKSI.',ok:function(d){return d.simaksi>=1;},prog:function(d){return d.simaksi?'Dokumen SIMAKSI terbit':'Belum ada dokumen terbit';}},
+ {id:'report',e:'📍',c:'g-amber',l:'Mata Jalur',desc:'Aktif menyampaikan kondisi nyata dari lapangan.',need:'Kirim minimal satu laporan kondisi jalur.',ok:function(d){return d.rep>=1;},prog:function(d){return d.rep+'/1 laporan jalur';}},
+ {id:'clean',e:'🌿',c:'g-green',l:'Sahabat Gunung',desc:'Berpartisipasi pada kegiatan bersih gunung atau konservasi.',need:'Ikuti satu kegiatan bersih gunung.',ok:function(d){return d.clean>=1;},prog:function(d){return d.clean+'/1 kegiatan konservasi';}},
+ {id:'good',e:'🛡️',c:'g-violet',l:'Pendaki Bertanggung Jawab',desc:'Rekam jejak pendakian baik dan tidak ada catatan pelanggaran lokal.',need:'SIMAKSI terbit dan tanpa catatan pelanggaran.',ok:function(d){return d.simaksi>=1&&d.warn===0;},prog:function(d){return d.warn?'Ada catatan yang perlu diselesaikan':(d.simaksi?'Status baik':'Selesaikan SIMAKSI dulu');}}
 ];
+var _profileBadgeData={};
+function _profileSimaksiDone(){try{var a=_lsGet('bwkSimaksi',[]);return (a||[]).filter(function(r){return r&&(r.stage==='terbit'||r.astatus==='terbit');}).length;}catch(e){return 0;}}
 function renderProfile(){
   var u=(typeof bwkUser==='function')?bwkUser():null;
   var name=(u&&u.name)?u.name:'Pendaki';
   var role=(u&&u.role)?u.role:'Pendaki';
-  var d={rep:_statN('bwkMyReports'),jur:_statN('bwkMyJurnal'),trees:_statN('bwkMyTrees'),ev:_statN('bwkMyEvents')};
-  var poin=d.rep*10+d.jur*15+Math.floor(d.trees/10)+d.ev*20;
+  var d={rep:_statN('bwkMyReports'),jur:_statN('bwkMyJurnal'),trees:_statN('bwkMyTrees'),ev:_statN('bwkMyEvents'),checkin:_statN('bwkTrailCheckins'),simaksi:_profileSimaksiDone(),clean:_statN('bwkMyCleanups')||_statN('bwkMyEvents'),warn:_statN('bwkConductWarnings')};_profileBadgeData=d;
+  var poin=d.rep*10+d.jur*15+Math.floor(d.trees/10)+d.ev*20+d.checkin*4+d.simaksi*20;
   var level=Math.max(1,Math.min(9,Math.floor(poin/100)+1));
   var av=document.getElementById('profAv');if(av){var _ph=(u&&u.photo)?u.photo:'';if(_ph){av.innerHTML='<img src="'+_ph+'" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';}else{av.textContent=(typeof initials==='function'&&name)?initials(name):name.slice(0,1).toUpperCase();}}
-  var pn=document.getElementById('profName');if(pn){pn.textContent=name;}
-  var lv=document.getElementById('profLevel');if(lv){lv.textContent='\uD83C\uDFF5\uFE0F '+role+' \u00b7 Level '+level;}
-  var pj=document.getElementById('profJoin');if(pj){pj.textContent=(u&&u.ts)?('Anggota sejak '+new Date(u.ts).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})):'';}
-  var e1=document.getElementById('statPendakian');if(e1){e1.textContent=d.jur;}
-  var e2=document.getElementById('statLaporan');if(e2){e2.textContent=d.rep;}
-  var e3=document.getElementById('statPoin');if(e3){e3.textContent=poin;}
-  var bc=document.getElementById('profBadges');
-  if(bc){bc.innerHTML=PROF_BADGES.map(function(b){var on=b.ok(d);return '<div class="bdg2'+(on?'':' locked')+'"><div class="bi '+b.c+'">'+b.e+'</div><span>'+b.l+(on?'':' \uD83D\uDD12')+'</span></div>';}).join('');}
+  var pn=document.getElementById('profName');if(pn){pn.textContent=name;}var lv=document.getElementById('profLevel');if(lv){lv.textContent='🏵️ '+role+' · Level '+level;}var pj=document.getElementById('profJoin');if(pj){pj.textContent=(u&&u.ts)?('Anggota sejak '+new Date(u.ts).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})):'';}
+  var e1=document.getElementById('statPendakian');if(e1){e1.textContent=d.jur;}var e2=document.getElementById('statLaporan');if(e2){e2.textContent=d.rep;}var e3=document.getElementById('statPoin');if(e3){e3.textContent=poin;}
+  var got=PROF_BADGES.filter(function(b){return b.ok(d);}).length;var count=document.getElementById('profBadgeCount');if(count)count.textContent=got+' / '+PROF_BADGES.length;var hint=document.getElementById('profBadgeHint');if(hint)hint.textContent=got?'Terus jaga jejak baikmu di Bawakaraeng.':'Selesaikan tantangan untuk membuka lencana.';
+  var bc=document.getElementById('profBadges');if(bc){bc.innerHTML=PROF_BADGES.map(function(b){var on=b.ok(d);return '<button class="bdg2'+(on?'':' locked')+'" onclick="openBadgeInfo(&quot;'+b.id+'&quot;)" aria-label="'+b.l+'"><div class="bi '+b.c+'">'+b.e+'</div><div class="badge-tx"><span>'+b.l+'</span><small>'+b.prog(d)+'</small></div><em class="badge-state">'+(on?'Terbuka':'🔒')+'</em></button>';}).join('');}
 }
+function openBadgeInfo(id){var b=PROF_BADGES.filter(function(x){return x.id===id;})[0];if(!b)return;var d=_profileBadgeData||{},on=b.ok(d);var html='<div style="text-align:center;padding:5px 2px 8px"><div class="'+b.c+'" style="width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:30px;color:#fff">'+b.e+'</div><h2 style="margin:0 0 6px;font-size:20px">'+b.l+'</h2><p style="font-size:13px;line-height:1.5;color:#667085;margin:0 0 12px">'+b.desc+'</p><div style="padding:10px 12px;border-radius:12px;background:'+(on?'#e8f8ef':'#f4f6f8')+';color:'+(on?'#087e4b':'#596579')+';font-size:13px;font-weight:800">'+(on?'✅ Lencana sudah terbuka':'🔒 '+b.need)+'</div><p style="font-size:12px;color:#738078;margin:10px 0 0">Progres: '+b.prog(d)+'</p></div>';if(typeof openSheet==='function'){document.getElementById('sheetBody').innerHTML=html;openSheet();}}
+window.openBadgeInfo=openBadgeInfo;
 function openEditProfile(){
   var u=(typeof bwkUser==='function')?bwkUser():null;
   var name=(u&&u.name)?u.name:'';var role=(u&&u.role)?u.role:'Pendaki';
@@ -2336,5 +2343,6 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="sk.js"></script>
 <script src="sos.js"></script>
 <script src="chat.js"></script>
+<script src="hike.js"></script>
 </body>
 </html>

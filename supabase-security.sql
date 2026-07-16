@@ -179,3 +179,12 @@ end;
 $$;
 revoke all on function public.submit_simaksi_payment(text,text) from public;
 grant execute on function public.submit_simaksi_payment(text,text) to authenticated;
+
+
+-- Check-in progres pendakian (opsional, untuk sinkronisasi saat online).
+create table if not exists public.hike_checkins (id bigint generated always as identity primary key,user_id uuid not null,position text not null,altitude integer,checked_in_at timestamptz not null default now());
+alter table public.hike_checkins enable row level security;
+drop policy if exists \"checkins owner insert\" on public.hike_checkins;
+drop policy if exists \"checkins owner admin read\" on public.hike_checkins;
+create policy \"checkins owner insert\" on public.hike_checkins for insert to authenticated with check (user_id=auth.uid());
+create policy \"checkins owner admin read\" on public.hike_checkins for select to authenticated using (user_id=auth.uid() or public.is_app_admin());
