@@ -1,4 +1,4 @@
-const CACHE='bwk-v17-status-sync';
+const CACHE='bwk-v18-sos-location';
 const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/PANDUAN.html','/guide-assets/01-login.png','/guide-assets/02-guest-home.png','/guide-assets/03-login-gate.png','/guide-assets/04-ai-pendamping.png','/species-macaca.jpg','/og.jpg'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
