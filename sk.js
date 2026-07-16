@@ -184,13 +184,13 @@ function _skAdminCard(r,ref,cloud){
   var rf=cloud?(`&#39;`+String(ref).replace(/'/g,'')+`&#39;`):ref;
   var cf=cloud?'true':'false';
   var btns='';
-  var del=`<button class='btn gh' style='color:#c0333c;border:1px solid #f2b9c0' onclick='skAdminDelete(${rf},${cf})'>🗑️ Hapus Aktivitas</button>`;
-  if(!rej&&stage==='diajukan'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;verif&#39;)'>✅ Verifikasi + Terbitkan Kode PNBP</button><button class='btn gh' onclick='skAdminAct(${rf},${cf},&#39;tolak&#39;)'>❌ Tolak</button>${del}`;}
-  else if(!rej&&stage==='diverifikasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>💰 Tandai Sudah Bayar</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Kode via WA</button>${del}`;}
-  else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>${del}`;}
-  else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>${del}`;}
-  else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>${del}`;}
-  return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
+  var del=`<button class='btn gh sk-del' onclick='skAdminDelete(${rf},${cf})'>🗑️ Hapus Aktivitas</button>`;
+  if(!rej&&stage==='diajukan'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;verif&#39;)'>✅ Verifikasi + Terbitkan Kode PNBP</button><button class='btn gh' onclick='skAdminAct(${rf},${cf},&#39;tolak&#39;)'>❌ Tolak</button>`;}
+  else if(!rej&&stage==='diverifikasi'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;bayar&#39;)'>💰 Tandai Sudah Bayar</button><button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Kode via WA</button>`;}
+  else if(!rej&&stage==='dibayar'){btns=`<button class='btn g-indigo' onclick='skAdminAct(${rf},${cf},&#39;terbit&#39;)'>🎫 Terbitkan Dokumen SIMAKSI</button>`;}
+  else if(stage==='terbit'){btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Kirim Dokumen via WA</button>`;}
+  else{btns=`<button class='btn gh' onclick='skWA(${rf},${cf})'>💬 Hubungi Pemohon</button>`;}
+  return `<div class='acard'><div class='ac-h'><b>🎫 ${_skEsc(r.code||'')} · ${_skEsc(r.nama||'-')}</b>${badge}</div><div class='sk-delete-top'>${del}</div><div class='ac-b'><div class='pdet'><span>WhatsApp</span><b>${_skEsc(r.wa||'-')}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'-')} org · ${_skEsc(r.org||'-')}</b></div><div class='pdet'><span>Tanggal</span><b>${_skEsc(r.naik||'?')} s/d ${_skEsc(r.turun||'?')}</b></div><div class='pdet'><span>PNBP</span><b>${_skEsc(amt)}</b></div>${pnbp}<div style='margin:8px 0'>${docs}</div></div><div class='skbtns' style='flex-direction:column;gap:6px'>${btns}</div></div>`;
 }
 
 function skAdminAct(ref,cloud,action){
@@ -235,4 +235,5 @@ function skWA(ref,cloud){
   .acard .ac-b{font-size:12.5px;color:#42506b}
   .acard .ac-b .pdet{display:flex;justify-content:space-between;margin:3px 0}
   .acard .ac-b .pdet span{color:#8b98ad}
+  .sk-delete-top{display:flex;justify-content:flex-end;margin:6px 0 10px}.sk-delete-top .sk-del{width:auto;min-height:36px;padding:7px 12px;color:#c0333c;border:1px solid #f2b9c0}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}})();
