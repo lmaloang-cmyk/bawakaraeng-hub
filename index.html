@@ -705,6 +705,13 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .login-ic::before{content:'';position:absolute;inset:-7px;border-radius:50%;padding:1.5px;background:conic-gradient(transparent 0 56%,rgba(226,255,244,.96) 68%,transparent 83%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:welcomeRing 1.25s ease-out both}
 .login-ic::after{content:'';position:absolute;inset:-11px;border-radius:50%;background:radial-gradient(circle,rgba(214,255,239,.32),transparent 67%);z-index:-1;animation:welcomeGlow 1.6s ease-out both}
 .login-ic img{border-radius:50%;display:block;animation:welcomeFocus .8s cubic-bezier(.2,.85,.35,1) both}
+.login-ic{cursor:pointer;outline:none}.login-ic:focus-visible{box-shadow:0 0 0 3px rgba(207,255,236,.7),0 10px 26px rgba(0,0,0,.35)}
+.logo-mantra{position:absolute;inset:-17px -72px;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none;opacity:0;transform:scale(.78);text-align:center;text-shadow:0 2px 9px rgba(0,0,0,.75)}
+.logo-mantra span{display:block;color:#f1fff8;font-size:12px;line-height:1.1;font-weight:900;letter-spacing:.14em;white-space:nowrap}
+.login-ic.mantra-play img{animation:mantraLogo .55s ease-in forwards}.login-ic.mantra-play::before,.login-ic.mantra-play::after{animation:none;opacity:.26}.login-ic.mantra-play .logo-mantra{animation:mantraWords 3.15s cubic-bezier(.2,.75,.35,1) both}.login-ic.mantra-play .logo-mantra span:nth-child(1){animation:mantraLine 2.55s .1s both}.login-ic.mantra-play .logo-mantra span:nth-child(2){animation:mantraLine 2.55s .45s both}.login-ic.mantra-play .logo-mantra span:nth-child(3){animation:mantraLine 2.55s .8s both}
+@keyframes mantraLogo{to{opacity:.15;transform:scale(.72);filter:blur(1px)}}
+@keyframes mantraWords{0%,8%{opacity:0;transform:scale(.75)}18%,79%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}
+@keyframes mantraLine{0%,14%{opacity:0;transform:translateY(8px);filter:blur(3px)}28%,76%{opacity:1;transform:translateY(0);filter:blur(0)}100%{opacity:0;transform:translateY(-5px);filter:blur(2px)}}
 .login-h{animation:loginUp .5s .16s ease-out both}.login-p{animation:loginUp .5s .26s ease-out both}
 .login-benefit{animation:benefitIn .45s ease-out both}.login-benefit:nth-child(1){animation-delay:.34s}.login-benefit:nth-child(2){animation-delay:.43s}.login-benefit:nth-child(3){animation-delay:.52s}
 .login-google{animation:loginUp .48s .62s ease-out both}.login-divider{animation:loginUp .45s .69s ease-out both}.login-guest{animation:loginUp .48s .76s ease-out both}.login-hint,.login-ver{animation:loginUp .45s .83s ease-out both}
@@ -1999,7 +2006,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
 </div>
 <div id="loginOverlay" class="login-ov">
   <div class="login-card">
-    <div class="login-ic"><img id="loginLogo" src="rc-logo.jpg" alt="Reichas Chelebes"/></div>
+    <div class="login-ic" onclick="playLogoMantra()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();playLogoMantra();}" role="button" tabindex="0" aria-label="Tampilkan pesan Hidup, Kehidupan, Menghidupkan"><img id="loginLogo" src="rc-logo.jpg" alt="Reichas Chelebes"/><div class="logo-mantra" aria-hidden="true"><span>HIDUP</span><span>KEHIDUPAN</span><span>MENGHIDUPKAN</span></div></div>
     <h2 class="login-h">Selamat Datang</h2>
     <p class="login-p">Satu akun untuk pemantauan, pelaporan, dan keselamatan pendakian.</p>
     <div class="login-benefits">
@@ -2018,6 +2025,9 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
 <script>
 function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},420);}}
 window.addEventListener('load',function(){['introLogo','introLogo2','loginLogo'].forEach(function(id){var el=document.getElementById(id);if(el){el.src='rc-logo.jpg';}});});
+var _logoMantraTimer=null;
+function playLogoMantra(){var el=document.querySelector('.login-ic');if(!el)return;el.classList.remove('mantra-play');void el.offsetWidth;el.classList.add('mantra-play');if(_logoMantraTimer)clearTimeout(_logoMantraTimer);_logoMantraTimer=setTimeout(function(){el.classList.remove('mantra-play');},3250);}
+window.playLogoMantra=playLogoMantra;
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
 <script>
