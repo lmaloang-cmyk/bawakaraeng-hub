@@ -155,7 +155,7 @@ function skPaymentSubmit(code){var proof=_skPaymentDraft[code];if(!proof){toast(
 function _skStatusHtml(){
   var arr=[];try{arr=_lsGet('bwkSimaksi',[]);}catch(e){}
   var last=_skLastCode();
-  var lookup=`<div class='skmy-hero'><h3>👤 SIMAKSI Saya</h3><p>Lihat nomor pengajuan, status terbaru, kode PNBP, dan dokumen SIMAKSI yang sudah terbit.</p></div><div class='form-card'><div class='fld'><label>Cari Nomor Pengajuan</label><div class='frow' style='gap:8px'><input id='sk-cek' value='${_skEsc(last)}' placeholder='SMK-XXXXX' style='flex:1;text-transform:uppercase'/><button class='btn g-indigo' style='width:auto;padding:0 16px' onclick='skCek()'>Cek</button></div><small class='fhint'>Masukkan nomor pengajuan jika membuka aplikasi dari perangkat lain.</small></div><div id='skCekRes'></div></div>`;
+  var lookup=`<div class='skmy-hero'><h3>👤 SIMAKSI Saya</h3><p>Lihat nomor pengajuan, status terbaru, kode PNBP, dan dokumen SIMAKSI yang sudah terbit.</p></div><div class='form-card'><div class='fld'><label>Cari Nomor Pengajuan</label><div class='frow' style='gap:8px'><input id='sk-cek' value='${_skEsc(last)}' placeholder='SMK-XXXXX' style='flex:1;text-transform:uppercase'/><button class='btn g-indigo' style='width:auto;padding:0 16px' onclick='skCek()'>Cek</button></div><small class='fhint'>Masukkan nomor pengajuan jika membuka aplikasi dari perangkat lain.</small></div><div id='skCekRes'></div></div><div class='form-card'><div class='fld'><label>🪪 Cek Status Kelayakan Mendaki</label><div class='frow' style='gap:8px'><input id='sk-ktp-check' inputmode='numeric' maxlength='16' placeholder='Masukkan No. KTP · 16 digit' style='flex:1'/><button class='btn g-indigo' style='width:auto;padding:0 16px' onclick='skCheckEligibility()'>Cek</button></div><small class='fhint'>Hasil hanya menampilkan status kelayakan, tanpa nama atau alasan pelanggaran.</small></div><div id='skKtpCheckRes'></div></div>`;
   var list='';
   if(arr&&arr.length){list=`<div class='sh'><span class='bar' style='background:var(--g-indigo,#4b47e6)'></span><h3>Pengajuan di Perangkat Ini</h3></div>`+arr.map(function(r){return _skStatusCard(r);}).join('');}
   else{list=`<div class='aempty' style='text-align:center;color:#8b98ad;padding:20px'>Belum ada SIMAKSI tersimpan di perangkat ini. Masukkan nomor pengajuan untuk melihat status.</div>`;}
@@ -169,6 +169,14 @@ function skCek(){
   var c=(typeof _sbClient==='function')?_sbClient():null;
   if(!c){var arr=[];try{arr=_lsGet('bwkSimaksi',[]);}catch(e){}var hit=arr.filter(function(x){return (x.code||'').toUpperCase()===v;})[0];res.innerHTML=hit?_skStatusCard(hit):`<div class='aempty'>Kode tidak ditemukan di perangkat ini.</div>`;return;}
   c.from('simaksi').select('*').eq('code',v).limit(1).then(function(r){if(r.error||!r.data||!r.data.length){res.innerHTML=`<div class='aempty'>Kode tidak ditemukan.</div>`;return;}res.innerHTML=_skStatusCard(r.data[0]);}).catch(function(){res.innerHTML=`<div class='aempty'>Gagal memuat.</div>`;});
+}
+
+function skCheckEligibility(){
+  var input=document.getElementById('sk-ktp-check'),res=document.getElementById('skKtpCheckRes');if(!input||!res)return;
+  var ktp=(input.value||'').replace(/\D/g,'');if(ktp.length!==16){res.innerHTML=`<div class='sknotice err'>Masukkan No. KTP yang terdiri dari 16 digit.</div>`;return;}
+  var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){res.innerHTML=`<div class='sknotice warn'>Sambungkan internet untuk memeriksa status kelayakan mendaki.</div>`;return;}
+  res.innerHTML=`<div class='aempty'>Memeriksa status…</div>`;
+  c.rpc('check_climbing_eligibility',{p_identity_number:ktp}).then(function(r){if(r&&r.error)throw r.error;var row=(r&&r.data&&r.data[0])||null;if(!row)throw new Error('Status tidak tersedia');if(row.is_allowed){res.innerHTML=`<div class='sknotice ok'><b>✅ Bebas Mendaki</b><br/>No. KTP ini tidak tercatat dalam daftar larangan mendaki aktif. Tetap wajib mengajukan SIMAKSI dan mematuhi tata tertib kawasan.</div>`;return;}var until=row.expires_at?(' Larangan berlaku sampai '+new Date(row.expires_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})+'.'):' Larangan berlaku permanen hingga ada keputusan pencabutan.';res.innerHTML=`<div class='sknotice err'><b>⛔ Masuk Daftar Larangan Mendaki</b><br/>No. KTP ini belum dapat mengajukan SIMAKSI.`+until+`</div>`;}).catch(function(){res.innerHTML=`<div class='sknotice err'>Status tidak dapat diperiksa. Coba lagi atau hubungi petugas.</div>`;});
 }
 
 function _skStatusCard(r){

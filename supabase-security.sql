@@ -118,6 +118,32 @@ create index if not exists user_blacklist_user_idx on public.user_blacklist(user
 -- Identitas opsional untuk pencatatan administratif pendaki.
 alter table public.user_blacklist add column if not exists identity_number text;
 alter table public.user_blacklist add column if not exists phone text;
+create index if not exists user_blacklist_identity_idx on public.user_blacklist(identity_number);
+
+-- Pengecekan publik hanya mengembalikan status izin dan masa larangan.
+-- Nama, KTP, serta alasan pelanggaran tidak pernah dikembalikan ke pengguna.
+create or replace function public.check_climbing_eligibility(p_identity_number text)
+returns table(is_allowed boolean, expires_at timestamptz)
+language plpgsql stable security definer set search_path=public
+as $$
+declare v_ktp text := regexp_replace(coalesce(p_identity_number,''), '\D', '', 'g');
+begin
+  if length(v_ktp) <> 16 then raise exception 'Nomor KTP harus 16 digit'; end if;
+  return query
+  select not exists(
+    select 1 from public.user_blacklist b
+    where b.identity_number=v_ktp and b.active=true
+      and (b.expires_at is null or b.expires_at > now())
+  ), (
+    select b.expires_at from public.user_blacklist b
+    where b.identity_number=v_ktp and b.active=true
+      and (b.expires_at is null or b.expires_at > now())
+    order by b.expires_at nulls first limit 1
+  );
+end;
+$$;
+revoke all on function public.check_climbing_eligibility(text) from public;
+grant execute on function public.check_climbing_eligibility(text) to anon, authenticated;
 
 
 -- SIMAKSI: unggah bukti pembayaran oleh pemohon.
