@@ -23,6 +23,40 @@ drop policy if exists "admin reads own membership" on public.app_admins;
 create policy "admin reads own membership" on public.app_admins for select to authenticated
 using (email=lower(coalesce(auth.jwt()->>'email','')));
 
+-- Daftar individu yang dilarang mengajukan SIMAKSI / masuk kawasan. Hanya admin yang boleh melihat dan mengubah daftar ini.
+create table if not exists public.user_blacklist (
+  id bigint generated always as identity primary key,
+  display_name text not null check (length(trim(display_name)) between 2 and 120),
+  user_email text,
+  user_id uuid,
+  reason text not null check (length(trim(reason)) between 3 and 600),
+  blacklisted_at timestamptz not null default now(),
+  expires_at timestamptz,
+  active boolean not null default true,
+  created_by uuid,
+  created_at timestamptz not null default now()
+);
+alter table public.user_blacklist enable row level security;
+drop policy if exists "blacklist admin read" on public.user_blacklist;
+drop policy if exists "blacklist admin insert" on public.user_blacklist;
+drop policy if exists "blacklist admin update" on public.user_blacklist;
+drop policy if exists "blacklist admin delete" on public.user_blacklist;
+create policy "blacklist admin read" on public.user_blacklist for select to authenticated using (public.is_app_admin());
+create policy "blacklist admin insert" on public.user_blacklist for insert to authenticated with check (public.is_app_admin());
+create policy "blacklist admin update" on public.user_blacklist for update to authenticated using (public.is_app_admin()) with check (public.is_app_admin());
+create policy "blacklist admin delete" on public.user_blacklist for delete to authenticated using (public.is_app_admin());
+
+create or replace function public.is_blacklisted_current_user()
+returns boolean language sql stable security definer set search_path=public
+as $$ select exists(
+  select 1 from public.user_blacklist b
+  where b.active=true
+    and (b.expires_at is null or b.expires_at > now())
+    and (b.user_id=auth.uid() or lower(coalesce(b.user_email,''))=lower(coalesce(auth.jwt()->>'email','')))
+) $$;
+revoke all on function public.is_blacklisted_current_user() from public;
+grant execute on function public.is_blacklisted_current_user() to anon, authenticated;
+
 -- Helper menerapkan RLS hanya bila tabel aplikasi sudah ada.
 do $$
 begin
@@ -46,7 +80,7 @@ begin
   execute 'drop policy if exists "simaksi admin update" on public.simaksi';
   execute 'drop policy if exists "simaksi admin delete" on public.simaksi';
   execute $p$create policy "simaksi owner admin read" on public.simaksi for select to authenticated using (user_id=auth.uid() or public.is_app_admin())$p$;
-  execute $p$create policy "simaksi owner insert" on public.simaksi for insert to authenticated with check (user_id=auth.uid() and astatus='baru' and jml between 1 and 20)$p$;
+  execute $p$create policy "simaksi owner insert" on public.simaksi for insert to authenticated with check (user_id=auth.uid() and not public.is_blacklisted_current_user() and astatus='baru' and jml between 1 and 20)$p$;
   execute $p$create policy "simaksi admin update" on public.simaksi for update to authenticated using (public.is_app_admin()) with check (public.is_app_admin())$p$;
   execute $p$create policy "simaksi admin delete" on public.simaksi for delete to authenticated using (public.is_app_admin())$p$;
  end if;
@@ -79,6 +113,11 @@ end $$;
 
 -- Disarankan: tambahkan indeks bila belum ada.
 create index if not exists app_admins_email_idx on public.app_admins(email);
+create index if not exists user_blacklist_email_idx on public.user_blacklist(lower(user_email));
+create index if not exists user_blacklist_user_idx on public.user_blacklist(user_id);
+-- Identitas opsional untuk pencatatan administratif pendaki.
+alter table public.user_blacklist add column if not exists identity_number text;
+alter table public.user_blacklist add column if not exists phone text;
 
 
 -- SIMAKSI: unggah bukti pembayaran oleh pemohon.
