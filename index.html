@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Bawakaraeng Hub</title>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#ff2d55"/>
@@ -28,11 +28,10 @@
 <meta name="twitter:title" content="Bawakaraeng Hub — Konservasi &amp; Pendakian"/>
 <meta name="twitter:description" content="Cuaca BMKG, jalur pendakian, SIMAKSI, lapor &amp; adopsi pohon."/>
 <meta name="twitter:image" content="https://bawakaraeng-hub.vercel.app/og.jpg"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet dimuat lazy saat tab Peta/Pantau dibuka (lihat ensureLeaflet) -->
 <style>
   :root{
-    --ink:#151b2e; --sub:#7b8399; --line:#eceef4; --canvas:#f4f6fb; --card:#ffffff;
+    --ink:#141a2c; --sub:#565f78; --line:#eceef4; --canvas:#f4f6fb; --card:#ffffff;
     --brand:#ff2d55; --brand2:#ff6b6b;
     --g-brand:linear-gradient(135deg,#ff6b6b,#ff2d55);
     --g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);
@@ -50,7 +49,7 @@
     --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{background:#c9cede;font-family:var(--font);color:var(--ink);line-height:1.5}
+  body{background:#c9cede;font-family:var(--font);color:var(--ink);line-height:1.5;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,textarea,select{font-family:inherit}
   img{display:block;max-width:100%}
@@ -68,18 +67,18 @@
   .brand{display:flex;align-items:center;gap:11px}
   .brand .logo{width:42px;height:42px;border-radius:50%;overflow:hidden;background:#fff;padding:2px;flex:none;box-shadow:0 4px 10px rgba(0,0,0,.15)}
   .brand .logo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-  .brand small{display:block;font-size:10px;font-weight:700;opacity:.9;letter-spacing:.1em}
+  .brand small{display:block;font-size:12px;font-weight:700;opacity:.95;letter-spacing:.1em}
   .brand h1{font-size:15px;font-weight:800;letter-spacing:.01em}
   .hicons{display:flex;gap:9px}
   .hbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
-  .hbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:#ffe14d;border-radius:50%;border:2px solid #ff5a4d}.hbtn .dot.num{width:auto;height:auto;min-width:15px;padding:0 4px;border-radius:9px;font-size:10px;font-weight:800;line-height:15px;color:#3a2a00;display:inline-flex;align-items:center;justify-content:center;top:2px;right:2px;background:#ffe14d}
+  .hbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:#ffe14d;border-radius:50%;border:2px solid #ff5a4d}.hbtn .dot.num{width:auto;height:auto;min-width:15px;padding:0 4px;border-radius:9px;font-size:11.5px;font-weight:800;line-height:15px;color:#3a2a00;display:inline-flex;align-items:center;justify-content:center;top:2px;right:2px;background:#ffe14d}
 
   /* Views */
   .view{display:none;padding:16px 16px 120px;animation:fade .35s ease}
   .view.active{display:block}
   @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .sec-title{font-size:21px;font-weight:800;letter-spacing:-.01em}
-  .sec-sub{font-size:13px;color:var(--sub);margin-top:2px}
+  .sec-sub{font-size:14px;color:var(--sub);margin-top:2px}
   .row-between{display:flex;justify-content:space-between;align-items:center}
   .link{font-size:12px;font-weight:800;color:var(--brand)}
 
@@ -89,14 +88,14 @@
   .hero .herosvg{position:absolute;inset:0;width:100%;height:100%;display:block}
   .hero .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.72))}
   .hero .txt{position:absolute;left:18px;bottom:16px;right:18px;color:#fff}
-  .hero .txt .k{font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.9}
+  .hero .txt .k{font-size:12px;font-weight:800;letter-spacing:.12em;opacity:.9}
   .hero .txt h2{font-size:24px;font-weight:900;margin-top:2px}
   .hero .chips{display:flex;gap:8px;margin-top:10px}
   .hero .hc{background:rgba(255,255,255,.2);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);
-    padding:6px 11px;border-radius:20px;font-size:11px;font-weight:700;display:flex;gap:5px;align-items:center}
-  .hero .live{position:absolute;top:14px;left:14px;background:rgba(255,45,85,.9);color:#fff;font-size:10px;font-weight:800;padding:5px 10px;border-radius:20px;display:flex;gap:6px;align-items:center}
+    padding:6px 11px;border-radius:20px;font-size:12px;font-weight:700;display:flex;gap:5px;align-items:center}
+  .hero .live{position:absolute;top:14px;left:14px;background:rgba(255,45,85,.9);color:#fff;font-size:11.5px;font-weight:800;padding:5px 10px;border-radius:20px;display:flex;gap:6px;align-items:center}
   .hero .live .b{width:7px;height:7px;background:#fff;border-radius:50%;animation:pulse 1.2s infinite}
-  .hero .hero-logout{position:absolute;top:12px;right:12px;z-index:6;background:rgba(13,27,46,.5);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.34);color:#fff;font-size:11px;font-weight:800;padding:6px 11px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(0,0,0,.32)}
+  .hero .hero-logout{position:absolute;top:12px;right:12px;z-index:6;background:rgba(13,27,46,.5);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.34);color:#fff;font-size:12px;font-weight:800;padding:6px 11px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(0,0,0,.32)}
   .hero .hero-logout:active{transform:scale(.94)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
@@ -105,7 +104,7 @@
   .q{display:flex;flex-direction:column;align-items:center;gap:7px}
   .q .ic{width:56px;height:56px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:25px;color:#fff;box-shadow:var(--shadow);transition:transform .12s}
   .q:active .ic{transform:scale(.9)}
-  .q span{font-size:10.5px;font-weight:700;color:#4a5169;text-align:center;line-height:1.2}
+  .q span{font-size:12px;font-weight:700;color:#333a52;text-align:center;line-height:1.25}
 
   /* Section heading with accent */
   .sh{display:flex;align-items:center;gap:9px;margin:24px 0 12px}
@@ -117,12 +116,12 @@
   .feed{display:flex;gap:13px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory}
   .rcard{min-width:250px;scroll-snap-align:center;background:var(--card);border-radius:20px;padding:15px;flex:none;box-shadow:var(--shadow);border:1px solid var(--line)}
   .rcard .who{display:flex;align-items:center;gap:9px;margin-bottom:9px}
-  .avatar{width:28px;height:28px;border-radius:50%;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
-  .rcard .who span{font-size:11px;font-weight:700;color:#4a5169}
-  .rcard .who time{font-size:10px;color:#a6adbf;margin-left:auto}
+  .avatar{width:28px;height:28px;border-radius:50%;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .rcard .who span{font-size:12px;font-weight:700;color:#4a5169}
+  .rcard .who time{font-size:11.5px;color:#626b82;margin-left:auto}
   .rcard h4{font-size:14px;font-weight:800}
   .rcard p{font-size:12px;color:var(--sub);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .tag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;padding:5px 9px;border-radius:20px;margin-top:11px}
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:5px 9px;border-radius:20px;margin-top:11px}
   .tag.ok{background:#e4faf0;color:#08a35f} .tag.warn{background:#fff2df;color:#d5803b} .tag.pending{background:#eaf1ff;color:#2b6fff}
 
   /* Featured species carousel */
@@ -133,14 +132,14 @@
   .fc .ov{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.75))}
   .fc .t{position:absolute;left:12px;bottom:12px;right:12px;color:#fff}
   .fc .t b{font-size:13px;font-weight:800;display:block}
-  .fc .t small{font-size:10px;opacity:.85;font-style:italic}
-  .fc .bdg{position:absolute;top:10px;left:10px;background:rgba(255,45,85,.92);color:#fff;font-size:9px;font-weight:800;padding:4px 8px;border-radius:20px}
+  .fc .t small{font-size:11.5px;opacity:.85;font-style:italic}
+  .fc .bdg{position:absolute;top:10px;left:10px;background:rgba(255,45,85,.92);color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:20px}
 
   /* Search + chips */
   .search{position:relative;margin-top:14px}
   .search input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px 14px 44px;font-size:14px;box-shadow:var(--shadow);outline:none}
   .search input:focus{border-color:var(--brand)}
-  .search .mag{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:#a6adbf}
+  .search .mag{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:#626b82}
   .chips{display:flex;gap:9px;overflow-x:auto;margin-top:13px;padding-bottom:4px}
   .chip{flex:none;font-size:12px;font-weight:800;padding:9px 15px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:#4a5169;box-shadow:var(--shadow)}
   .chip.on{background:var(--g-sunset);color:#fff;border-color:transparent}
@@ -150,12 +149,12 @@
   .species:active{transform:scale(.985)}
   .species .hero2{height:150px;position:relative;display:flex;align-items:center;justify-content:center;font-size:70px}
   .species .hero2 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .species .badge{position:absolute;top:12px;right:12px;background:rgba(255,45,85,.95);color:#fff;font-size:10px;font-weight:800;padding:6px 11px;border-radius:20px;display:flex;gap:5px;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+  .species .badge{position:absolute;top:12px;right:12px;background:rgba(255,45,85,.95);color:#fff;font-size:11.5px;font-weight:800;padding:6px 11px;border-radius:20px;display:flex;gap:5px;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,.25)}
   .species .body{padding:15px}
   .species .body .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
   .species h3{font-size:16px;font-weight:800}
   .species .lat{font-size:12px;color:#08a35f;font-style:italic;font-weight:600}
-  .species .kind{font-size:10px;font-weight:800;padding:6px 10px;border-radius:20px;background:#e4faf0;color:#08a35f;flex:none}
+  .species .kind{font-size:11.5px;font-weight:800;padding:6px 10px;border-radius:20px;background:#e4faf0;color:#08a35f;flex:none}
   .species .desc{font-size:12px;color:var(--sub);margin-top:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .empty{text-align:center;color:var(--sub);font-size:13px;padding:40px 0}
 
@@ -166,44 +165,44 @@
   .catopt .d{font-size:20px}
   .catopt.on{border-color:transparent;background:var(--g-green);color:#fff}
   .catopt.on.danger{background:var(--g-brand)}
-  .drop{width:100%;height:160px;border:2px dashed #cfd5e6;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#a6adbf;background:var(--card);overflow:hidden;position:relative;box-shadow:var(--shadow)}
+  .drop{width:100%;height:160px;border:2px dashed #cfd5e6;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#626b82;background:var(--card);overflow:hidden;position:relative;box-shadow:var(--shadow)}
   .drop .di{font-size:34px} .drop small{font-size:12px;font-weight:600}
   .drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .gps{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;box-shadow:var(--shadow)}
   .gps .pin{width:38px;height:38px;border-radius:12px;background:var(--g-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .gps b{font-size:12px} .gps small{display:block;font-size:10px;color:var(--sub)}
-  .gps button{font-size:11px;font-weight:800;color:#2b6fff;background:#eaf1ff;padding:7px 11px;border-radius:10px}
+  .gps b{font-size:12px} .gps small{display:block;font-size:11.5px;color:var(--sub)}
+  .gps button{font-size:12px;font-weight:800;color:#2b6fff;background:#eaf1ff;padding:7px 11px;border-radius:10px}
   textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;font-size:14px;outline:none;resize:none;box-shadow:var(--shadow)}
   textarea:focus{border-color:var(--brand)}
-  .counter{font-size:10px;color:#a6adbf;text-align:right;margin-top:5px}
+  .counter{font-size:11.5px;color:#626b82;text-align:right;margin-top:5px}
   .btn{width:100%;color:#fff;font-weight:800;padding:16px;border-radius:16px;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;box-shadow:var(--shadow-lg);transition:transform .12s}
   .btn:active{transform:scale(.98)}
-  .note{text-align:center;font-size:10px;color:#a6adbf;margin-top:11px}
+  .note{text-align:center;font-size:11.5px;color:#626b82;margin-top:11px}
 
   /* Map */
   .map{margin-top:14px;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-lg);position:relative}
   .map svg{display:block;width:100%;height:auto}
-  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--sub);font-weight:700;justify-content:center}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--sub);font-weight:700;justify-content:center}
   .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
 
   /* Tripartite */
   .tri-wrap{background:var(--card);border-radius:24px;padding:20px;box-shadow:var(--shadow);margin-top:14px}
-  .tri-wrap h4{text-align:center;font-size:11px;font-weight:800;color:#a6adbf;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px}
+  .tri-wrap h4{text-align:center;font-size:12px;font-weight:800;color:#626b82;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px}
   .tri{position:relative;height:250px}
   .node{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translateX(-50%);transition:transform .12s}
   .node:active{transform:translateX(-50%) scale(.92)}
   .node .circle{width:60px;height:60px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:27px;border:4px solid #fff;box-shadow:var(--shadow-lg);overflow:hidden}
   .node .circle img{width:100%;height:100%;object-fit:cover}
-  .node .lbl{background:#fff;border-radius:10px;padding:5px 9px;font-size:10px;font-weight:800;margin-top:7px;text-align:center;box-shadow:var(--shadow);white-space:nowrap}
-  .node .lbl small{display:block;font-size:9px;font-weight:600;color:var(--sub)}
+  .node .lbl{background:#fff;border-radius:10px;padding:5px 9px;font-size:11.5px;font-weight:800;margin-top:7px;text-align:center;box-shadow:var(--shadow);white-space:nowrap}
+  .node .lbl small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
   .tri .center{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);text-align:center}
-  .tri .center .m{font-size:40px} .tri .center span{font-size:10px;font-weight:800;color:#b6bccb}
+  .tri .center .m{font-size:40px} .tri .center span{font-size:11.5px;font-weight:800;color:#646d84}
 
   .rule{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin-top:12px;overflow:hidden}
   .rule .head{display:flex;gap:13px;align-items:center;padding:15px}
   .rule .ri{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;color:#fff}
   .rule .head h4{font-size:14px;font-weight:800}
-  .rule .head .chev{margin-left:auto;color:#a6adbf;transition:transform .2s;font-size:14px}
+  .rule .head .chev{margin-left:auto;color:#626b82;transition:transform .2s;font-size:14px}
   .rule.open .chev{transform:rotate(180deg)}
   .rule .detail{max-height:0;overflow:hidden;transition:max-height .28s ease;padding:0 15px}
   .rule.open .detail{max-height:220px;padding-bottom:15px}
@@ -216,7 +215,7 @@
   .subnav{display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:9px 11px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line);position:sticky;top:64px;z-index:29}
   .subnav .sn-home{font-size:15px;font-weight:800;background:#eef1f7;border-radius:11px;padding:8px 11px;flex:none;cursor:pointer}
   .subnav .sn-mid{flex:1;min-width:60px;display:flex;flex-direction:column;line-height:1.25;overflow:hidden}
-  .subnav .sn-cat{font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--sub);text-transform:uppercase}
+  .subnav .sn-cat{font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--sub);text-transform:uppercase}
   .subnav .sn-cur{font-size:13px;font-weight:900;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .subnav .sn-arrows{display:flex;gap:6px;flex:none}
   .subnav .sn-btn{font-size:12px;font-weight:800;color:#fff;background:var(--g-sunset);border-radius:11px;padding:8px 10px;display:inline-flex;align-items:center;gap:3px;cursor:pointer}
@@ -225,32 +224,32 @@
 
   /* Leaderboard */
   .lead{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-top:12px;padding:13px 15px;display:flex;align-items:center;gap:13px}
-  .lead .rk{width:28px;font-size:15px;font-weight:900;text-align:center;color:#b6bccb}
+  .lead .rk{width:28px;font-size:15px;font-weight:900;text-align:center;color:#646d84}
   .lead .rk.g{color:#f5b400} .lead .rk.s{color:#9aa3b5} .lead .rk.b{color:#cd7f32}
   .lead .av{width:42px;height:42px;border-radius:50%;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
-  .lead .nm{flex:1} .lead .nm b{font-size:14px} .lead .nm small{display:block;font-size:11px;color:var(--sub)}
+  .lead .nm{flex:1} .lead .nm b{font-size:14px} .lead .nm small{display:block;font-size:12px;color:var(--sub)}
   .lead .pts{font-size:13px;font-weight:800;color:var(--brand)}
 
   /* Gallery */
   .gal{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
   .gt{border-radius:18px;overflow:hidden;height:150px;position:relative;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:52px}
   .gt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .gt .cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.7));color:#fff;font-size:10px;font-weight:700;padding:16px 10px 8px}
+  .gt .cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.7));color:#fff;font-size:11.5px;font-weight:700;padding:16px 10px 8px}
 
   /* Event */
   .event{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin-top:13px;overflow:hidden;display:flex}
   .event .date{width:66px;flex:none;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
-  .event .date b{font-size:22px;font-weight:900;line-height:1} .event .date small{font-size:10px;font-weight:700}
+  .event .date b{font-size:22px;font-weight:900;line-height:1} .event .date small{font-size:11.5px;font-weight:700}
   .event .ed{padding:13px 14px} .event .ed h4{font-size:14px;font-weight:800}
-  .event .ed p{font-size:11px;color:var(--sub);margin-top:3px}
-  .event .ed .m{font-size:11px;color:var(--brand);font-weight:700;margin-top:6px}
+  .event .ed p{font-size:12px;color:var(--sub);margin-top:3px}
+  .event .ed .m{font-size:12px;color:var(--brand);font-weight:700;margin-top:6px}
 
   /* Trip */
   .tripcard{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:16px;margin-top:14px}
   .routeopt{display:flex;gap:12px;align-items:center;padding:13px;border:2px solid var(--line);border-radius:16px;margin-top:11px;transition:all .15s}
   .routeopt.on{border-color:var(--brand);background:#fff5f7}
   .routeopt .re{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff}
-  .routeopt .ri2{flex:1} .routeopt .ri2 b{font-size:14px;font-weight:800} .routeopt .ri2 small{display:block;font-size:11px;color:var(--sub)}
+  .routeopt .ri2{flex:1} .routeopt .ri2 b{font-size:14px;font-weight:800} .routeopt .ri2 small{display:block;font-size:12px;color:var(--sub)}
   .routeopt .pr{font-size:13px;font-weight:800;color:var(--brand)}
   .stepper{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:8px}
   .stepper button{width:40px;height:40px;border-radius:12px;background:#eef1f8;font-size:20px;font-weight:800;color:var(--ink)}
@@ -259,7 +258,7 @@
   .quota i{display:block;height:100%;border-radius:6px;background:var(--g-sunset)}
   .dategrid{display:flex;gap:9px;overflow-x:auto;margin-top:10px;padding-bottom:4px}
   .dg{flex:none;width:56px;text-align:center;padding:10px 0;border:2px solid var(--line);border-radius:14px;font-weight:800}
-  .dg.on{border-color:transparent;background:var(--g-indigo);color:#fff} .dg small{display:block;font-size:10px;font-weight:600;color:var(--sub)} .dg.on small{color:#fff}
+  .dg.on{border-color:transparent;background:var(--g-indigo);color:#fff} .dg small{display:block;font-size:11.5px;font-weight:600;color:var(--sub)} .dg.on small{color:#fff}
 
   /* Profile */
   .phead{border-radius:24px;padding:24px;color:#fff;text-align:center;margin-top:4px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
@@ -267,11 +266,11 @@
   .phead h2{font-size:22px;font-weight:900} .phead .lv{font-size:12px;font-weight:700;opacity:.92;margin-top:2px}
   .pstats{display:flex;gap:11px;margin-top:16px}
   .pstat{flex:1;background:var(--card);border-radius:16px;padding:14px;text-align:center;box-shadow:var(--shadow)}
-  .pstat b{display:block;font-size:19px;font-weight:900} .pstat small{font-size:10px;color:var(--sub);font-weight:600}
+  .pstat b{display:block;font-size:19px;font-weight:900} .pstat small{font-size:11.5px;color:var(--sub);font-weight:600}
   .badges{display:flex;gap:11px;overflow-x:auto;margin-top:12px;padding-bottom:4px}
   .bdg2{flex:none;width:78px;text-align:center}
   .bdg2 .bi{width:60px;height:60px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:27px;color:#fff;margin:0 auto 6px;box-shadow:var(--shadow)}
-  .bdg2 span{font-size:10px;font-weight:700;color:#4a5169}
+  .bdg2 span{font-size:11.5px;font-weight:700;color:#4a5169}
   .plist{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin-top:12px;overflow:hidden}
   .pli{display:flex;align-items:center;gap:13px;padding:15px;border-bottom:1px solid var(--line)}
   .pli:last-child{border-bottom:none}
@@ -281,7 +280,7 @@
   /* Bottom nav */
   .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:460px;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-top:1px solid var(--line);
     display:flex;justify-content:space-around;align-items:center;padding:9px 8px calc(9px + env(safe-area-inset-bottom));z-index:45;box-shadow:0 -4px 20px rgba(30,40,90,.06)}
-  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:#b0b7c8;font-size:10px;font-weight:800;padding:5px 10px;border-radius:14px;transition:.15s}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:#b0b7c8;font-size:11.5px;font-weight:800;padding:5px 10px;border-radius:14px;transition:.15s}
   .tab .ti{font-size:21px}
   .tab.on{color:var(--brand)} .tab.on{background:#fff0f3}
   .fab{width:58px;height:58px;border-radius:50%;background:var(--g-brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 10px 22px rgba(255,45,85,.45);margin-top:-32px;border:4px solid #fff;transition:transform .12s}
@@ -307,7 +306,7 @@
   .sheet .shero{height:170px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:84px;margin-bottom:14px;overflow:hidden;position:relative}
   .sheet .shero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .sheet .shero{cursor:zoom-in}
-  .shero-zoom{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:800;padding:5px 9px;border-radius:20px;pointer-events:none}
+  .shero-zoom{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:11.5px;font-weight:800;padding:5px 9px;border-radius:20px;pointer-events:none}
   .imglb{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:120;display:none;align-items:center;justify-content:center;padding:18px}
   .imglb.show{display:flex}
   .imglb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -315,9 +314,9 @@
   .sheet h2{font-size:23px;font-weight:800} .sheet .lat{font-size:13px;color:#08a35f;font-style:italic;font-weight:600;margin-bottom:10px}
   .sheet .info-row{display:flex;gap:10px;margin:15px 0}
   .sheet .info{flex:1;background:var(--card);border-radius:14px;padding:11px;text-align:center;box-shadow:var(--shadow)}
-  .sheet .info b{display:block;font-size:14px} .sheet .info small{font-size:10px;color:var(--sub)}
+  .sheet .info b{display:block;font-size:14px} .sheet .info small{font-size:11.5px;color:var(--sub)}
   .sheet p.body{font-size:13px;color:#4a5169;line-height:1.65}
-  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:7px 13px;border-radius:20px;margin:2px 6px 2px 0}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:7px 13px;border-radius:20px;margin:2px 6px 2px 0}
   .sos{position:fixed;inset:0;background:linear-gradient(160deg,#ff2d55,#a30f2e);z-index:95;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:30px}
   .sos.show{display:flex;animation:fade .3s}
   .sos h2{font-size:31px;font-weight:900} .sos p{font-size:14px;opacity:.92;margin-top:8px;max-width:280px}
@@ -332,15 +331,15 @@
   .zcard{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-top:12px;padding:14px;border-left:5px solid #ccc;transition:transform .12s}
   .zcard:active{transform:scale(.985)}
   .zcard b{font-size:14px;font-weight:800}
-  .zbadge{color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:20px}
-  .zmeta{font-size:11px;color:var(--sub);font-weight:600;margin-top:6px}
+  .zbadge{color:#fff;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:20px}
+  .zmeta{font-size:12px;color:var(--sub);font-weight:600;margin-top:6px}
 
   .liveinfo{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-top:12px;padding:12px 14px}
   .liveinfo .li-row{display:flex;gap:10px;align-items:center;padding:6px 0}
   .liveinfo .li-ic{font-size:20px}
   .liveinfo b{font-size:13px;color:#16233d;display:block;line-height:1.3}
-  .liveinfo small{font-size:11px;color:var(--sub);font-weight:600}
-  .liveinfo .li-hd{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  .liveinfo small{font-size:12px;color:var(--sub);font-weight:600}
+  .liveinfo .li-hd{font-size:12px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
   /* ===== Fitur tambahan ===== */
   .form-card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px;margin-top:12px}
   .fld{margin-bottom:12px}
@@ -349,7 +348,7 @@
   .fld input:focus,.fld select:focus{outline:none;border-color:#ff2d55}
   .frow{display:flex;gap:10px}.frow .fld{flex:1}
   .permit{background:var(--g-indigo);color:#fff;border-radius:18px;padding:18px;margin-top:14px;box-shadow:var(--shadow-lg)}
-  .permit h4{margin:0 0 2px;font-size:16px}.permit>small{opacity:.9;font-size:11px}
+  .permit h4{margin:0 0 2px;font-size:16px}.permit>small{opacity:.9;font-size:12px}
   .permit .code{font-family:monospace;font-size:20px;font-weight:800;letter-spacing:2px;margin:8px 0}
   .permit .qr{background:#fff;border-radius:12px;padding:8px;width:140px;height:140px;display:flex;align-items:center;justify-content:center;margin:10px auto;font-size:40px}
   .permit .qr img{width:100%;height:100%;border-radius:6px}
@@ -361,7 +360,7 @@
   .pkgcard b{font-size:15px}.pkgcard small{color:var(--sub);font-size:12px;display:block}
   .pkgcard .price{margin-left:auto;font-weight:800;color:#08b96f;white-space:nowrap}
   .cert{background:linear-gradient(135deg,#ffffff,#f2fff8);border:2px solid #08b96f;border-radius:18px;padding:18px;margin-top:14px;text-align:center;box-shadow:var(--shadow-lg)}
-  .cert .seal{font-size:40px}.cert small{color:var(--sub);font-weight:700;letter-spacing:1px;font-size:10px}
+  .cert .seal{font-size:40px}.cert small{color:var(--sub);font-weight:700;letter-spacing:1px;font-size:11.5px}
   .cert h4{margin:6px 0 2px;font-size:18px}
   .cert .cid{font-family:monospace;font-weight:800;color:#08b96f;font-size:15px;margin:6px 0}
   .tier{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
@@ -371,12 +370,12 @@
   .alloc .atop{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px}
   .cmp{position:relative;border-radius:16px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow);height:210px;user-select:none}
   .cmp .layer{position:absolute;inset:0;background-size:cover;background-position:center;display:flex;align-items:flex-end}
-  .cmp .lbl{background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;margin:10px}
+  .cmp .lbl{background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;margin:10px}
   .cmp .divider{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.45);transform:translateX(-1px)}
   .cmp input[type=range]{position:absolute;bottom:10px;left:5%;width:90%;z-index:5}
   .evt{display:flex;gap:12px;background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-top:12px;align-items:center}
   .evt .cal{background:var(--g-teal);color:#fff;border-radius:12px;padding:8px 10px;text-align:center;min-width:50px}
-  .evt .cal b{font-size:20px;display:block;line-height:1}.evt .cal small{font-size:10px;font-weight:700}
+  .evt .cal b{font-size:20px;display:block;line-height:1}.evt .cal small{font-size:11.5px;font-weight:700}
   .evt .einfo{flex:1}.evt .einfo b{font-size:14px}.evt .einfo small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
   .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
   .evt .ebtn.done{background:#c7ccd6}
@@ -395,12 +394,12 @@
   .tchip.diff-landai{background:#e3f7ec;color:#0a8a4f}
   .tdesc{font-size:13px;color:#374151;margin-top:10px;line-height:1.55}
   .species .hero2{position:relative}
-  .species .credit{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px}
+  .species .credit{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px}
   .obschip{display:inline-block;font-size:11.5px;font-weight:700;color:#0a8a4f;background:#e3f7ec;padding:3px 10px;border-radius:999px;margin:2px 0 6px}
   .wikibox{background:#f6f8fb;border-radius:14px;padding:12px 14px;margin-top:12px}
   .wikibox .wikih{font-size:12px;font-weight:800;color:#5a6b8c;margin-bottom:5px}
   .wikibox p{margin:0;font-size:13px;line-height:1.55;color:#374151}
-  .srcline{font-size:11.5px;color:#8a94a6;margin-top:10px;line-height:1.5}
+  .srcline{font-size:11.5px;color:#59627a;margin-top:10px;line-height:1.5}
   #eksplorNote{display:none;background:#eef3ff;color:#3b5bbf;font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:12px;margin:4px 0 12px;text-align:center}
   /* === Kartu cuaca Beranda (BMKG live) === */
   .wcard{margin-top:16px;border-radius:22px;padding:16px 18px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#2f7cf6,#4aa8ff 55%,#7bc6ff);box-shadow:0 14px 30px -12px rgba(47,124,246,.65)}
@@ -409,31 +408,31 @@
   .wcard .wtop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:relative;z-index:1}
   .wcard .wtemp{font-size:46px;font-weight:900;line-height:1;letter-spacing:-1px}
   .wcard .wdesc{font-size:13.5px;font-weight:800;opacity:.97;margin-top:4px;text-transform:capitalize}
-  .wcard .warea{font-size:11px;font-weight:600;opacity:.85;margin-top:4px}
+  .wcard .warea{font-size:12px;font-weight:600;opacity:.85;margin-top:4px}
   .wcard .wicon{width:78px;height:78px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
   .wcard .wicon-fallback{font-size:60px;line-height:1;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
   .wcard .wmeta{display:flex;gap:9px;margin-top:15px;position:relative;z-index:1;flex-wrap:wrap}
   .wcard .wm{background:rgba(255,255,255,.20);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:7px 12px;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:6px}
-  .wcard .wsrc{font-size:9.5px;font-weight:600;opacity:.82;margin-top:12px;position:relative;z-index:1}
+  .wcard .wsrc{font-size:11px;font-weight:600;opacity:.82;margin-top:12px;position:relative;z-index:1}
   .wcard.loading{background:linear-gradient(135deg,#9db8dd,#c3d6ee)}
   .wcard.loading .wtemp,.wcard.loading .wdesc{opacity:.7}
   .wquake{margin-top:10px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:11px 13px;display:flex;align-items:center;gap:11px}
   .wquake .qk-ic{width:38px;height:38px;border-radius:11px;background:var(--g-amber);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
   .wquake b{font-size:12.5px;color:#16233d;display:block;line-height:1.3}
-  .wquake small{font-size:10.5px;color:var(--sub);font-weight:600}
+  .wquake small{font-size:12px;color:var(--sub);font-weight:600}
 
   /* ===== New tabs ===== */
   .nt-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px}
   .nt-row{display:flex;align-items:center;gap:12px}
   .nt-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:#fff}
   .nt-card h4{font-size:14px;margin-bottom:2px}
-  .nt-card .meta{font-size:11px;color:var(--sub);font-weight:700}
+  .nt-card .meta{font-size:12px;color:var(--sub);font-weight:700}
   .ck-item{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--shadow);margin-bottom:8px;cursor:pointer;transition:.15s}
   .ck-item .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0}
   .ck-item.done .box{background:var(--g-green);border-color:transparent}
   .ck-item.done b{text-decoration:line-through;color:var(--sub)}
   .ck-item b{font-size:13px;font-weight:700}
-  .ck-item small{display:block;font-size:11px;color:var(--sub);font-weight:600}
+  .ck-item small{display:block;font-size:12px;color:var(--sub);font-weight:600}
   .bdbar{margin-bottom:11px}
   .bdbar .lb{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px}
   .bdbar .track{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
@@ -559,13 +558,13 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
   .pdf-btn:active{transform:scale(.98)}
   .cert-card{background:var(--card);border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-bottom:18px;border:1px solid var(--line)}
   .cert-head{margin-bottom:12px}
-  .cert-badge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.12em;color:#0b7a4e;background:#e4faf0;border-radius:20px;padding:4px 11px;margin-bottom:8px}
+  .cert-badge{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#0b7a4e;background:#e4faf0;border-radius:20px;padding:4px 11px;margin-bottom:8px}
   .cert-head h3{font-size:18px;font-weight:900;margin:0 0 4px}
   .cert-head p{font-size:12.5px;line-height:1.5;color:var(--sub);margin:0}
   .cert-preview{border-radius:14px;overflow:hidden;box-shadow:0 10px 28px rgba(10,30,20,.4);background:#0c2a22}
   .cert-preview canvas{width:100%;height:auto;display:block}
   .cert-form{margin-top:14px;display:flex;flex-direction:column;gap:11px}
-  .cert-form label{font-size:10.5px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;display:flex;flex-direction:column;gap:5px}
+  .cert-form label{font-size:12px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;display:flex;flex-direction:column;gap:5px}
   .cert-form .nt-input{text-transform:none;letter-spacing:normal;font-weight:600}
   .cert-row{display:flex;gap:10px}
   .cert-row label{flex:1;min-width:0}
@@ -583,11 +582,11 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .hx-top-r{display:flex;gap:8px;align-items:center}
 .hx-clock{background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:20px;padding:4px 11px;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
 .herox .hero-logout{position:static;background:rgba(0,0,0,.32);color:#fff;border:none;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer}
-.herox .live{position:static;display:inline-flex;align-items:center;gap:5px;background:rgba(229,57,53,.92);color:#fff;font-size:11px;font-weight:800;letter-spacing:.5px;padding:4px 10px;border-radius:20px}
+.herox .live{position:static;display:inline-flex;align-items:center;gap:5px;background:rgba(229,57,53,.92);color:#fff;font-size:12px;font-weight:800;letter-spacing:.5px;padding:4px 10px;border-radius:20px}
 .herox .live .b{width:7px;height:7px;border-radius:50%;background:#fff;animation:hxblink 1.2s infinite}
 @keyframes hxblink{50%{opacity:.25}}
 .hx-body{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:56px 16px 14px}
-.hx-greet .k{font-size:11px;font-weight:800;letter-spacing:1.4px;opacity:.92;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.hx-greet .k{font-size:12px;font-weight:800;letter-spacing:1.4px;opacity:.92;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .hx-greet h2{margin:3px 0 9px;font-size:22px;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.55)}
 .hx-greet .chips{display:flex;flex-wrap:wrap;gap:6px}
 .hx-greet .hc{background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
@@ -602,18 +601,18 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .hx-wx .wicon{width:34px;height:34px;object-fit:contain;vertical-align:middle}
 .hx-ic{font-size:26px}
 .hx-desc{font-size:12.5px;font-weight:700;margin-top:4px}
-.hx-meta{display:flex;gap:10px;justify-content:flex-end;font-size:11px;opacity:.94;margin-top:5px}
-.hx-area{font-size:10.5px;opacity:.82;margin-top:4px}
-.hx-src{font-size:9.5px;opacity:.62;margin-top:3px}
+.hx-meta{display:flex;gap:10px;justify-content:flex-end;font-size:12px;opacity:.94;margin-top:5px}
+.hx-area{font-size:12px;opacity:.82;margin-top:4px}
+.hx-src{font-size:11px;opacity:.62;margin-top:3px}
 .hx-quake{position:relative;z-index:3;margin:0 14px 14px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:12px;padding:8px 11px;font-size:12px}
 .hx-quake .qk-ic{font-size:15px}
 .hx-quake b{font-weight:800}
-.hx-quake small{display:block;opacity:.85;font-size:10.5px}
+.hx-quake small{display:block;opacity:.85;font-size:12px}
 .hx-dots{position:absolute;z-index:3;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
 .hx-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:all .25s}
 .hx-dots i.on{background:#fff;width:20px;border-radius:5px}
 @media (prefers-reduced-motion:reduce){.hx-slide.on{animation:none}}
-.pjoin{font-size:11px;font-weight:600;opacity:.85;margin-top:5px}
+.pjoin{font-size:12px;font-weight:600;opacity:.85;margin-top:5px}
 .badges .bdg2.locked{opacity:.4;filter:grayscale(.9)}
 .badges .bdg2 span{transition:opacity .2s}
 .login-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid #dadce0;border-radius:12px;background:#fff;color:#3c4043;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0}
@@ -622,7 +621,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .login-or{display:flex;align-items:center;gap:10px;color:#9aa;font-size:12px;margin:14px 0 8px}
 .login-or span{white-space:nowrap}
 .login-or::before,.login-or::after{content:'';flex:1;height:1px;background:#e3e3e3}
-.login-hint{font-size:11px;color:#888;margin:10px 0 2px;text-align:center;line-height:1.4}
+.login-hint{font-size:12px;color:#888;margin:10px 0 2px;text-align:center;line-height:1.4}
 .admin-fab{position:fixed;right:16px;bottom:88px;z-index:120;width:54px;height:54px;border-radius:50%;background:#1f2b44;color:#fff;border:none;box-shadow:0 8px 20px rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
 .admin-ov{position:fixed;inset:0;z-index:300;background:#0f1523;display:none;flex-direction:column}
 .admin-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 10px;font-size:17px;font-weight:800;color:#e8edf6;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -633,15 +632,26 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 .admin-body{flex:1;overflow-y:auto;padding:10px 16px 40px}
 .acard{background:#182234;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .acard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:700;color:#e8edf6}
-.acard-s{font-size:12.5px;color:#8b98ad;margin:6px 0 0;line-height:1.5}
-.ast{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.acard-s{font-size:12.5px;color:#59627a;margin:6px 0 0;line-height:1.5}
+.ast{font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
 .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .abt{flex:1;min-width:82px;padding:9px;border-radius:10px;border:none;font-weight:700;font-size:12.5px;cursor:pointer}
 .abt.ok{background:rgba(8,185,111,.15);color:#08b96f}
 .abt.no{background:rgba(229,72,77,.15);color:#e5484d}
-.abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#8b98ad}
-.aempty{text-align:center;color:#8b98ad;padding:46px 10px;font-size:13px}
-.login-ver{font-size:10px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}.appver{font-size:10.5px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#8b98ad;margin:2px 0 12px;text-align:center}.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 6px}.afil{flex:none;padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#9fb0c9;font-weight:700;font-size:12px;cursor:pointer}.afil.on{background:#22304a;color:#fff;border-color:#3a4d72}#cnt-baru{margin-left:1px;font-weight:800}.rimg{width:100%;border-radius:12px;margin:8px 0 2px;max-height:280px;object-fit:cover;display:block}</style>
+.abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#59627a}
+.aempty{text-align:center;color:#59627a;padding:46px 10px;font-size:13px}
+.login-ver{font-size:11.5px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}.appver{font-size:12px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#59627a;margin:2px 0 12px;text-align:center}.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 6px}.afil{flex:none;padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#9fb0c9;font-weight:700;font-size:12px;cursor:pointer}.afil.on{background:#22304a;color:#fff;border-color:#3a4d72}#cnt-baru{margin-left:1px;font-weight:800}.rimg{width:100%;border-radius:12px;margin:8px 0 2px;max-height:280px;object-fit:cover;display:block}
+.svgi{width:1.1em;height:1.1em;display:inline-block;vertical-align:-.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.q .ic .svgi{width:26px;height:26px}
+.nav .ti .svgi{width:22px;height:22px}
+.hbtn .svgi{width:20px;height:20px}
+.in-ic .svgi{width:22px;height:22px}
+.node .circle .svgi{width:30px;height:30px}
+.tri .center .m .svgi{width:40px;height:40px}
+.holdbtn .big .svgi{width:62px;height:62px;stroke-width:1.6}
+.catbtn .ce .svgi{width:16px;height:16px}
+.sn-mid .svgi,.subcatbtn .svgi{width:16px;height:16px}
+.sn-home .svgi{width:18px;height:18px}</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -652,9 +662,9 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
       <div><small>REICHAS CHELEBES</small><h1>Bawakaraeng Hub</h1></div>
     </div>
     <div class="hicons">
-      <button class="hbtn" id="themeBtn" onclick="toggleTheme()" title="Mode malam">🌙</button>
-      <button class="hbtn" onclick="openNotif()">🔔<span class="dot" id="bellDot" style="display:none"></span></button>
-      <button class="hbtn" onclick="go('profil')">👤</button>
+      <button class="hbtn" id="themeBtn" onclick="toggleTheme()" title="Ganti mode gelap/terang" aria-label="Ganti mode gelap/terang"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      <button class="hbtn" onclick="openNotif()" title="Notifikasi" aria-label="Notifikasi"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 6-2.74 7.33"/></svg><span class="dot" id="bellDot" style="display:none"></span></button>
+      <button class="hbtn" onclick="go('profil')" title="Profil" aria-label="Profil"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
     </div>
   </div>
 
@@ -769,10 +779,10 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     <div class="tri-wrap">
       <h4>Konsep Core Tripartit</h4>
       <div class="tri">
-        <div class="node" style="left:50%;top:0" onclick="openNode('gov')"><div class="circle g-blue">🏛️</div><div class="lbl">Pemerintah<small>Regulasi &amp; Budgeting</small></div></div>
-        <div class="node" style="left:16%;top:150px" onclick="openNode('people')"><div class="circle g-green">👥</div><div class="lbl">Masyarakat<small>Pengelola &amp; Eksekutor</small></div></div>
+        <div class="node" style="left:50%;top:0" onclick="openNode('gov')"><div class="circle g-blue"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></svg></div><div class="lbl">Pemerintah<small>Regulasi &amp; Budgeting</small></div></div>
+        <div class="node" style="left:16%;top:150px" onclick="openNode('people')"><div class="circle g-green"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="lbl">Masyarakat<small>Pengelola &amp; Eksekutor</small></div></div>
         <div class="node" style="left:84%;top:150px" onclick="openNode('rc')"><div class="circle g-brand"><img src="/rc-logo.jpg" loading="lazy" alt="RC"/></div><div class="lbl">Reichas Chelebes<small>Supervisi &amp; Sistem</small></div></div>
-        <div class="center"><div class="m">⛰️</div><span>Lestari Alam</span></div>
+        <div class="center"><div class="m"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></div><span>Lestari Alam</span></div>
       </div>
     </div>
     <div class="sh"><span class="bar" style="background:var(--g-violet)"></span><h3>Regulasi Pendakian</h3></div>
@@ -811,11 +821,11 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
       <div class="stepper"><button onclick="stepClimb(-1)">−</button><b id="climbN">2</b><button onclick="stepClimb(1)">+</button></div>
       <label class="fld">Kuota Harian Tersisa</label>
       <div class="quota"><i id="quotabar" style="width:62%"></i></div>
-      <div style="font-size:11px;color:var(--sub);margin-top:6px;font-weight:600">93 dari 150 slot tersedia</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:6px;font-weight:600">93 dari 150 slot tersedia</div>
     </div>
     <div class="tripcard" style="display:flex;justify-content:space-between;align-items:center">
-      <div><small style="font-size:11px;color:var(--sub);font-weight:700">Total Biaya</small><div id="tripTotal" style="font-size:22px;font-weight:900;color:var(--brand)">Rp 150.000</div></div>
-      <div style="font-size:11px;color:var(--sub);text-align:right;font-weight:600">2 pendaki<br/>× Rp 75rb</div>
+      <div><small style="font-size:12px;color:var(--sub);font-weight:700">Total Biaya</small><div id="tripTotal" style="font-size:22px;font-weight:900;color:var(--brand)">Rp 150.000</div></div>
+      <div style="font-size:12px;color:var(--sub);text-align:right;font-weight:600">2 pendaki<br/>× Rp 75rb</div>
     </div>
     <button class="btn g-indigo" onclick="submitTrip()">🎫 Ajukan SIMAKSI</button>
     <p class="note">SIMAKSI berlaku setelah verifikasi &amp; pembayaran.</p>
@@ -827,7 +837,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
       <div class="pav" id="profAv">N</div>
       <h2 id="profName">Pendaki</h2>
       <div class="lv" id="profLevel">🏵️ Pendaki · Level 1</div>
-      <div class="pjoin" id="profJoin"></div><div class="pjoin" id="profEmail" style="opacity:.92;margin-top:3px;font-size:11px"></div>
+      <div class="pjoin" id="profJoin"></div><div class="pjoin" id="profEmail" style="opacity:.92;margin-top:3px;font-size:12px"></div>
     </div>
     <div class="pstats">
       <div class="pstat"><b id="statPendakian">0</b><small>Pendakian</small></div>
@@ -895,7 +905,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     <div class="form-card">
       <div class="row-between" style="font-size:12px;font-weight:800"><span>Terkumpul 2026</span><span style="color:#08b96f">Rp 47.500.000</span></div>
       <div class="quota" style="margin-top:8px"><i style="width:63%;background:var(--g-green)"></i></div>
-      <div class="row-between" style="font-size:11px;color:var(--sub);margin-top:4px"><span>Target Rp 75.000.000</span><span>63%</span></div>
+      <div class="row-between" style="font-size:12px;color:var(--sub);margin-top:4px"><span>Target Rp 75.000.000</span><span>63%</span></div>
       <div class="tier" id="dnTier"></div>
       <button class="btn g-brand" onclick="donasi()">❤️ Donasi Sekarang</button>
     </div>
@@ -952,7 +962,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 
   <!-- DASHBOARD BIODIVERSITAS -->
   <section id="biodiv" class="view">
-    <div class="sec-title">Dashboard Biodiversitas 🔬</div>
+    <div class="sec-title">Dashboard Biodiversitas ����</div>
     <div class="sec-sub">Data keanekaragaman hayati Bawakaraeng dari laporan warga &amp; iNaturalist.</div>
     <div class="pstats">
       <div class="pstat"><b id="bd-spec">0</b><small>Spesies Tercatat</small></div>
@@ -996,7 +1006,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
     <div class="form-card">
       <div class="row-between" style="font-size:12px;font-weight:800"><span>Pendaki hari ini</span><span id="ek-dd">0 / 0</span></div>
       <div class="quota" style="margin-top:8px"><i id="ek-ddbar" style="width:0%;background:var(--g-amber)"></i></div>
-      <p style="font-size:11px;color:var(--sub);margin-top:8px" id="ek-ddnote"></p>
+      <p style="font-size:12px;color:var(--sub);margin-top:8px" id="ek-ddnote"></p>
     </div>
     <p class="note">Indeks ilustratif berbasis tutupan hutan, lahan kritis, populasi satwa &amp; tekanan pengunjung. Sumber final: BMKG, KLHK &amp; survei RC.</p>
   </section>
@@ -1004,11 +1014,11 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 
   <!-- Bottom nav -->
   <div class="nav">
-    <button class="tab on" data-tab="beranda" onclick="go('beranda')"><span class="ti">🏠</span>Beranda</button>
-    <button class="tab" data-tab="eksplor" onclick="go('eksplor')"><span class="ti">🌿</span>Eksplor</button>
-    <button class="fab" onclick="go('lapor')">＋</button>
-    <button class="tab" data-tab="komunitas" onclick="go('komunitas')"><span class="ti">👥</span>Komunitas</button>
-    <button class="tab" data-tab="profil" onclick="go('profil')"><span class="ti">👤</span>Profil</button>
+    <button class="tab on" data-tab="beranda" onclick="go('beranda')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v6"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Beranda</button>
+    <button class="tab" data-tab="eksplor" onclick="go('eksplor')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg></span>Eksplor</button>
+    <button class="fab" onclick="go('lapor')" title="Lapor insiden" aria-label="Buat laporan"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true" style="width:26px;height:26px"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+    <button class="tab" data-tab="komunitas" onclick="go('komunitas')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Komunitas</button>
+    <button class="tab" data-tab="profil" onclick="go('profil')"><span class="ti"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profil</button>
   </div>
 </div>
 
@@ -1019,7 +1029,7 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 <div class="sos" id="sos">
   <h2>MODE DARURAT</h2>
   <p>Tahan tombol 3 detik untuk mengirim sinyal SOS + lokasi GPS ke tim Reichas Chelebes.</p>
-  <button class="holdbtn" id="holdbtn"><div class="fill" id="fill"></div><div class="big">🆘</div><div>TAHAN</div></button>
+  <button class="holdbtn" id="holdbtn"><div class="fill" id="fill"></div><div class="big"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg></div><div>TAHAN</div></button>
   <div class="status" id="sosStatus"></div>
   <button class="cancel" onclick="closeSOS()">Batalkan</button>
 </div>
@@ -1047,9 +1057,9 @@ var rules=[
   {ico:'📝',bg:'var(--g-blue)',title:'Registrasi &amp; SIMAKSI',body:'Setiap pendaki wajib registrasi online &amp; memiliki Surat Izin Masuk Kawasan Konservasi sebelum mendaki.'}
 ];
 var nodeInfo={
-  gov:{t:'Pemerintah',e:'🏛️',c:'var(--g-blue)',role:'Regulasi &amp; Budgeting',body:'Menetapkan kebijakan konservasi, menyediakan anggaran, &amp; menerbitkan izin kawasan. Payung hukum seluruh aktivitas pengelolaan.'},
-  people:{t:'Masyarakat',e:'👥',c:'var(--g-green)',role:'Pengelola &amp; Eksekutor',body:'Komunitas lokal &amp; relawan yang menjalankan operasional lapangan: basecamp, pemandu, evakuasi, serta menjaga kearifan lokal.'},
-  rc:{t:'Reichas Chelebes',e:'🛡️',c:'var(--g-brand)',role:'Supervisi &amp; Sistem',body:'Menyediakan sistem digital (aplikasi ini), memverifikasi laporan warga, &amp; mengawasi mutu data agar tata kelola transparan.'}
+  gov:{t:'Pemerintah',e:'landmark',c:'var(--g-blue)',role:'Regulasi &amp; Budgeting',body:'Menetapkan kebijakan konservasi, menyediakan anggaran, &amp; menerbitkan izin kawasan. Payung hukum seluruh aktivitas pengelolaan.'},
+  people:{t:'Masyarakat',e:'users',c:'var(--g-green)',role:'Pengelola &amp; Eksekutor',body:'Komunitas lokal &amp; relawan yang menjalankan operasional lapangan: basecamp, pemandu, evakuasi, serta menjaga kearifan lokal.'},
+  rc:{t:'Reichas Chelebes',e:'shield',c:'var(--g-brand)',role:'Supervisi &amp; Sistem',body:'Menyediakan sistem digital (aplikasi ini), memverifikasi laporan warga, &amp; mengawasi mutu data agar tata kelola transparan.'}
 };
 var posData=[
   {x:90,y:282,name:'Basecamp',alt:'1.500 mdpl',st:'ok',note:'Titik registrasi &amp; SIMAKSI. Sumber air melimpah.'},
@@ -1090,13 +1100,13 @@ function tick(){var d=new Date();document.getElementById('clock').textContent=St
 
 function initials(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()}
 var _feedRows=[];
-function _feedCard(r,idx){var who=r.user_name||r.name||'Warga';var role=r.role||'Pendaki';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'Baru');var color=r.color||'#2b6fff';var desc=r.description||r.desc||'';var title=r.title||'Laporan';var hint=r.photo?'<div style="font-size:11px;color:#2b6fff;font-weight:700;margin-top:6px">📷 Ketuk untuk lihat foto</div>':'';return '<div class="rcard" style="cursor:pointer" onclick="openFeedReport('+idx+')"><div class="who"><div class="avatar" style="background:'+color+'">'+initials(who)+'</div><span>'+role+' — '+who+'</span><time>'+when+'</time></div><h4>'+title+'</h4><p>'+desc+'</p>'+hint+'<div class="tag ok">✅ Terverifikasi RC</div></div>';}
+function _feedCard(r,idx){var who=r.user_name||r.name||'Warga';var role=r.role||'Pendaki';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'Baru');var color=r.color||'#2b6fff';var desc=r.description||r.desc||'';var title=r.title||'Laporan';var hint=r.photo?'<div style="font-size:12px;color:#2b6fff;font-weight:700;margin-top:6px">📷 Ketuk untuk lihat foto</div>':'';return '<div class="rcard" style="cursor:pointer" onclick="openFeedReport('+idx+')"><div class="who"><div class="avatar" style="background:'+color+'">'+initials(who)+'</div><span>'+role+' — '+who+'</span><time>'+when+'</time></div><h4>'+title+'</h4><p>'+desc+'</p>'+hint+'<div class="tag ok">✅ Terverifikasi RC</div></div>';}
 function openFeedReport(idx){var r=_feedRows[idx];if(!r)return;if(r.photo){openImg(r.photo);}else{if(window.toast)toast('Laporan ini tidak menyertakan foto','err');}}
-function renderFeed(){var el=document.getElementById('feed');if(!el)return;var em='text-align:center;color:#8b98ad;padding:22px 12px;font-size:13px';var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){renderFeed._n=(renderFeed._n||0)+1;if(renderFeed._n<40){el.innerHTML='<div style="'+em+'">Memuat laporan…</div>';setTimeout(renderFeed,200);}else{el.innerHTML='<div style="'+em+'">Sambungkan internet untuk melihat laporan.</div>';}return;}renderFeed._n=0;c.from('reports').select('*').eq('astatus','disetujui').order('created_at',{ascending:false}).limit(30).then(function(res){if(res.error){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.<br><small>'+(res.error.message||'')+'</small></div>';return;}_feedRows=res.data||[];if(!_feedRows.length){el.innerHTML='<div style="'+em+'">Belum ada laporan terverifikasi.</div>';return;}el.innerHTML=_feedRows.map(function(r,i){return _feedCard(r,i);}).join('');}).catch(function(){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.</div>';});}
+function renderFeed(){var el=document.getElementById('feed');if(!el)return;var em='text-align:center;color:#59627a;padding:22px 12px;font-size:13px';var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){renderFeed._n=(renderFeed._n||0)+1;if(renderFeed._n<40){el.innerHTML='<div style="'+em+'">Memuat laporan…</div>';setTimeout(renderFeed,200);}else{el.innerHTML='<div style="'+em+'">Sambungkan internet untuk melihat laporan.</div>';}return;}renderFeed._n=0;c.from('reports').select('*').eq('astatus','disetujui').order('created_at',{ascending:false}).limit(30).then(function(res){if(res.error){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.<br><small>'+(res.error.message||'')+'</small></div>';return;}_feedRows=res.data||[];if(!_feedRows.length){el.innerHTML='<div style="'+em+'">Belum ada laporan terverifikasi.</div>';return;}el.innerHTML=_feedRows.map(function(r,i){return _feedCard(r,i);}).join('');}).catch(function(){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.</div>';});}
 function _pf(el,e){el.onerror=null;var pn=el.parentNode;if(pn){pn.setAttribute('data-fb',e);pn.classList.add('photofail');}}
 function renderFcar(){
   document.getElementById('fcar').innerHTML=species.map(function(s){
-    var im=s.photo?'<img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':'<div class="im" style="background:'+s.bg+'">'+s.emoji+'</div>';
+    var im=s.photo?'<img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':'<div class="im" style="background:'+s.bg+'">'+s.emoji+'</div>';
     return '<div class="fc" onclick="openSpecies('+s.id+')">'+im+'<div class="ov"></div><div class="bdg">'+s.protect+'</div><div class="t"><b>'+s.name+'</b><small>'+s.lat+'</small></div></div>';
   }).join('');
 }
@@ -1111,13 +1121,13 @@ function renderSpecies(){
   var el=document.getElementById('speciesList');
   if(!list.length){el.innerHTML='<div class="empty">🔍 Tidak ada hasil.</div>';return;}
   el.innerHTML=list.map(function(s){
-    var im=s.photo?'<img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':s.emoji;
+    var im=s.photo?'<img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':s.emoji;
     return '<div class="species" onclick="openSpecies('+s.id+')"><div class="hero2" style="background:'+s.bg+'">'+im+'<div class="badge">🛡️ '+s.protect+'</div>'+(s.photoBy?'<div class="credit">📷 '+s.photoBy+'</div>':'')+'</div><div class="body"><div class="hd"><div><h3>'+s.name+'</h3><div class="lat">'+s.lat+'</div></div><span class="kind">'+s.kind+'</span></div>'+(s.inatCount!=null?'<span class="obschip">📍 '+s.inatCount+' di sekitar</span>':'')+'<div class="desc">'+s.desc+'</div></div></div>';
   }).join('');
 }
 function openSpecies(id){
   var s=species.filter(function(x){return x.id===id})[0];
-  var hero=s.photo?'<div class="shero"><img src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)" onclick="openImg(&#39;'+s.photo+'&#39;)"/><div class="shero-zoom">⤢ Ketuk untuk perbesar</div></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
+  var hero=s.photo?'<div class="shero"><img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)" onclick="openImg(&#39;'+s.photo+'&#39;)"/><div class="shero-zoom">⤢ Ketuk untuk perbesar</div></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
   document.getElementById('sheetBody').innerHTML=hero+'<h2>'+s.name+'</h2><div class="lat">'+s.lat+'</div>'+
     '<span class="pill" style="background:#ffe4ea;color:#e0154a">🛡️ '+s.protect+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">'+s.kind+'</span>'+
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
@@ -1127,7 +1137,7 @@ function openSpecies(id){
 
 function renderRules(){document.getElementById('rules').innerHTML=rules.map(function(r,i){return '<div class="rule" id="rule'+i+'"><div class="head" onclick="toggleRule('+i+')"><div class="ri" style="background:'+r.bg+'">'+r.ico+'</div><h4>'+r.title+'</h4><span class="chev">▾</span></div><div class="detail"><p>'+r.body+'</p></div></div>'}).join('');}
 function toggleRule(i){document.getElementById('rule'+i).classList.toggle('open');}
-function openNode(k){var n=nodeInfo[k];document.getElementById('sheetBody').innerHTML='<div style="text-align:center;margin:6px 0 4px"><div style="width:74px;height:74px;border-radius:50%;background:'+n.c+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto">'+n.e+'</div></div><h2 style="text-align:center">'+n.t+'</h2><div style="text-align:center;color:var(--sub);font-size:12px;font-weight:800;margin-bottom:12px">'+n.role+'</div><p class="body">'+n.body+'</p>';openSheet();}
+function openNode(k){var n=nodeInfo[k];document.getElementById('sheetBody').innerHTML='<div style="text-align:center;margin:6px 0 4px"><div style="width:74px;height:74px;border-radius:50%;background:'+n.c+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto">'+ic(n.e)+'</div></div><h2 style="text-align:center">'+n.t+'</h2><div style="text-align:center;color:var(--sub);font-size:12px;font-weight:800;margin-bottom:12px">'+n.role+'</div><p class="body">'+n.body+'</p>';openSheet();}
 
 function renderMap(){var svg=document.getElementById('mapsvg');posData.forEach(function(p,i){var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.style.cursor='pointer';g.setAttribute('onclick','openPos('+i+')');var c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r','10');c.setAttribute('fill',stC[p.st]);c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','3.5');var t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',p.x+15);t.setAttribute('y',p.y+4);t.setAttribute('font-size','12');t.setAttribute('font-weight','800');t.setAttribute('fill','#151b2e');t.textContent=p.name;g.appendChild(c);g.appendChild(t);svg.appendChild(g);});}
 function openPos(i){var p=posData[i];var col=p.st==='ok'?'#e4faf0;color:#08a35f':p.st==='warn'?'#fff2df;color:#d5803b':'#ffe4ea;color:#e0154a';document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+col+'">● '+stT[p.st]+'</span><h2 style="margin-top:8px">'+p.name+'</h2><div class="lat" style="color:#2b6fff;font-style:normal;font-weight:800">⛰️ '+p.alt+'</div><p class="body" style="margin-top:10px">'+p.note+'</p>';openSheet();}
@@ -1146,7 +1156,7 @@ function segKom(s){
 }
 function renderKomLap(){
   var b=document.getElementById('kom-lap');if(!b)return;
-  var em='text-align:center;color:#8b98ad;padding:30px 12px;font-size:13px';
+  var em='text-align:center;color:#59627a;padding:30px 12px;font-size:13px';
   var c=(typeof _sbClient==='function')?_sbClient():null;
   if(!c){b.innerHTML='<div style="'+em+'">Sambungkan internet untuk melihat laporan komunitas.</div>';return;}
   b.innerHTML='<div style="'+em+'">Memuat…</div>';
@@ -1163,7 +1173,7 @@ function renderKomLap(){
 }
 function renderKom(){
   document.getElementById('kom-lead').innerHTML=leaders.map(function(l,i){var rk=i===0?'rk g':i===1?'rk s':i===2?'rk b':'rk';var med=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);return '<div class="lead"><div class="'+rk+'">'+med+'</div><div class="av" style="background:'+l.c+'">'+initials(l.n)+'</div><div class="nm"><b>'+l.n+'</b><small>'+l.t+'</small></div><div class="pts">'+l.p+' pts</div></div>'}).join('');
-  document.getElementById('kom-gal').innerHTML='<div class="gal">'+galleryItems.map(function(g){var im=g.photo?'<img src="'+g.photo+'"/>':'';var bg=g.photo?'':'background:'+g.bg;return '<div class="gt" style="'+bg+'">'+(g.photo?im:g.emoji)+'<div class="cap">'+g.cap+'</div></div>'}).join('')+'</div>';
+  document.getElementById('kom-gal').innerHTML='<div class="gal">'+galleryItems.map(function(g){var im=g.photo?'<img loading="lazy" decoding="async" src="'+g.photo+'"/>':'';var bg=g.photo?'':'background:'+g.bg;return '<div class="gt" style="'+bg+'">'+(g.photo?im:g.emoji)+'<div class="cap">'+g.cap+'</div></div>'}).join('')+'</div>';
   document.getElementById('kom-eve').innerHTML=events.map(function(e){return '<div class="event"><div class="date" style="background:'+e.bg+'"><b>'+e.d+'</b><small>'+e.m+'</small></div><div class="ed"><h4>'+e.t+'</h4><p>'+e.p+'</p><div class="m">'+e.meta+'</div></div></div>'}).join('');
 }
 
@@ -1203,6 +1213,7 @@ function cancelHold(){clearInterval(holdTimer);if(document.getElementById('sosSt
 function sosSent(){document.getElementById('fill').style.height='100%';document.getElementById('sosStatus').textContent='✅ Sinyal SOS terkirim! Tim menuju lokasi Anda.';setTimeout(function(){closeSOS();toast('Tim penyelamat telah dihubungi','ok');},1800);}
 
 /* Pantau Pohon */
+function ensureLeaflet(cb){if(window.L){cb&&cb();return;}window._lcbs=window._lcbs||[];if(cb)window._lcbs.push(cb);if(window._lloading)return;window._lloading=true;var css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=function(){window._lloading=false;var cbs=window._lcbs||[];window._lcbs=[];cbs.forEach(function(f){try{f();}catch(e){}});};s.onerror=function(){window._lloading=false;var cbs=window._lcbs||[];window._lcbs=[];cbs.forEach(function(f){try{f();}catch(e){}});};document.head.appendChild(s);}
 var pantauMap=null;
 var zones=[
  {n:'Kaldera Longsor 2004',st:'kritis',ha:235,need:120000,planted:38000,year:'2004',cause:'Runtuhnya dinding kaldera (~235 juta m³) memicu lahan terbuka masif di hulu Sungai Jeneberang; material masih labil tiap musim hujan.',c:[-5.3105,119.9385],poly:[[-5.305,119.933],[-5.305,119.944],[-5.316,119.944],[-5.316,119.933]]},
@@ -1215,7 +1226,8 @@ var zc={kritis:'#ff2d55',sedang:'#ff9838',pulih:'#08b96f'},zt={kritis:'Kritis',s
 function fmt(n){return n.toLocaleString('id-ID');}
 function renderPantauStats(){var need=0,plant=0,ha=0;zones.forEach(function(z){need+=z.need;plant+=z.planted;ha+=z.ha;});var pct=Math.round(plant/need*100);document.getElementById('pt-ha').textContent=fmt(ha);document.getElementById('pt-need').textContent=fmt(need);document.getElementById('pt-plant').textContent=fmt(plant);document.getElementById('pt-pct').textContent=pct+'%';document.getElementById('pt-bar').style.width=pct+'%';}
 function renderZones(){document.getElementById('zoneList').innerHTML=zones.map(function(z,i){var pct=Math.round(z.planted/z.need*100);return '<div class="zcard" style="border-left-color:'+zc[z.st]+'" onclick="openZone('+i+')"><div class="row-between"><b>'+z.n+'</b><span class="zbadge" style="background:'+zc[z.st]+'">'+zt[z.st]+'</span></div><div class="zmeta">📐 '+z.ha+' ha · 🌳 butuh '+fmt(z.need)+' pohon</div><div class="quota" style="margin-top:8px"><i style="width:'+pct+'%;background:'+zc[z.st]+'"></i></div><div class="zmeta" style="margin-top:5px">'+fmt(z.planted)+' ditanam ('+pct+'%)</div></div>';}).join('');}
-function initPantau(){
+function initPantau(){if(typeof ensureLeaflet==='function'){ensureLeaflet(_initPantau);}else{_initPantau();}}
+function _initPantau(){
   if(!window.L){document.getElementById('map').innerHTML='<div style="padding:34px 20px;text-align:center;color:#8a92a6;font-size:13px;font-weight:600">🌐 Peta citra satelit butuh koneksi internet.<br/>Sambungkan internet lalu buka lagi tab ini.</div>';return;}
   if(!pantauMap){
     pantauMap=L.map('map',{scrollWheelZoom:false}).setView([-5.305,119.928],13);
@@ -1247,6 +1259,7 @@ async function loadLiveData(){
   var box=document.getElementById("liveInfo");
   if(!box) return;
   if(window._liveDone) return; window._liveDone=true;
+  box.innerHTML='<div class="li-skel"></div><div class="li-skel"></div><div class="li-skel"></div>';
   var html="";
   try{
     var r=await fetch((window.API_BASE||"")+"/api/bmkg?adm4=73.06.04.1010");
@@ -1264,7 +1277,7 @@ async function loadLiveData(){
       if(window.L&&pantauMap&&arr.length){arr.forEach(function(h){L.circleMarker([h.lat,h.lng],{radius:5,color:"#fff",weight:1,fillColor:"#ff3b30",fillOpacity:.95}).addTo(pantauMap).bindTooltip("🔥 "+(h.date||"")+" · conf "+(h.conf||"-"),{direction:"top"});});}
     }
   }catch(e){}
-  box.innerHTML=html||'<small>🌐 Data langsung aktif setelah aplikasi di-deploy online (proxy /api). Saat ini memakai data statis.</small>';
+  box.innerHTML=html||('<div class="li-row"><span class="li-ic">🌦️</span><div><b>Berawan · 19°C <span class="samp-badge">CONTOH</span></b><small>Kawasan Bawakaraeng</small></div></div><div class="li-row"><span class="li-ic">📍</span><div><b>Gempa M 3.2 <span class="samp-badge">CONTOH</span></b><small>Laut Flores</small></div></div><div class="li-row"><span class="li-ic">🔥</span><div><b>0 titik panas · 72 jam <span class="samp-badge">CONTOH</span></b><small>Aktif setelah di-deploy</small></div></div><button class="retry-btn dark" onclick="retryLive()">↻ Coba lagi</button>');
 }
 (function(){if(typeof initPantau==="function"){var _o=initPantau;initPantau=function(){_o();setTimeout(loadLiveData,250);};}})();
 </script><script>
@@ -1345,17 +1358,18 @@ var jalurPos=[
   {n:'Memorial',f:0.544,el:2230,st:'warn',d:'Tugu peringatan untuk mengenang pendaki.'},
   {n:'Pos 8',f:0.703,el:2440,st:'warn',d:'Vegetasi menipis, angin mulai kencang.'},
   {n:'Pos 9',f:0.833,el:2610,st:'danger',d:'Perpotongan jalur Sinjai. Trek menanjak & tebing curam menuju puncak.'},
-  {n:'Puncak Bawakaraeng',f:1,el:2830,st:'danger',d:'⛰️ Puncak 2.830 mdpl. Hati-hati cuaca cepat berubah.'}
+  {n:'Puncak Bawakaraeng',f:1,el:2830,st:'danger',d:'������ Puncak 2.830 mdpl. Hati-hati cuaca cepat berubah.'}
 ];
 var waterPos=[
   {n:'Sumber Air Pos 2',f:0.225,el:1810,type:'Mata air / aliran',note:'Aliran air kecil dekat Pos 2. Cocok untuk isi ulang & area mendirikan tenda.'},
   {n:'Sumber Air Pos 5',f:0.499,el:2170,type:'Mata air (TERAKHIR)',note:'Titik air TERAKHIR sebelum puncak - WAJIB isi penuh semua persediaan di sini.'}
 ];
-function openWater(w){var c=_jc(w.f);if(jalurMap){jalurMap.setView(c,15);}var b=document.getElementById('sheetBody');if(b){b.innerHTML='<span class="pill" style="background:#2b6fff22;color:#2b6fff">💧 Sumber Air</span><h2 style="margin-top:8px">'+w.n+'</h2><div class="info-row"><div class="info"><b>'+w.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body"><b>'+w.type+'</b><br>'+w.note+'</p><div style="margin-top:10px;font-size:12px;color:#8a94a6;line-height:1.5">Ketersediaan air bergantung musim. Selalu bawa cadangan & alat filter/rebus air.</div>';}if(typeof openSheet==='function')openSheet();}
+function openWater(w){var c=_jc(w.f);if(jalurMap){jalurMap.setView(c,15);}var b=document.getElementById('sheetBody');if(b){b.innerHTML='<span class="pill" style="background:#2b6fff22;color:#2b6fff">💧 Sumber Air</span><h2 style="margin-top:8px">'+w.n+'</h2><div class="info-row"><div class="info"><b>'+w.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body"><b>'+w.type+'</b><br>'+w.note+'</p><div style="margin-top:10px;font-size:12px;color:#59627a;line-height:1.5">Ketersediaan air bergantung musim. Selalu bawa cadangan & alat filter/rebus air.</div>';}if(typeof openSheet==='function')openSheet();}
 function renderWater(){var el=document.getElementById('waterList');if(!el||typeof waterPos==='undefined')return;el.innerHTML=waterPos.map(function(w,i){return '<button class="wrow" onclick="openWater(waterPos['+i+'])"><span class="wro-ic">💧</span><span class="wro-tx"><b>'+w.n+'</b><small>'+w.type+' · '+w.el+' m</small></span><span class="wro-go">›</span></button>';}).join('')+'<div class="jhint" style="margin-top:6px">⚠️ Setelah Pos 5 tidak ada sumber air sampai puncak. Rencanakan kebutuhan air dengan cermat.</div>';}
 var _jzc={ok:'#08a35f',warn:'#d5803b',danger:'#ff2d55'};
 var _jzt={ok:'Aman',warn:'Waspada',danger:'Bahaya'};
-function initJalur(){
+function initJalur(){if(typeof ensureLeaflet==='function'){ensureLeaflet(_initJalur);}else{_initJalur();}}
+function _initJalur(){
   if(!window.L){return;}
   if(!jalurMap){
     jalurMap=L.map('jalurMap',{scrollWheelZoom:false}).setView([-5.288,119.925],13);
@@ -1375,11 +1389,11 @@ function initJalur(){
 function openPos(i){
   var p=jalurPos[i];var c=_jc(p.f);
   if(jalurMap){jalurMap.setView(c,14);}
-  document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+_jzc[p.st]+'22;color:'+_jzc[p.st]+'">● '+_jzt[p.st]+'</span><h2 style="margin-top:8px">'+p.n+'</h2><div class="info-row"><div class="info"><b>'+p.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body">'+p.d+'</p><div style="margin-top:10px;font-size:12px;color:#8a94a6;line-height:1.5">Koordinat merupakan perkiraan jalur untuk ilustrasi. Gunakan peta/GPX resmi saat mendaki.</div>';
+  document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+_jzc[p.st]+'22;color:'+_jzc[p.st]+'">● '+_jzt[p.st]+'</span><h2 style="margin-top:8px">'+p.n+'</h2><div class="info-row"><div class="info"><b>'+p.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body">'+p.d+'</p><div style="margin-top:10px;font-size:12px;color:#59627a;line-height:1.5">Koordinat merupakan perkiraan jalur untuk ilustrasi. Gunakan peta/GPX resmi saat mendaki.</div>';
   openSheet();
 }
 var jalurTrails=[
-  {ic:'🥾',bg:'var(--g-green)',n:'Via Lembanna',sub:'Jalur klasik & terpopuler',diff:'sedang',chips:['⏱️ 10–14 jam','📍 10 pos','💧 air s/d Pos 5','🏔️ mulai 1.514 m'],d:'Titik awal Desa Lembanna (Malino). Medan bervariasi dari landai hingga tanjakan curam berbatu. Jalur paling lengkap fasilitas & paling ramai.'},
+  {ic:'🥾',bg:'var(--g-green)',n:'Via Lembanna',sub:'Jalur klasik & terpopuler',diff:'sedang',chips:['⏱️ 10–14 jam','📍 10 pos','💧 air s/d Pos 5','🏔�� mulai 1.514 m'],d:'Titik awal Desa Lembanna (Malino). Medan bervariasi dari landai hingga tanjakan curam berbatu. Jalur paling lengkap fasilitas & paling ramai.'},
   {ic:'⛰️',bg:'var(--g-teal)',n:'Via Bulu Ballea',sub:'Favorit untuk tektok & latihan',diff:'sedang',chips:['⏱️ ± 8–10 jam','🌿 relatif landai','📍 8+ pos'],d:'Jalur dengan pemandangan terbuka dan tanjakan lebih bertahap. Populer untuk pendakian cepat (tektok), meski tetap butuh stamina.'},
   {ic:'🌲',bg:'var(--g-indigo)',n:'Via Tassoso',sub:'Jalur alternatif sisi Sinjai',diff:'berat',chips:['⏱️ 12–15 jam','🌫️ jarang dilewati','⚠️ minim penanda'],d:'Jalur menantang dari sisi Tassoso. Vegetasi rapat & penanda terbatas — disarankan bersama pemandu lokal.'},
   {ic:'🌄',bg:'var(--g-amber)',n:'Via Pattapang',sub:'Mulai dari hutan pinus',diff:'sedang',chips:['⏱️ ± 6,5 jam','🏔️ 1.523 → 2.803 m','📷 view kebun teh'],d:'Dimulai dari pintu hutan pinus Pattapang (1.523 mdpl). Salah satu akses dengan estimasi tercepat menuju puncak.'}
@@ -1474,10 +1488,11 @@ async function enrichSpecies(){
       }
     }catch(e){
       if(card)card.classList.remove('loading');
-      var dd=document.getElementById('wDesc');if(dd)dd.textContent='Cuaca live aktif saat online';
-      var src=document.getElementById('wSrc');if(src)src.textContent='Data BMKG tampil otomatis setelah aplikasi online (mode offline: contoh statis)';
+      _wxSample();
     }
   }
+  function _wxSample(){var T=document.getElementById('wTemp');if(T)T.textContent='19°';var D=document.getElementById('wDesc');if(D)D.textContent='Berawan (contoh)';var H=document.getElementById('wHum');if(H)H.textContent='86%';var W=document.getElementById('wWind');if(W)W.textContent='8 km/j';var A=document.getElementById('wArea');if(A)A.textContent='Kawasan Gunung Bawakaraeng';var S=document.getElementById('wSrc');if(S)S.innerHTML='<span class="samp-badge">CONTOH</span> Data live BMKG tampil setelah di-deploy. <button class="retry-btn" onclick="retryWeather()">↻ Coba lagi</button>';}
+  window.retryWeather=function(){done=false;var card=document.getElementById('wcard');if(card)card.classList.add('loading');var D=document.getElementById('wDesc');if(D)D.textContent='Memuat cuaca…';loadBerandaWeather();};
   window.loadBerandaWeather=loadBerandaWeather;
   window.addEventListener('load',function(){setTimeout(loadBerandaWeather,300);setTimeout(function(){try{if(typeof enrichSpecies==='function')enrichSpecies();}catch(e){}},400);});
 })();
@@ -1541,7 +1556,7 @@ function renderBiodiv(){
   document.getElementById('bd-obs').textContent=(total*7).toLocaleString('id-ID');
   document.getElementById('bd-bars').innerHTML=bdCats.map(function(c){var w=Math.round(c.n/max*100);return '<div class="bdbar"><div class="lb"><span>'+c.l+'</span><span>'+c.n+'</span></div><div class="track"><div class="fillb" style="width:'+w+'%;background:'+c.c+'"></div></div></div>';}).join('');
   var top=(typeof species!=='undefined'?species:[]).slice(0,5);
-  document.getElementById('bd-top').innerHTML=top.map(function(s,i){var im=s.photo?'<img src="'+s.photo+'" style="width:44px;height:44px;border-radius:11px;object-fit:cover"/>':'<div class="nt-ic" style="background:'+(s.bg||'#08b96f')+'">'+(s.emoji||'🌿')+'</div>';return '<div class="nt-card" onclick="go(\'eksplor\')"><div class="nt-row">'+im+'<div style="flex:1"><h4>'+s.name+'</h4><div class="meta">'+(s.lat||'')+'</div></div><span class="pill" style="background:#eef2fb;color:#2b6fff">'+(s.inatCount!=null?s.inatCount:(40-i*6))+' obs</span></div></div>';}).join('');
+  document.getElementById('bd-top').innerHTML=top.map(function(s,i){var im=s.photo?'<img loading="lazy" decoding="async" src="'+s.photo+'" style="width:44px;height:44px;border-radius:11px;object-fit:cover"/>':'<div class="nt-ic" style="background:'+(s.bg||'#08b96f')+'">'+(s.emoji||'🌿')+'</div>';return '<div class="nt-card" onclick="go(\'eksplor\')"><div class="nt-row">'+im+'<div style="flex:1"><h4>'+s.name+'</h4><div class="meta">'+(s.lat||'')+'</div></div><span class="pill" style="background:#eef2fb;color:#2b6fff">'+(s.inatCount!=null?s.inatCount:(40-i*6))+' obs</span></div></div>';}).join('');
 }
 /* --- Sertifikat Adopsi Pohon --- */
 var _certLogo=null,_certLogoOK=false,_certNo='',_certNoName='',_lastCertData=null;
@@ -1598,8 +1613,8 @@ function renderArsip(){
 function setArType(t){arType=t;renderArsip();}
 function openPub(url){if(!url){if(window.toast)toast('Tautan belum tersedia');return;}window.open(url,'_blank','noopener');if(window.toast)toast('Membuka publikasi…');}
 function _rcWA(){try{return (SOS_CONTACTS&&SOS_CONTACTS[0]&&SOS_CONTACTS[0].p)||'6282320124040';}catch(e){return '6282320124040';}}
-function openNotif(){var items=[{ic:'\U0001F331',t:'Ajakan tanam bibit',d:'Agenda penghijauan terdekat ada di menu Agenda.',tm:'Hari ini'},{ic:'\u26C5',t:'Prakiraan cuaca diperbarui',d:'Cek tab Cuaca untuk kondisi puncak terbaru.',tm:'Baru'}];try{if(typeof reports!=='undefined'&&reports){reports.slice(0,5).forEach(function(r){items.push({ic:'\U0001F4CD',t:r.title||'Laporan',d:(r.desc||'').slice(0,70),tm:r.time||''});});}}catch(e){}var html='<h2 style="margin:0 0 12px">\U0001F514 Notifikasi</h2>'+items.map(function(n){return `<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eef1f5"><div style="font-size:20px">${n.ic}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${n.t}</div><div style="color:#667;font-size:12px">${n.d}</div></div><div style="color:#99a;font-size:11px;white-space:nowrap">${n.tm}</div></div>`;}).join('');document.getElementById('sheetBody').innerHTML=html;openSheet();}
-function openAllReports(){var html='<h2 style="margin:0 0 12px">📋 Semua Laporan</h2>';try{if(_feedRows&&_feedRows.length){html+=_feedRows.map(function(r,i){var who=r.user_name||r.name||'Warga';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'');return '<div onclick="closeSheet();openFeedReport('+i+')" style="padding:11px 0;border-bottom:1px solid #eef1f5;cursor:pointer"><div style="font-weight:700;font-size:14px">'+(r.title||'Laporan')+'</div><div style="color:#667;font-size:12px">'+(r.description||r.desc||'')+'</div><div style="color:#99a;font-size:11px;margin-top:3px">'+who+' · '+when+(r.photo?' · 📷 lihat foto':'')+'</div></div>';}).join('');}else{html+='<p style="color:#889">Belum ada laporan.</p>';}}catch(e){html+='<p style="color:#889">Belum ada laporan.</p>';}document.getElementById('sheetBody').innerHTML=html;openSheet();}
+function openNotif(){var items=[{ic:'\U0001F331',t:'Ajakan tanam bibit',d:'Agenda penghijauan terdekat ada di menu Agenda.',tm:'Hari ini'},{ic:'\u26C5',t:'Prakiraan cuaca diperbarui',d:'Cek tab Cuaca untuk kondisi puncak terbaru.',tm:'Baru'}];try{if(typeof reports!=='undefined'&&reports){reports.slice(0,5).forEach(function(r){items.push({ic:'\U0001F4CD',t:r.title||'Laporan',d:(r.desc||'').slice(0,70),tm:r.time||''});});}}catch(e){}var html='<h2 style="margin:0 0 12px">\U0001F514 Notifikasi</h2>'+items.map(function(n){return `<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eef1f5"><div style="font-size:20px">${n.ic}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${n.t}</div><div style="color:#667;font-size:12px">${n.d}</div></div><div style="color:#99a;font-size:12px;white-space:nowrap">${n.tm}</div></div>`;}).join('');document.getElementById('sheetBody').innerHTML=html;openSheet();}
+function openAllReports(){var html='<h2 style="margin:0 0 12px">📋 Semua Laporan</h2>';try{if(_feedRows&&_feedRows.length){html+=_feedRows.map(function(r,i){var who=r.user_name||r.name||'Warga';var when=r.created_at?(''+r.created_at).slice(0,10):(r.time||'');return '<div onclick="closeSheet();openFeedReport('+i+')" style="padding:11px 0;border-bottom:1px solid #eef1f5;cursor:pointer"><div style="font-weight:700;font-size:14px">'+(r.title||'Laporan')+'</div><div style="color:#667;font-size:12px">'+(r.description||r.desc||'')+'</div><div style="color:#99a;font-size:12px;margin-top:3px">'+who+' · '+when+(r.photo?' · 📷 lihat foto':'')+'</div></div>';}).join('');}else{html+='<p style="color:#889">Belum ada laporan.</p>';}}catch(e){html+='<p style="color:#889">Belum ada laporan.</p>';}document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Bawakaraeng Hub \u00b7 Reichas Chelebes<br>PWA v10 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openHelp(){var wa='https://wa.me/'+_rcWA();var faq=[['Cara lapor temuan/insiden?','Buka menu Lapor, unggah foto, isi deskripsi & lokasi, lalu kirim.'],['Apa itu SIMAKSI?','Surat Izin Masuk Kawasan Konservasi \u2014 ajukan lewat menu SIMAKSI sebelum mendaki.'],['Cara kerja tombol SOS?','Tahan tombol 3 detik; aplikasi menyiapkan lokasi GPS untuk dibagikan ke tim & panggilan darurat.'],['Apakah data saya tersimpan?','Laporan & jurnal tersimpan di perangkat Anda.']];var html='<h2 style="margin:0 0 12px">\u2753 Bantuan</h2>'+faq.map(function(f){return `<details style="border-bottom:1px solid #eef1f5;padding:10px 0"><summary style="font-weight:700;font-size:14px;cursor:pointer">${f[0]}</summary><div style="color:#667;font-size:13px;margin-top:6px">${f[1]}</div></details>`;}).join('');html+=`<a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:14px" href="${wa}" target="_blank" rel="noopener">\U0001F4F2 Hubungi Tim Reichas Chelebes</a><a class="btn" style="display:block;text-decoration:none;text-align:center;margin-top:8px" href="mailto:${RC_EMAIL}">\u2709\ufe0f ${RC_EMAIL}</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function kirimRiset(){var body=document.getElementById('sheetBody');var vals=[];if(body){var fs=body.querySelectorAll('input,textarea,select');for(var i=0;i<fs.length;i++){var f=fs[i];var v=(f.value||'').trim();if(v){var lab=f.getAttribute('placeholder')||f.name||('Isian '+(i+1));vals.push(lab+': '+v);}}}var txt=vals.length?vals.join('\n'):'(form belum diisi)';var subj=encodeURIComponent('Pengajuan Riset \u2014 Bawakaraeng Hub');var mb=encodeURIComponent('Halo Tim Reichas Chelebes,\n\nSaya mengajukan riset/kolaborasi:\n\n'+txt+'\n\nTerima kasih.');closeSheet();window.location.href='mailto:'+RC_EMAIL+'?subject='+subj+'&body='+mb;if(window.toast)toast('Membuka email pengajuan\u2026','ok');}
@@ -1620,7 +1635,7 @@ function renderEkosistem(){
   var lab=score>=75?'Sehat':score>=55?'Cukup Sehat':score>=40?'Waspada':'Kritis';
   document.getElementById('ek-label').textContent=lab+' · skor '+score+'/100';
   document.getElementById('ek-bar').style.width=score+'%';
-  document.getElementById('ek-metrics').innerHTML=ekMetrics.map(function(m){return '<div class="ekm"><div class="kpi"><div class="lb"><span>'+m.l+'</span><span style="color:'+m.c+'">'+m.v+'</span></div><div class="track"><i style="width:'+m.pct+'%;background:'+m.c+'"></i></div><div style="font-size:10px;color:var(--sub);font-weight:700;margin-top:5px">'+m.tr+'</div></div></div>';}).join('');
+  document.getElementById('ek-metrics').innerHTML=ekMetrics.map(function(m){return '<div class="ekm"><div class="kpi"><div class="lb"><span>'+m.l+'</span><span style="color:'+m.c+'">'+m.v+'</span></div><div class="track"><i style="width:'+m.pct+'%;background:'+m.c+'"></i></div><div style="font-size:11.5px;color:var(--sub);font-weight:700;margin-top:5px">'+m.tr+'</div></div></div>';}).join('');
   var used=93,cap=150;
   document.getElementById('ek-dd').textContent=used+' / '+cap;
   document.getElementById('ek-ddbar').style.width=Math.round(used/cap*100)+'%';
@@ -1628,33 +1643,38 @@ function renderEkosistem(){
 }
 </script>
 <script>
+var SVGI={home:'<path d="M15 21v-6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v6"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',tree:'<path d="M8 19a4 4 0 0 1-2.24-7.32A3.5 3.5 0 0 1 9 6.03V6a3 3 0 1 1 6 0v.03a3.5 3.5 0 0 1 3.24 5.65A4 4 0 0 1 16 19Z"/><path d="M12 19v3"/>',pine:'<path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"/><path d="M12 22v-3"/>',flask:'<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/>',book:'<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',scale:'<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',sprout:'<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',contrast:'<circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12z"/>',lifebuoy:'<circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/>',camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',backpack:'<path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"/><path d="M8 10h8"/>',map:'<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',compass:'<path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/><circle cx="12" cy="12" r="10"/>',calendar:'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',landmark:'<path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',satellite:'<path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/>',mountain:'<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',hand:'<path d="M22 14a8 8 0 0 1-8 8"/><path d="M18 11v-1a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V9a2 2 0 0 0-2-2 2 2 0 0 0-2 2v1"/><path d="M10 9.5V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v10"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'};
+function ic(n,cls){var p=SVGI[n];if(p==null){return '';}return '<svg class="svgi'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';}
+window.ic=ic;
+</script>
+<script>
 /* ===== Beranda 4 Kategori: KLH, Kehutanan, SAR, Adventure ===== */
 var catData=[
- {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'🛰️',grad:'var(--g-violet)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
-   {id:'klh',name:'KLH',emoji:'🏛️',tiles:[
-     {a:"go('ekosistem')",ic:'g-green',e:'🌳',l:'Kesehatan'},
-     {a:"go('biodiv')",ic:'g-teal',e:'🔬',l:'Biodiversitas'},
-     {a:"go('arsip')",ic:'g-indigo',e:'📚',l:'Publikasi'},
-     {a:"go('regulasi')",ic:'g-violet',e:'⚖️',l:'Regulasi'},
-     {a:"go('donasi')",ic:'g-brand',e:'💚',l:'Donasi'}
+ {id:'pantau',name:'PANTAU',full:'Pantau Lingkungan & Hutan',emoji:'satellite',grad:'var(--g-violet)',desc:'Kesehatan ekosistem, biodiversitas, tutupan hutan & keanekaragaman hayati.',subs:[
+   {id:'klh',name:'KLH',emoji:'landmark',tiles:[
+     {a:"go('ekosistem')",ic:'g-green',e:'tree',l:'Kesehatan'},
+     {a:"go('biodiv')",ic:'g-teal',e:'flask',l:'Biodiversitas'},
+     {a:"go('arsip')",ic:'g-indigo',e:'book',l:'Publikasi'},
+     {a:"go('regulasi')",ic:'g-violet',e:'scale',l:'Regulasi'},
+     {a:"go('donasi')",ic:'g-brand',e:'heart',l:'Donasi'}
    ]},
-   {id:'hut',name:'Kehutanan',emoji:'🌲',tiles:[
-     {a:"go('pantau')",ic:'g-teal',e:'🌳',l:'Pantau Pohon'},
-     {a:"go('adopsi')",ic:'g-green',e:'🌱',l:'Adopsi Pohon'},
-     {a:"go('eksplor')",ic:'g-green',e:'🌿',l:'Flora & Fauna'},
-     {a:"go('bandingkan')",ic:'g-teal',e:'🌗',l:'Before-After'}
+   {id:'hut',name:'Kehutanan',emoji:'pine',tiles:[
+     {a:"go('pantau')",ic:'g-teal',e:'tree',l:'Pantau Pohon'},
+     {a:"go('adopsi')",ic:'g-green',e:'sprout',l:'Adopsi Pohon'},
+     {a:"go('eksplor')",ic:'g-green',e:'leaf',l:'Flora & Fauna'},
+     {a:"go('bandingkan')",ic:'g-teal',e:'contrast',l:'Before-After'}
    ]}
  ]},
- {id:'sos',name:'SOS',full:'SOS & Keselamatan',emoji:'🚨',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
-   {a:'openSOS()',ic:'g-brand',e:'🆘',l:'SOS Darurat'},
-   {a:"go('lapor')",ic:'g-amber',e:'📷',l:'Lapor Insiden'},
-   {a:"go('checklist')",ic:'g-green',e:'🎒',l:'Checklist'},
-   {a:"go('peta')",ic:'g-blue',e:'🗺️',l:'Peta Jalur'}
+ {id:'sos',name:'SOS',full:'SOS & Keselamatan',emoji:'alert',grad:'var(--g-brand)',desc:'Darurat, pelaporan insiden, kesiapan perlengkapan & navigasi jalur.',tiles:[
+   {a:'openSOS()',ic:'g-brand',e:'lifebuoy',l:'SOS Darurat'},
+   {a:"go('lapor')",ic:'g-amber',e:'camera',l:'Lapor Insiden'},
+   {a:"go('checklist')",ic:'g-green',e:'backpack',l:'Checklist'},
+   {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'}
  ]},
- {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'⛰️',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
-   {a:"go('jurnal')",ic:'g-blue',e:'🧭',l:'Jurnal Pendaki'},
-   {a:"go('agenda')",ic:'g-amber',e:'📅',l:'Agenda'},
-   {a:"go('komunitas')",ic:'g-pink',e:'👥',l:'Komunitas'}
+ {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'mountain',grad:'var(--g-sunset)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
+   {a:"go('jurnal')",ic:'g-blue',e:'compass',l:'Jurnal Pendaki'},
+   {a:"go('agenda')",ic:'g-amber',e:'calendar',l:'Agenda'},
+   {a:"go('komunitas')",ic:'g-pink',e:'users',l:'Komunitas'}
  ]}
 ];
 var curCat=null;
@@ -1666,25 +1686,25 @@ function closeCat(){curCat=null;renderCat();}
 function setSub(id){curSub=id;renderCat();}
 function renderCat(){
  var bar=document.getElementById('catbar');if(!bar)return;
- bar.innerHTML=catData.map(function(c){return '<button class="catbtn'+(c.id===curCat?' on':'')+'" style="'+(c.id===curCat?'background:'+c.grad+';':'')+'" onclick="setCat(\''+c.id+'\')"><span class="ce">'+c.emoji+'</span>'+c.name+'</button>';}).join('');
+ bar.innerHTML=catData.map(function(c){return '<button class="catbtn'+(c.id===curCat?' on':'')+'" style="'+(c.id===curCat?'background:'+c.grad+';':'')+'" onclick="setCat(\''+c.id+'\')"><span class="ce">'+ic(c.emoji)+'</span>'+c.name+'</button>';}).join('');
  var d=document.getElementById('catdesc');var g0=document.getElementById('catGrid');var sc0=document.getElementById('subcatbar');
- if(!curCat){if(d)d.innerHTML='<div class="cathint">👆 Pilih kategori di atas untuk membuka menunya.</div>';if(sc0){sc0.style.display='none';sc0.innerHTML='';}if(g0)g0.innerHTML='';return;}
+ if(!curCat){if(d)d.innerHTML='<div class="cathint">'+ic('hand')+' Pilih kategori di atas untuk membuka menunya.</div>';if(sc0){sc0.style.display='none';sc0.innerHTML='';}if(g0)g0.innerHTML='';return;}
  var c=_catById(curCat);if(!c)return;
- if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+c.emoji+' '+c.full+'</b> — '+c.desc+'</span><button class="catclose" onclick="closeCat()">✕ Tutup</button></div>';
+ if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+ic(c.emoji)+' '+c.full+'</b> — '+c.desc+'</span><button class="catclose" onclick="closeCat()">'+ic('x')+' Tutup</button></div>';
  var g=document.getElementById('catGrid');
  var sc=document.getElementById('subcatbar');
  if(c.subs){
    if(!sc){sc=document.createElement('div');sc.id='subcatbar';sc.className='subcatbar';if(g&&g.parentNode)g.parentNode.insertBefore(sc,g);}
    sc.style.display='flex';
-   sc.innerHTML=c.subs.map(function(s){return '<button class="subcatbtn'+(s.id===curSub?' on':'')+'" onclick="setSub(\''+s.id+'\')"><span>'+s.emoji+'</span> '+s.name+'</button>';}).join('');
+   sc.innerHTML=c.subs.map(function(s){return '<button class="subcatbtn'+(s.id===curSub?' on':'')+'" onclick="setSub(\''+s.id+'\')"><span>'+ic(s.emoji)+'</span> '+s.name+'</button>';}).join('');
  }else if(sc){sc.style.display='none';sc.innerHTML='';}
- if(g)g.innerHTML=_curTiles(c).map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+t.e+'</div><span>'+t.l+'</span></button>';}).join('');
+ if(g)g.innerHTML=_curTiles(c).map(function(t){return '<button class="q" onclick="'+t.a+'"><div class="ic '+t.ic+'">'+ic(t.e)+'</div><span>'+t.l+'</span></button>';}).join('');
 }
 window.addEventListener('load',function(){setTimeout(function(){try{renderCat();}catch(e){}},60);});
 /* ===== Sub-navigasi antar tab (Beranda / sebelumnya / berikutnya) ===== */
 var NAV_SEQ=[];
 function buildNavSeq(){NAV_SEQ=[];catData.forEach(function(c){var gr=c.subs?c.subs:[{tiles:c.tiles}];gr.forEach(function(gp){(gp.tiles||[]).forEach(function(t){var m=/^go\('([a-z]+)'\)$/.exec(t.a);if(m){NAV_SEQ.push({view:m[1],label:t.l,emoji:t.e,cat:c.name,catEmoji:c.emoji});}});});});}
-function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getElementById(id);if(!view){return;}var old=view.querySelector(':scope > .subnav');if(old){old.remove();}var idx=-1;for(var i=0;i<NAV_SEQ.length;i++){if(NAV_SEQ[i].view===id){idx=i;break;}}if(idx<0){return;}var cur=NAV_SEQ[idx];var prev=NAV_SEQ[(idx-1+NAV_SEQ.length)%NAV_SEQ.length];var next=NAV_SEQ[(idx+1)%NAV_SEQ.length];var bar=document.createElement('div');bar.className='subnav';bar.innerHTML='<button class="sn-home" onclick="go(\'beranda\')" title="Beranda">\ud83c\udfe0</button><div class="sn-mid"><span class="sn-cat">'+cur.catEmoji+' '+cur.cat+'</span><span class="sn-cur">'+cur.emoji+' '+cur.label+'</span></div><div class="sn-arrows"><button class="sn-btn" onclick="go(\''+prev.view+'\')" title="'+prev.label+'">\u2039 <span>'+prev.label+'</span></button><button class="sn-btn sn-next" onclick="go(\''+next.view+'\')" title="'+next.label+'"><span>'+next.label+'</span> \u203a</button></div>';view.insertBefore(bar,view.firstChild);}
+function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getElementById(id);if(!view){return;}var old=view.querySelector(':scope > .subnav');if(old){old.remove();}var idx=-1;for(var i=0;i<NAV_SEQ.length;i++){if(NAV_SEQ[i].view===id){idx=i;break;}}if(idx<0){return;}var cur=NAV_SEQ[idx];var prev=NAV_SEQ[(idx-1+NAV_SEQ.length)%NAV_SEQ.length];var next=NAV_SEQ[(idx+1)%NAV_SEQ.length];var bar=document.createElement('div');bar.className='subnav';bar.innerHTML='<button class="sn-home" onclick="go(\'beranda\')" title="Beranda">'+ic('home')+'</button><div class="sn-mid"><span class="sn-cat">'+ic(cur.catEmoji)+' '+cur.cat+'</span><span class="sn-cur">'+ic(cur.emoji)+' '+cur.label+'</span></div><div class="sn-arrows"><button class="sn-btn" onclick="go(\''+prev.view+'\')" title="'+prev.label+'">\u2039 <span>'+prev.label+'</span></button><button class="sn-btn sn-next" onclick="go(\''+next.view+'\')" title="'+next.label+'"><span>'+next.label+'</span> \u203a</button></div>';view.insertBefore(bar,view.firstChild);}
 </script>
 <div id="introOverlay" class="intro-ov">
   <svg class="intro-bg" viewBox="0 0 460 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
@@ -1728,8 +1748,8 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     <div class="intro-eco">Ekosistem Gunung Bulu Bawakaraeng</div>
     <p class="intro-sub">Konservasi lingkungan, tata kelola hutan dan keselamatan pendakian dalam satu aplikasi.</p>
         <div class="intro-tri">
-      <p class="tri-lead">Pendekatan <b>Tripartit</b> membagi peran secara taktis demi kelestarian kawasan. Ketuk tiap pilar untuk melihat tugas &amp; fungsinya (tusi).</p><div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-blue">🏛️</div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Pemegang kendali legalitas, kebijakan &amp; pendanaan — melalui BBKSDA, Dinas Kehutanan, atau Pemerintah Daerah setempat.</p><h5>⚖️ Regulasi (Kebijakan Terarah)</h5><ul><li>Menyusun payung hukum tata tertib pendakian, zona konservasi, perlindungan flora &amp; fauna endemik, serta sanksi bagi pelanggar lingkungan.</li><li>Menetapkan kuota harian pendakian (carrying capacity) agar ekosistem tidak tertekan akibat over-tourism.</li></ul><h5>📝 Perizinan (Sistem Kontrol)</h5><ul><li>Mengatur izin masuk kawasan hutan (SIMAKSI).</li><li>Mengontrol izin penelitian, wisata minat khusus, maupun kegiatan adat/budaya.</li></ul><h5>💰 Penganggaran (Budgeting)</h5><ul><li>Mengalokasikan dana APBD/APBN untuk fasilitas konservasi: pos registrasi, jalur evakuasi, rambu, shelter.</li><li>Mendanai pemulihan ekosistem — reboisasi pasca-kebakaran &amp; rehabilitasi lahan kritis.</li></ul></div></div>
-      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-green">👥</div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Ujung tombak &amp; eksekutor langsung di lapangan — pendaki, komunitas pencinta alam (KPA), relawan, SAR, serta warga lokal (Lembanna).</p><h5>🛖 Pengelola &amp; Keamanan Lokal (Warga Sekitar)</h5><ul><li>Garda terdepan pengawasan pintu masuk (Pos Lembanna) &amp; penyedia jasa pemandu (porter/guide) lokal yang paham etika konservasi.</li><li>Menerapkan hukum adat/kearifan lokal demi menjaga kesucian spiritual &amp; keasrian fisik gunung.</li></ul><h5>🌱 Eksekutor Pemulihan (Komunitas &amp; Relawan)</h5><ul><li>Bersih gunung (clean-up) berkala untuk meminimalkan sampah plastik dari pos hingga puncak.</li><li>Penanaman pohon swadaya di area tangkapan air &amp; jalur rawan erosi.</li></ul><h5>🥾 Penerap Aturan (Para Pendaki)</h5><ul><li>Mematuhi standar keselamatan &amp; zero waste hiking.</li><li>Mengawasi sesama pendaki untuk mencegah vandalisme, perburuan liar &amp; api unggun pemicu kebakaran.</li></ul></div></div>
+      <p class="tri-lead">Pendekatan <b>Tripartit</b> membagi peran secara taktis demi kelestarian kawasan. Ketuk tiap pilar untuk melihat tugas &amp; fungsinya (tusi).</p><div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-blue"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></svg></div><div class="in-tx"><b>Pemerintah</b><span>Regulasi, perizinan &amp; penganggaran (budgeting) kawasan konservasi.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Pemegang kendali legalitas, kebijakan &amp; pendanaan — melalui BBKSDA, Dinas Kehutanan, atau Pemerintah Daerah setempat.</p><h5>⚖️ Regulasi (Kebijakan Terarah)</h5><ul><li>Menyusun payung hukum tata tertib pendakian, zona konservasi, perlindungan flora &amp; fauna endemik, serta sanksi bagi pelanggar lingkungan.</li><li>Menetapkan kuota harian pendakian (carrying capacity) agar ekosistem tidak tertekan akibat over-tourism.</li></ul><h5>📝 Perizinan (Sistem Kontrol)</h5><ul><li>Mengatur izin masuk kawasan hutan (SIMAKSI).</li><li>Mengontrol izin penelitian, wisata minat khusus, maupun kegiatan adat/budaya.</li></ul><h5>💰 Penganggaran (Budgeting)</h5><ul><li>Mengalokasikan dana APBD/APBN untuk fasilitas konservasi: pos registrasi, jalur evakuasi, rambu, shelter.</li><li>Mendanai pemulihan ekosistem — reboisasi pasca-kebakaran &amp; rehabilitasi lahan kritis.</li></ul></div></div>
+      <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-green"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="in-tx"><b>Masyarakat</b><span>Pengelola &amp; eksekutor lapangan — pendaki, komunitas &amp; warga sekitar.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Ujung tombak &amp; eksekutor langsung di lapangan — pendaki, komunitas pencinta alam (KPA), relawan, SAR, serta warga lokal (Lembanna).</p><h5>🛖 Pengelola &amp; Keamanan Lokal (Warga Sekitar)</h5><ul><li>Garda terdepan pengawasan pintu masuk (Pos Lembanna) &amp; penyedia jasa pemandu (porter/guide) lokal yang paham etika konservasi.</li><li>Menerapkan hukum adat/kearifan lokal demi menjaga kesucian spiritual &amp; keasrian fisik gunung.</li></ul><h5>🌱 Eksekutor Pemulihan (Komunitas &amp; Relawan)</h5><ul><li>Bersih gunung (clean-up) berkala untuk meminimalkan sampah plastik dari pos hingga puncak.</li><li>Penanaman pohon swadaya di area tangkapan air &amp; jalur rawan erosi.</li></ul><h5>🥾 Penerap Aturan (Para Pendaki)</h5><ul><li>Mematuhi standar keselamatan &amp; zero waste hiking.</li><li>Mengawasi sesama pendaki untuk mencegah vandalisme, perburuan liar &amp; api unggun pemicu kebakaran.</li></ul></div></div>
       <div class="intro-acc"><div class="intro-node" onclick="triToggle(this)"><div class="in-ic g-brand"><img id="introLogo2" alt="RC"/></div><div class="in-tx"><b>Reichas Chelebes</b><span>Supervisi, sistem &amp; jembatan data antara pemerintah dan masyarakat.</span></div><span class="in-chev">▾</span></div><div class="intro-detail"><p class="td-lead">Konektor cerdas antara kebijakan pemerintah &amp; aksi masyarakat — fokus pada tata kelola informasi &amp; pemantauan Gunung Bawakaraeng.</p><h5>🔗 Jembatan Data (Digitalisasi &amp; Integrasi)</h5><ul><li>Menyediakan sistem registrasi &amp; pendataan pendaki terintegrasi untuk melacak siapa saja yang naik dan turun gunung.</li><li>Mengumpulkan data riil lapangan (volume sampah, kerusakan jalur, frekuensi evakuasi) sebagai bahan evaluasi kebijakan.</li></ul><h5>📡 Sistem Monitoring (Supervisi)</h5><ul><li>Pemantauan berkala kepatuhan pendaki &amp; pengelolaan pos pintu masuk.</li><li>Membangun sistem peringatan dini (early warning) &amp; koordinasi darurat saat cuaca ekstrem, kebakaran, atau pendaki hilang.</li></ul><h5>📣 Edukasi &amp; Advokasi</h5><ul><li>Menyosialisasikan regulasi rumit ke bahasa praktis yang mudah dipahami komunitas &amp; masyarakat awam.</li><li>Mengadvokasi hak masyarakat lokal &amp; kebutuhan lapangan agar diakomodasi dalam kebijakan/anggaran pemerintah.</li></ul></div></div><div class="tri-concl"><b>Sinergi Tripartit:</b> Pemerintah menyiapkan wadah hukum &amp; dana, Reichas Chelebes menyediakan sistem kendali informasi &amp; pengawasan data, sementara Masyarakat menggerakkan fisiknya merawat langsung ekosistem Gunung Bawakaraeng secara berkelanjutan.</div>
     </div>
     <button class="intro-btn" onclick="enterApp()">Masuk Aplikasi →</button>
@@ -1751,6 +1771,41 @@ function closeIntro(){var o=document.getElementById('introOverlay');if(o){o.clas
 window.addEventListener('load',function(){try{var t=document.querySelector('.tri .node .circle img');var src=t?t.src:'';if(src){var a=document.getElementById('introLogo');if(a){a.src=src;}var b=document.getElementById('introLogo2');if(b){b.src=src;}}else{var rc=document.querySelector('#introLogo2');if(rc){rc.parentNode.textContent='🛡️';}var tb=document.getElementById('introLogo');if(tb){tb.parentNode.textContent='⛰️';tb.parentNode.style.fontSize='34px';}}}catch(e){}});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+<script>
+/* === Enhancement: Install PWA + gaya skeleton/retry/badge contoh === */
+(function(){
+  var css='.samp-badge{display:inline-block;background:#ffb020;color:#3a2a00;font-size:9px;font-weight:900;letter-spacing:.5px;padding:1px 6px;border-radius:6px;vertical-align:middle;margin-left:4px}'
+  +'.retry-btn{margin-top:8px;background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.42);border-radius:9px;padding:5px 12px;font-size:11.5px;font-weight:800;cursor:pointer}'
+  +'.retry-btn.dark{background:#2b6fff;border-color:#2b6fff;color:#fff;display:inline-block}'
+  +'@keyframes bwkShimmer{0%{background-position:100% 0}100%{background-position:0 0}}'
+  +'.hx-wx.loading .hx-temp,.hx-wx.loading .hx-desc,.hx-wx.loading .hx-area{background:linear-gradient(90deg,rgba(150,160,180,.20) 25%,rgba(150,160,180,.42) 37%,rgba(150,160,180,.20) 63%);background-size:400% 100%;animation:bwkShimmer 1.3s ease infinite;color:transparent!important;border-radius:8px}'
+  +'.li-skel{height:34px;border-radius:10px;margin:7px 0;background:linear-gradient(90deg,rgba(150,160,180,.14) 25%,rgba(150,160,180,.32) 37%,rgba(150,160,180,.14) 63%);background-size:400% 100%;animation:bwkShimmer 1.3s ease infinite}'
+  +'.installbar{position:fixed;left:12px;right:12px;bottom:84px;z-index:6000;display:flex;align-items:center;gap:11px;background:var(--card,#fff);color:var(--ink,#141a2c);box-shadow:0 16px 40px -10px rgba(0,0,0,.4);border-radius:16px;padding:12px 14px;animation:ibup .3s ease;max-width:520px;margin:0 auto}'
+  +'@keyframes ibup{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}'
+  +'.installbar .ib-ic{font-size:24px}'
+  +'.installbar .ib-tx{flex:1;line-height:1.3}'
+  +'.installbar .ib-tx b{font-size:13.5px;display:block}'
+  +'.installbar .ib-tx small{font-size:11.5px;color:var(--sub,#565f78)}'
+  +'.installbar .ib-yes{background:#2b6fff;color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:12.5px;cursor:pointer}'
+  +'.installbar .ib-no{background:transparent;border:0;font-size:16px;color:var(--sub,#889);cursor:pointer;padding:4px 8px}';
+  var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+
+  window.retryLive=function(){window._liveDone=false;if(typeof loadLiveData==='function')loadLiveData();};
+
+  var deferred=null;
+  function dismissed(){try{return localStorage.getItem('bwkInstallDismiss')==='1';}catch(e){return false;}}
+  function showBar(){
+    if(dismissed()||document.getElementById('installBar'))return;
+    var bar=document.createElement('div');bar.id='installBar';bar.className='installbar';
+    bar.innerHTML='<span class="ib-ic">📲</span><div class="ib-tx"><b>Pasang Bawakaraeng Hub</b><small>Akses cepat dari layar utama, bisa jalan offline.</small></div><button class="ib-yes" id="ibYes">Pasang</button><button class="ib-no" id="ibNo" aria-label="Tutup">✕</button>';
+    document.body.appendChild(bar);
+    document.getElementById('ibYes').onclick=function(){if(!deferred){bar.remove();return;}deferred.prompt();deferred.userChoice.then(function(){deferred=null;bar.remove();});};
+    document.getElementById('ibNo').onclick=function(){bar.remove();try{localStorage.setItem('bwkInstallDismiss','1');}catch(e){}};
+  }
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;showBar();});
+  window.addEventListener('appinstalled',function(){var b=document.getElementById('installBar');if(b)b.remove();deferred=null;});
+})();
+</script>
 <script>
 var BWK_ROLE='';
 function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
@@ -1805,8 +1860,8 @@ window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}tr
 </script>
 <script>
 /* ===== Fitur tambahan v4 ===== */
-function toggleTheme(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('bwkTheme',d?'dark':'light');}catch(e){}var b=document.getElementById('themeBtn');if(b)b.textContent=d?'\u2600\ufe0f':'\ud83c\udf19';if(window.jalurMap){setTimeout(function(){try{jalurMap.invalidateSize();}catch(e){}},80);}if(window.pantauMap){setTimeout(function(){try{pantauMap.invalidateSize();}catch(e){}},80);}}
-function _initThemeBtn(){var b=document.getElementById('themeBtn');if(b)b.textContent=document.documentElement.classList.contains('dark')?'\u2600\ufe0f':'\ud83c\udf19';}
+function toggleTheme(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('bwkTheme',d?'dark':'light');}catch(e){}var b=document.getElementById('themeBtn');if(b)b.innerHTML=d?ic('sun'):ic('moon');if(window.jalurMap){setTimeout(function(){try{jalurMap.invalidateSize();}catch(e){}},80);}if(window.pantauMap){setTimeout(function(){try{pantauMap.invalidateSize();}catch(e){}},80);}}
+function _initThemeBtn(){var b=document.getElementById('themeBtn');if(b)b.innerHTML=document.documentElement.classList.contains('dark')?ic('sun'):ic('moon');}
 window.addEventListener('load',function(){setTimeout(_initThemeBtn,40);});
 function refreshMyAlt(){var v=document.getElementById('myAltVal');var ch=document.getElementById('myAltChip');if(!v)return;if(!navigator.geolocation){v.textContent='n/a';return;}v.textContent='\u2026';navigator.geolocation.getCurrentPosition(function(p){var a=p.coords.altitude;if(a==null||isNaN(a)){v.textContent='n/a';if(ch)ch.title='Perangkat tidak menyediakan data ketinggian GPS';return;}var m=Math.round(a);v.textContent=m.toLocaleString('id-ID');if(ch)ch.title='Ketinggianmu (GPS) \u00b1'+Math.round(p.coords.altitudeAccuracy||0)+' m \u2014 ketuk untuk perbarui';},function(e){v.textContent='off';if(ch)ch.title='Aktifkan izin lokasi untuk melihat ketinggianmu';},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
 window.addEventListener('load',function(){setTimeout(refreshMyAlt,1500);});
@@ -1939,5 +1994,6 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 </script>
 <script src="sk.js"></script>
 <script src="sos.js"></script>
+<script src="chat.js"></script>
 </body>
 </html>
