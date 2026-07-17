@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: 'application/json' }
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } }
       }),
       signal: AbortSignal.timeout(20_000)
     });
@@ -50,7 +50,11 @@ export default async function handler(req, res) {
       const mm = text.match(/\{[\s\S]*\}/);
       if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} }
     }
-    if (!out || typeof out !== 'object') return res.status(502).json({ error: 'Jawaban AI tidak terbaca', code: 'PARSE' });
+    if (!out || typeof out !== 'object') {
+      const fr = (data && data.candidates && data.candidates[0] && data.candidates[0].finishReason) || '';
+      const snip = (text || '').slice(0, 100);
+      return res.status(502).json({ error: 'Jawaban AI tidak terbaca' + (fr ? (' [' + fr + ']') : '') + (snip ? (': ' + snip) : ''), code: 'PARSE' });
+    }
     const clip = function (v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; };
     const result = {
       name: clip(out.name, 80),
