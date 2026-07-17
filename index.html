@@ -974,8 +974,8 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
     <section class="lens-card" aria-label="Lensa Bawakaraeng — identifikasi flora dan fauna">
       <div class="lens-top"><div class="lens-orb">🔎</div><div><h3>Lensa Bawakaraeng</h3><p>Foto temuanmu, lalu kenali kemungkinan spesiesnya.</p></div><span class="lens-tag">BETA</span></div>
       <label class="lens-drop" id="lensDrop"><span>📷</span><b>Ambil atau unggah foto</b><small>Flora, fauna, jejak, atau bagian tumbuhan</small><input id="lensFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="lensPreview(this)"/></label>
-      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Foto siap dipilih kembali di Google Lens.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
-      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Buka Google Lens</button>
+      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Foto langsung dikirim ke Google Lens lewat menu berbagi.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
+      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Buka di Google Lens</button>
       <div class="lens-note"><span>🛡️</span><span>Hasil adalah perkiraan. Jangan menyentuh, memberi makan, atau mengonsumsi spesies sebelum diverifikasi petugas/ahli.</span></div>
     </section>
     <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
@@ -1318,7 +1318,7 @@ var species=[
   {id:4,name:'Kantong Semar',lat:'Nepenthes maxima',kind:'Flora Endemik',cat:'flora',emoji:'🌿',photo:null,bg:'linear-gradient(135deg,#5d8a4f,#2f4a2b)',protect:'Dilindungi',pos:'Pos 2–Pos 5',iucn:'Rentan (VU)',size:'15–30 cm',desc:'Tumbuhan karnivora pemerangkap serangga. Hidup di tebing lembap. Jangan isi kantongnya dengan sampah.'},
   {id:5,name:'Elang Sulawesi',lat:'Nisaetus lanceolatus',kind:'Fauna Endemik',cat:'fauna',emoji:'🦅',photo:null,bg:'linear-gradient(135deg,#5a7a8a,#33454d)',protect:'Dilindungi',pos:'Area Puncak',iucn:'Rentan (VU)',size:'±130 cm',desc:'Raptor endemik yang mengitari lembah Bawakaraeng. Indikator ekosistem sehat. Amati dari kejauhan.'},
   {id:6,name:'Sikatan Lompobatang',lat:'Ficedula bonthaina',kind:'Fauna Endemik',cat:'fauna',emoji:'🐦',photo:null,bg:'linear-gradient(135deg,#5b6b8a,#2e3a52)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Rentan (VU)',size:'±13 cm',desc:'Burung sikatan endemik yang hanya hidup di massif Bawakaraeng-Lompobattang. Jantan berdada jingga khas. Salah satu burung paling langka di Sulawesi Selatan.'},
-  {id:7,name:'Anis Gunung',lat:'Turdus poliocephalus',kind:'Burung Pengicau',cat:'fauna',emoji:'🐦',photo:null,bg:'linear-gradient(135deg,#6b7d6a,#33402f)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Risiko Rendah (LC)',size:'±22 cm',desc:'Burung pengicau bersuara merdu yang sering teramati di hutan ketinggian. Populasi lokalnya khas kawasan Bawakaraeng dan Lompobattang.'},
+  {id:7,name:'Anis Gunung',lat:'Turdus poliocephalus',kind:'Burung Pengicau',cat:'fauna',emoji:'���',photo:null,bg:'linear-gradient(135deg,#6b7d6a,#33402f)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Risiko Rendah (LC)',size:'±22 cm',desc:'Burung pengicau bersuara merdu yang sering teramati di hutan ketinggian. Populasi lokalnya khas kawasan Bawakaraeng dan Lompobattang.'},
   {id:8,name:'Tikus Hutan Sulawesi',lat:'Rattus hoffmanni',kind:'Fauna Endemik',cat:'fauna',emoji:'🐀',photo:null,bg:'linear-gradient(135deg,#7a6f5f,#3b3329)',protect:'Belum Dievaluasi',pos:'Lantai Hutan',iucn:'Risiko Rendah (LC)',size:'±18 cm',desc:'Tikus hutan endemik Sulawesi, pengurai serasah &amp; penyebar biji di lantai hutan. Aktif malam hari dan jarang terlihat pendaki.'},
   {id:9,name:'Capung Jarum Endemik',lat:'Drepanosticta',kind:'Serangga Endemik',cat:'fauna',emoji:'🦗',photo:null,bg:'linear-gradient(135deg,#3f7d8a,#274a52)',protect:'Dilindungi Habitat',pos:'Sungai &amp; Mata Air',iucn:'Terbatas',size:'3–5 cm',desc:'Capung jarum khas perairan jernih Bawakaraeng. Kawasan ini punya marga capung endemik seperti Celebargiolestes dan Drepanosticta. Penanda kualitas air bersih.'},
   {id:10,name:'Anggrek Hutan Pegunungan',lat:'Coelogyne celebensis',kind:'Flora Endemik',cat:'flora',emoji:'🌸',photo:null,bg:'linear-gradient(135deg,#8a6f9a,#4a3559)',protect:'Dilindungi',pos:'Batang &amp; Tebing Lembap',iucn:'Rentan (VU)',size:'Epifit',desc:'Anggrek hutan endemik Sulawesi yang menempel di batang pohon lembap. Berbunga indah namun rapuh. Jangan dipetik atau dipindahkan.'},
@@ -1439,9 +1439,23 @@ function lensPreview(input){
 }
 function lensReset(){var input=document.getElementById('lensFile'),preview=document.getElementById('lensPreview'),action=document.getElementById('lensAction'),img=document.getElementById('lensImage');if(input)input.value='';if(preview)preview.classList.remove('show');if(action)action.disabled=true;if(img)img.removeAttribute('src');if(_lensObjectUrl){URL.revokeObjectURL(_lensObjectUrl);_lensObjectUrl='';}}
 function lensOpenGoogle(){
-  // Google does not allow a web app to send a local photo directly to Lens. Open only the official Lens page; never invoke the device share sheet.
+  var input=document.getElementById('lensFile');
+  if(!input||!input.files||!input.files[0]){if(window.toast)toast('Pilih atau ambil foto terlebih dahulu','err');return;}
+  var file=input.files[0];
+  // Share the photo ONLY (no title/text) so Android shows image apps like Google Lens first, not email.
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+      navigator.share({files:[file]}).then(function(){if(window.toast)toast('Pilih Google Lens di menu berbagi','ok');}).catch(function(err){if(err&&err.name==='AbortError')return;lensFallback(file);});
+      return;
+    }
+  }catch(e){}
+  lensFallback(file);
+}
+function lensFallback(file){
+  // Devices without file sharing: save the photo, then open Google Lens for a manual Upload.
+  try{var u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download='lensa-bawakaraeng-'+Date.now()+'.'+(((file.type||'image/jpeg').split('/')[1])||'jpg');document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);}catch(e){}
   window.open('https://lens.google.com/','_blank','noopener');
-  if(window.toast)toast('Google Lens dibuka. Pilih Upload lalu pilih foto yang sama','ok');
+  if(window.toast)toast('Foto disimpan. Di Google Lens pilih Upload lalu pilih foto itu','ok');
 }
 
 function renderRules(){document.getElementById('rules').innerHTML=rules.map(function(r,i){return '<div class="rule" id="rule'+i+'"><div class="head" onclick="toggleRule('+i+')"><div class="ri" style="background:'+r.bg+'">'+r.ico+'</div><h4>'+r.title+'</h4><span class="chev">▾</span></div><div class="detail"><p>'+r.body+'</p></div></div>'}).join('');}
