@@ -652,6 +652,9 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
 @media(max-width:899px){.home-tools{padding:15px!important;border-radius:19px!important}.home-tools .catbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.home-tools .catbtn{min-height:64px!important;flex-direction:row;justify-content:flex-start;padding:11px 12px!important;font-size:12px!important}.home-tools .catbtn .ce{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:rgba(45,157,112,.12)}.home-tools .catbtn.on .ce{background:rgba(255,255,255,.19)}}
 .reports-more{display:flex;align-items:center;justify-content:space-between;width:100%;margin:11px 0 1px;padding:12px 14px;border:1px solid rgba(70,201,147,.38);border-radius:13px;background:linear-gradient(135deg,#183e37,#1f735d);color:#f4fffa;font-size:12.5px;font-weight:850;box-shadow:0 7px 16px rgba(4,29,25,.18)}.reports-more span{font-size:19px;line-height:12px}.reports-more:active{transform:scale(.98)}html:not(.dark) .reports-more{background:linear-gradient(135deg,#e6f6ed,#cdebd9);color:#176044}
 .agency-logo{width:20px;height:20px;object-fit:contain;display:block}.subcatbtn span:has(.agency-logo){width:22px;height:22px;display:inline-grid;place-items:center;border-radius:6px;background:#fff;padding:1px}
+
+/* Tombol layanan: neon glow lembut */
+.home-tools .catbtn{position:relative;isolation:isolate;overflow:visible!important;animation:neonService 3.6s ease-in-out infinite}.home-tools .catbtn:nth-child(2){animation-delay:.65s}.home-tools .catbtn:nth-child(3){animation-delay:1.3s}.home-tools .catbtn:nth-child(4){animation-delay:1.95s}.home-tools .catbtn:before{content:'';position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(115deg,rgba(45,232,168,.8),rgba(54,139,255,.46),rgba(212,94,255,.45),rgba(45,232,168,.8));background-size:260% 100%;z-index:-1;opacity:.22;filter:blur(7px);animation:neonFlow 5.5s linear infinite;pointer-events:none}.home-tools .catbtn:hover,.home-tools .catbtn.on{box-shadow:0 0 0 1px rgba(75,255,191,.72),0 0 11px rgba(49,239,165,.50),0 0 25px rgba(38,147,255,.25)!important}.home-tools .catbtn:active{box-shadow:0 0 0 2px rgba(139,255,213,.95),0 0 23px rgba(63,244,170,.8)!important}@keyframes neonService{0%,100%{border-color:rgba(94,229,173,.22);box-shadow:0 0 5px rgba(36,222,150,.08)}50%{border-color:rgba(81,255,185,.68);box-shadow:0 0 9px rgba(40,237,163,.30),0 0 19px rgba(48,149,255,.13)}}@keyframes neonFlow{to{background-position:260% 0}}@media(prefers-reduced-motion:reduce){.home-tools .catbtn,.home-tools .catbtn:before{animation:none!important}}
 </style>
 <script>(function(){try{if(localStorage.getItem("bwkTheme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();</script>
 <style id="hxcss">
@@ -941,7 +944,7 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
 
     <div class="home-columns">
       <section class="home-section" aria-label="Laporan lapangan terbaru">
-        <div class="home-section-title compact"><div><span class="eyebrow">DARI LAPANGAN</span><h3>Laporan terkini</h3></div><button class="text-action" onclick="openAllReports()">Lihat semua →</button></div>
+        <div class="home-section-title compact"><div><span class="eyebrow">DARI LAPANGAN</span><h3>Laporan terkini</h3></div></div>
         <div class="feed" id="feed"></div><button class="reports-more" onclick="openAllReports()">📋 Lihat semua laporan <span>→</span></button>
       </section>
     </div>
