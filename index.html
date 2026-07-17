@@ -161,6 +161,16 @@
   .chip{flex:none;font-size:12px;font-weight:800;padding:9px 15px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:#4a5169;box-shadow:var(--shadow)}
   .chip.on{background:var(--g-sunset);color:#fff;border-color:transparent}
 
+  /* Lensa Bawakaraeng */
+  .lens-card{position:relative;isolation:isolate;overflow:hidden;margin-top:16px;padding:17px;border-radius:20px;color:#fff;background:radial-gradient(circle at 87% 12%,rgba(186,255,209,.34),transparent 23%),linear-gradient(135deg,#103f44 0%,#126b57 57%,#0d8c68 100%);box-shadow:0 12px 28px rgba(13,93,73,.24)}
+  .lens-card::before{content:'';position:absolute;z-index:-1;inset:0;opacity:.2;background-image:radial-gradient(rgba(255,255,255,.9) 1px,transparent 1px);background-size:19px 19px}
+  .lens-top{display:flex;align-items:center;gap:12px}.lens-orb{width:50px;height:50px;flex:none;border-radius:16px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.3);font-size:27px;box-shadow:inset 0 1px rgba(255,255,255,.24)}
+  .lens-top h3{font-size:16px;line-height:1.15;margin:0}.lens-top p{font-size:12px;line-height:1.35;opacity:.9;margin:4px 0 0}.lens-tag{margin-left:auto;align-self:flex-start;font-size:10px;font-weight:900;letter-spacing:.05em;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25)}
+  .lens-drop{position:relative;display:flex;align-items:center;justify-content:center;min-height:96px;margin-top:14px;border:1.5px dashed rgba(231,255,242,.7);border-radius:15px;background:rgba(0,0,0,.11);text-align:center;cursor:pointer}.lens-drop span{display:block;font-size:25px;line-height:1}.lens-drop b{display:block;font-size:13px;margin-top:5px}.lens-drop small{display:block;margin-top:2px;font-size:11px;opacity:.8}.lens-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .lens-preview{display:none;align-items:center;gap:11px;margin-top:14px;padding:9px;border-radius:15px;background:rgba(1,35,29,.28)}.lens-preview.show{display:flex}.lens-preview img{width:58px;height:58px;object-fit:cover;border-radius:11px;border:1px solid rgba(255,255,255,.4)}.lens-preview div{min-width:0;flex:1}.lens-preview b{display:block;font-size:12.5px}.lens-preview small{display:block;font-size:10.5px;line-height:1.35;opacity:.82;margin-top:3px}.lens-reset{width:36px;height:36px;flex:none;border-radius:11px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:17px}
+  .lens-action{width:100%;min-height:46px;margin-top:12px;border-radius:13px;background:#f3fff7;color:#115b45;font-size:13.5px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px}.lens-action:disabled{opacity:.48;cursor:not-allowed}.lens-note{display:flex;gap:6px;margin:10px 1px 0;font-size:10.5px;line-height:1.4;color:rgba(255,255,255,.83)}
+  html.dark .lens-card{background:radial-gradient(circle at 87% 12%,rgba(111,217,174,.22),transparent 23%),linear-gradient(135deg,#123034 0%,#155844 57%,#0d6c54 100%)}
+
   /* Species cards */
   .species{background:var(--card);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);margin-top:15px;transition:transform .12s}
   .species:active{transform:scale(.985)}
@@ -279,11 +289,8 @@
 
   /* Profile */
   .phead{border-radius:24px;padding:24px;color:#fff;text-align:center;margin-top:4px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
-  .profile-hero{isolation:isolate;padding:28px 24px 24px;background:radial-gradient(circle at 50% -12%,rgba(170,239,197,.32),transparent 35%),radial-gradient(circle at 9% 108%,rgba(80,205,175,.34),transparent 43%),linear-gradient(135deg,#102b37 0%,#146452 54%,#0b7961 100%);border:1px solid rgba(184,244,221,.28);box-shadow:0 14px 32px rgba(8,44,39,.28)}
-  .profile-hero::before{content:'';position:absolute;inset:0;z-index:-1;opacity:.35;background-image:radial-gradient(rgba(236,255,246,.78) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.9),transparent 72%)}
-  .profile-hero::after{content:'';position:absolute;left:-12%;right:-12%;bottom:-46px;height:124px;z-index:-1;opacity:.38;background:linear-gradient(145deg,transparent 0 28%,rgba(255,255,255,.34) 28.5% 29.4%,transparent 30% 55%,rgba(255,255,255,.25) 55.5% 56.4%,transparent 57%);transform:skewY(-5deg)}
-  .phead .pav{width:82px;height:82px;border-radius:50%;background:rgba(255,255,255,.17);border:3px solid rgba(236,255,246,.82);box-shadow:0 8px 20px rgba(1,30,28,.32),0 0 0 6px rgba(204,255,230,.10);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;margin:0 auto 12px}
-  .phead h2{font-size:22px;font-weight:900;letter-spacing:-.02em;text-shadow:0 1px 1px rgba(0,0,0,.12)} .phead .lv{font-size:12px;font-weight:700;opacity:.95;margin-top:3px}.profile-hero .pjoin{font-size:12px;color:rgba(255,255,255,.88);font-weight:650}
+  .phead .pav{width:82px;height:82px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;margin:0 auto 10px}
+  .phead h2{font-size:22px;font-weight:900} .phead .lv{font-size:12px;font-weight:700;opacity:.92;margin-top:2px}
   .pstats{display:flex;gap:11px;margin-top:16px}
   .pstat{flex:1;background:var(--card);border-radius:16px;padding:14px;text-align:center;box-shadow:var(--shadow)}
   .pstat b{display:block;font-size:19px;font-weight:900} .pstat small{font-size:11.5px;color:var(--sub);font-weight:600}
@@ -964,6 +971,13 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
   <section id="eksplor" class="view">
     <div class="sec-title">Ensiklopedia Alam 🌿</div>
     <div class="sec-sub">Kenali flora &amp; fauna endemik Bawakaraeng.</div>
+    <section class="lens-card" aria-label="Lensa Bawakaraeng — identifikasi flora dan fauna">
+      <div class="lens-top"><div class="lens-orb">🔎</div><div><h3>Lensa Bawakaraeng</h3><p>Foto temuanmu, lalu kenali kemungkinan spesiesnya.</p></div><span class="lens-tag">BETA</span></div>
+      <label class="lens-drop" id="lensDrop"><span>📷</span><b>Ambil atau unggah foto</b><small>Flora, fauna, jejak, atau bagian tumbuhan</small><input id="lensFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="lensPreview(this)"/></label>
+      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Google Lens akan dibuka untuk menemukan kemungkinan spesies.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
+      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Analisis dengan Google Lens</button>
+      <div class="lens-note"><span>🛡️</span><span>Hasil adalah perkiraan. Jangan menyentuh, memberi makan, atau mengonsumsi spesies sebelum diverifikasi petugas/ahli.</span></div>
+    </section>
     <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
     <div class="chips" id="chips"></div>
     <div id="eksplorNote">⏳ Memuat foto asli &amp; data (iNaturalist + Wikipedia)…</div>
@@ -1081,7 +1095,7 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
 
   <!-- PROFIL -->
   <section id="profil" class="view">
-    <div class="phead profile-hero">
+    <div class="phead g-sunset">
       <div class="pav" id="profAv">N</div>
       <h2 id="profName">Pendaki</h2>
       <div class="lv" id="profLevel">🏵️ Pendaki · Level 1</div>
@@ -1411,6 +1425,26 @@ function openSpecies(id){
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
     '<p class="body">'+s.desc+'</p>'+(s.wiki?'<div class="wikibox"><div class="wikih">📖 Ringkasan Wikipedia</div><p>'+s.wiki+'</p></div>':'')+(s.inatCount!=null?'<div class="srcline">📍 <b>'+s.inatCount+'</b> pengamatan tercatat di sekitar Bawakaraeng · sumber iNaturalist</div>':'')+'<button class="btn g-green" onclick="closeSheet();go(\'lapor\')">📷 Laporkan Perjumpaan</button>';
   openSheet();
+}
+
+var _lensObjectUrl='';
+function lensPreview(input){
+  var file=input&&input.files&&input.files[0];if(!file)return;
+  var ok=['image/jpeg','image/png','image/webp'].indexOf((file.type||'').toLowerCase())>=0;
+  if(!ok){input.value='';if(window.toast)toast('Gunakan foto JPEG, PNG, atau WebP','err');return;}
+  if(file.size>8*1024*1024){input.value='';if(window.toast)toast('Ukuran foto maksimal 8 MB','err');return;}
+  if(_lensObjectUrl)URL.revokeObjectURL(_lensObjectUrl);_lensObjectUrl=URL.createObjectURL(file);
+  var img=document.getElementById('lensImage'),preview=document.getElementById('lensPreview'),action=document.getElementById('lensAction');
+  if(img)img.src=_lensObjectUrl;if(preview)preview.classList.add('show');if(action)action.disabled=false;
+}
+function lensReset(){var input=document.getElementById('lensFile'),preview=document.getElementById('lensPreview'),action=document.getElementById('lensAction'),img=document.getElementById('lensImage');if(input)input.value='';if(preview)preview.classList.remove('show');if(action)action.disabled=true;if(img)img.removeAttribute('src');if(_lensObjectUrl){URL.revokeObjectURL(_lensObjectUrl);_lensObjectUrl='';}}
+function lensOpenGoogle(){
+  var input=document.getElementById('lensFile');if(!input||!input.files||!input.files[0]){if(window.toast)toast('Pilih foto terlebih dahulu','err');return;}
+  // Google Lens does not provide a public embedded API. Submitting the selected photo opens its own result page in a new tab.
+  var form=document.createElement('form');form.method='post';form.enctype='multipart/form-data';form.action='https://lens.google.com/v3/upload?hl=id';form.target='_blank';form.style.display='none';
+  var home=document.getElementById('lensDrop');document.body.appendChild(form);input.name='encoded_image';form.appendChild(input);form.submit();
+  setTimeout(function(){if(home)home.appendChild(input);input.name='lensFile';if(form.parentNode)form.parentNode.removeChild(form);},700);
+  if(window.toast)toast('Membuka Google Lens untuk analisis foto','ok');
 }
 
 function renderRules(){document.getElementById('rules').innerHTML=rules.map(function(r,i){return '<div class="rule" id="rule'+i+'"><div class="head" onclick="toggleRule('+i+')"><div class="ri" style="background:'+r.bg+'">'+r.ico+'</div><h4>'+r.title+'</h4><span class="chev">▾</span></div><div class="detail"><p>'+r.body+'</p></div></div>'}).join('');}
@@ -1998,7 +2032,7 @@ function renderCat(){
  var d=document.getElementById('catdesc');var g0=document.getElementById('catGrid');var sc0=document.getElementById('subcatbar');
  if(!curCat){if(d)d.innerHTML='<div class="cathint">'+ic('hand')+' Pilih kategori di atas untuk membuka menunya.</div>';if(sc0){sc0.style.display='none';sc0.innerHTML='';}if(g0)g0.innerHTML='';return;}
  var c=_catById(curCat);if(!c)return;
- if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+ic(c.emoji)+' '+c.full+'</b> ��� '+c.desc+'</span><button class="catclose" onclick="closeCat()">'+ic('x')+' Tutup</button></div>';
+ if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+ic(c.emoji)+' '+c.full+'</b> — '+c.desc+'</span><button class="catclose" onclick="closeCat()">'+ic('x')+' Tutup</button></div>';
  var g=document.getElementById('catGrid');
  var sc=document.getElementById('subcatbar');
  if(c.subs){
@@ -2134,8 +2168,7 @@ window.playLogoMantra=playLogoMantra;
 var BWK_ROLE='';
 function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
 function isGuest(){var u=bwkUser();return !!(u&&u.guest);}
-function _memberSince(key,fallback){var k='bwkMemberSince:'+String(key||'local');try{var saved=localStorage.getItem(k);if(saved)return saved;var stamp=fallback||new Date().toISOString();localStorage.setItem(k,String(stamp));return stamp;}catch(e){return fallback||new Date().toISOString();}}
-function enterGuest(){var since=_memberSince('guest',new Date().toISOString());var u={name:'Tamu',role:'Guest',guest:true,ts:since,memberSince:since};try{localStorage.setItem('bwkUser',JSON.stringify(u));}catch(e){}applyUser(u);hideLogin();}
+function enterGuest(){var u={name:'Tamu',role:'Guest',guest:true,ts:Date.now()};try{localStorage.setItem('bwkUser',JSON.stringify(u));}catch(e){}applyUser(u);hideLogin();}
 function openGuestGate(feature){
   var label=feature||'menggunakan fitur ini';
   var host=document.getElementById('sheetBody');if(!host)return;
@@ -2147,7 +2180,7 @@ function enterApp(){closeIntro();var u=bwkUser();if(u&&(u.google||u.guest)){appl
 function triToggle(node){var a=node.parentNode;if(a){a.classList.toggle('open');}}
 function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
-function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var since=_memberSince('local:'+n.toLowerCase(),new Date().toISOString());var u={name:n,role:BWK_ROLE,ts:since,memberSince:since};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
+function doLogin(){var n=(document.getElementById('lgName').value||'').trim();if(!n){if(window.toast){toast('Isi nama dulu ya');}else{alert('Isi nama dulu');}return;}if(!BWK_ROLE){if(window.toast){toast('Pilih peran dulu');}else{alert('Pilih peran dulu');}return;}var u={name:n,role:BWK_ROLE,ts:Date.now()};localStorage.setItem('bwkUser',JSON.stringify(u));applyUser(u);hideLogin();if(window.toast){toast('Selamat datang, '+n+'!');}}
 function skipLogin(){hideLogin();}
 function applyUser(u){if(!u){return;}var nm=document.getElementById('heroName');if(nm){nm.textContent=u.name;}var rc=document.getElementById('heroRoleChip');if(rc){rc.textContent=(u.guest?'👋 Mode Tamu':'👤 '+u.role);rc.style.display='inline-flex';}var gb=document.getElementById('guestBanner');if(gb){gb.style.display=u.guest?'flex':'none';}var lo=document.getElementById('heroLogout');if(lo){lo.style.display='inline-flex';}var pn=document.getElementById('profName');if(pn){pn.textContent=u.name;}var c=document.getElementById('profChip');if(c){c.style.display='none';}var pe=document.getElementById('profEmail');if(pe){pe.textContent=(u.email?('✉️ '+u.email):'')+((u.role==='Admin')?('  ·  🛡️ Admin'):'');}try{_adminToggle(u&&u.role);}catch(e){}try{refreshBellBadge();}catch(e){}}
 function refreshBellBadge(){var b=document.getElementById("bellDot");if(!b)return;var u=(typeof bwkUser==="function")?bwkUser():null;var isAdmin=u&&u.role==="Admin";if(!isAdmin){b.style.display="none";b.className="dot";return;}var c=(typeof _sbClient==="function")?_sbClient():null;if(!c){b.style.display="none";return;}var tbls=["reports","simaksi","jurnal"];var total=0,done=0;tbls.forEach(function(t){c.from(t).select("id",{count:"exact",head:true}).eq("astatus","baru").then(function(res){if(!res.error&&typeof res.count==="number")total+=res.count;done++;if(done===tbls.length){if(total>0){b.textContent=total>99?"99+":String(total);b.className="dot num";b.style.display="inline-flex";}else{b.style.display="none";b.className="dot";}}}).catch(function(){done++;});});}
@@ -2293,7 +2326,7 @@ function renderProfile(){
   var poin=d.rep*10+d.jur*15+Math.floor(d.trees/10)+d.ev*20+d.checkin*4+d.simaksi*20;
   var level=Math.max(1,Math.min(9,Math.floor(poin/100)+1));
   var av=document.getElementById('profAv');if(av){var _ph=(u&&u.photo)?u.photo:'';if(_ph){av.innerHTML='<img src="'+_ph+'" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';}else{av.textContent=(typeof initials==='function'&&name)?initials(name):name.slice(0,1).toUpperCase();}}
-  var pn=document.getElementById('profName');if(pn){pn.textContent=name;}var lv=document.getElementById('profLevel');if(lv){lv.textContent='🏵️ '+role+' · Level '+level;}var pj=document.getElementById('profJoin');if(pj){var since=(u&&(u.memberSince||u.ts))?String(u.memberSince||u.ts):'';pj.textContent=since?('Anggota sejak '+new Date(since).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})):'';}
+  var pn=document.getElementById('profName');if(pn){pn.textContent=name;}var lv=document.getElementById('profLevel');if(lv){lv.textContent='🏵️ '+role+' · Level '+level;}var pj=document.getElementById('profJoin');if(pj){pj.textContent=(u&&u.ts)?('Anggota sejak '+new Date(u.ts).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})):'';}
   var e1=document.getElementById('statPendakian');if(e1){e1.textContent=d.jur;}var e2=document.getElementById('statLaporan');if(e2){e2.textContent=d.rep;}var e3=document.getElementById('statPoin');if(e3){e3.textContent=poin;}
   var got=PROF_BADGES.filter(function(b){return b.ok(d);}).length;var count=document.getElementById('profBadgeCount');if(count)count.textContent=got+' / '+PROF_BADGES.length;var hint=document.getElementById('profBadgeHint');if(hint)hint.textContent=got?'Terus jaga jejak baikmu di Bawakaraeng.':'Selesaikan tantangan untuk membuka lencana.';
   var bc=document.getElementById('profBadges');if(bc){bc.innerHTML=PROF_BADGES.map(function(b){var on=b.ok(d);return '<button class="bdg2'+(on?'':' locked')+'" onclick="openBadgeInfo(&quot;'+b.id+'&quot;)" aria-label="'+b.l+'"><div class="bi '+b.c+'">'+b.e+'</div><div class="badge-tx"><span>'+b.l+'</span><small>'+b.prog(d)+'</small></div><em class="badge-state">'+(on?'Terbuka':'🔒')+'</em></button>';}).join('');}
@@ -2318,8 +2351,8 @@ function saveProfile(){
   var n=(document.getElementById('epName').value||'').trim();
   var r=(document.getElementById('epRole').value||'Pendaki');
   if(!n){if(window.toast){toast('Nama tidak boleh kosong','err');}return;}
-  var u=(typeof bwkUser==='function')?bwkUser():null;var ts=(u&&u.ts)?u.ts:new Date().toISOString();
-  var since=(u&&u.memberSince)||ts;var nu=Object.assign({},u||{},{name:n,role:r,ts:ts,memberSince:since});
+  var u=(typeof bwkUser==='function')?bwkUser():null;var ts=(u&&u.ts)?u.ts:Date.now();
+  var nu={name:n,role:r,ts:ts};
   try{localStorage.setItem('bwkUser',JSON.stringify(nu));}catch(e){}
   if(typeof applyUser==='function'){applyUser(nu);}
   renderProfile();
@@ -2338,23 +2371,7 @@ function sbInsert(table,row){var allowed={reports:1,simaksi:1,jurnal:1};var c=_s
 window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
-function _fromGoogle(su){try{
-  var m=su.user_metadata||{};
-  var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();
-  var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');
-  var prev=(typeof bwkUser==='function'?bwkUser():null)||{};
-  // Supabase created_at is the account's original registration date, not the latest deploy/login date.
-  var since=_memberSince('google:'+email,su.created_at||prev.memberSince||prev.ts||new Date().toISOString());
-  var _own='';try{_own=localStorage.getItem('bwkOwner')||'';}catch(e){}
-  var user={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:since,memberSince:since,google:true};
-  if(email&&_own&&_own!==email){
-    try{['bwkMyReports','bwkMyJurnal','bwkMyTrees','bwkMyEvents','bwkReports','bwkJurnal','bwkSimaksi','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});localStorage.setItem('bwkOwner',email);localStorage.setItem('bwkUser',JSON.stringify(user));}catch(e){}
-    location.reload();return;
-  }
-  if(email){try{localStorage.setItem('bwkOwner',email);}catch(e){}}
-  localStorage.setItem('bwkUser',JSON.stringify(user));
-  if(typeof applyUser==='function'){applyUser(user);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' 👋','ok');}
-}catch(e){}}
+function _fromGoogle(su){try{var m=su.user_metadata||{};var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var _own='';try{_own=localStorage.getItem('bwkOwner')||'';}catch(e){}if(email&&_own&&_own!==email){try{['bwkMyReports','bwkMyJurnal','bwkMyTrees','bwkMyEvents','bwkReports','bwkJurnal','bwkSimaksi','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});localStorage.setItem('bwkOwner',email);localStorage.setItem('bwkUser',JSON.stringify({name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:Date.now(),google:true}));}catch(e){}location.reload();return;}if(email){try{localStorage.setItem('bwkOwner',email);}catch(e){}}var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
 try{initAuth();}catch(e){}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
