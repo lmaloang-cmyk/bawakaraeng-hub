@@ -2502,5 +2502,24 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="sos.js"></script>
 <script src="chat.js"></script>
 <script src="hike.js"></script>
-<script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script></body>
+<script src="lens-extras.js" defer></script>
+<script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script>
+<style id="profcss">
+#profil .phead{background:linear-gradient(135deg,#ff8a3d 0%,#ff5e62 45%,#ff2d6f 100%);background-size:220% 220%;box-shadow:0 18px 40px rgba(255,64,110,.35);animation:pheadGrad 9s ease infinite,pheadIn .6s ease both}
+#profil .phead::before{content:'';position:absolute;inset:-40%;z-index:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 42%),radial-gradient(circle at 80% 75%,rgba(255,190,110,.42),transparent 46%);animation:pheadAura 12s ease-in-out infinite;pointer-events:none}
+#profil .phead::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;z-index:1;background:linear-gradient(105deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);animation:pheadShine 6.5s ease-in-out infinite;pointer-events:none}
+#profil .phead>*{position:relative;z-index:2}
+#profil .phead .pav{position:relative;background:rgba(255,255,255,.2);border:0;box-shadow:0 8px 22px rgba(0,0,0,.22);animation:pavFloat 4.5s ease-in-out infinite}
+#profil .phead .pav::before{content:'';position:absolute;inset:-5px;border-radius:50%;z-index:-1;background:conic-gradient(from 0deg,#fff,#ffd27a,#ff6a95,#ffd27a,#fff);animation:pavSpin 7s linear infinite}
+#profil .phead .lv{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.38);opacity:1}
+#profil .phead h2{text-shadow:0 2px 10px rgba(0,0,0,.25)}
+@keyframes pheadGrad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes pheadAura{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(3%,3%) scale(1.08)}}
+@keyframes pheadShine{0%,58%{left:-60%}100%{left:130%}}
+@keyframes pavFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes pavSpin{to{transform:rotate(360deg)}}
+@keyframes pheadIn{0%{opacity:0;transform:translateY(12px) scale(.98)}100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#profil .phead,#profil .phead::after,#profil .phead .pav,#profil .phead .pav::before{animation:none!important}}
+</style>
+</body>
 </html>

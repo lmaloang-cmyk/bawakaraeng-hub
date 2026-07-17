@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: 'Konteks aplikasi saat ini: ' + JSON.stringify(context) + '\n\nPertanyaan pengguna: ' + message }] }],
-        generationConfig: { temperature: 0.25, maxOutputTokens: 420, topP: 0.85 }
+        generationConfig: { temperature: 0.25, maxOutputTokens: 1200, topP: 0.85, thinkingConfig: { thinkingBudget: 0 } }
       }),
       signal: AbortSignal.timeout(12_000)
     });

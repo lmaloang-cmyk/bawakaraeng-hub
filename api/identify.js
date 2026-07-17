@@ -1,5 +1,6 @@
 import { bodyWithin, rateLimit, secureApi, verifySupabaseUser } from '../lib/security.js';
 
+// Lensa Bawakaraeng: in-app species identification (Google Lens alternative) via Gemini vision.
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
@@ -22,9 +23,9 @@ export default async function handler(req, res) {
   const b64 = m[2];
   if (b64.length > 2_100_000) return res.status(413).json({ error: 'Foto terlalu besar' });
 
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const system = 'Anda adalah ahli biologi lapangan untuk kawasan Gunung Bawakaraeng, Sulawesi Selatan. Tugas Anda mengidentifikasi kemungkinan spesies flora atau fauna dari foto yang diberikan pendaki. Jawab HANYA dalam format JSON valid tanpa teks lain. Bahasa Indonesia yang ringkas dan tenang. Jika tidak yakin, katakan tingkat keyakinan rendah dan berikan beberapa kemungkinan pada alternates. Jangan mengarang. Jika foto bukan makhluk hidup atau tidak jelas, set name ke string kosong dan jelaskan pada description. Selalu ingatkan bahwa hasil hanyalah perkiraan yang perlu verifikasi ahli/petugas, terutama sebelum menyentuh, memberi makan, atau mengonsumsi.';
-  const prompt = 'Identifikasi kemungkinan spesies pada foto ini. Balas HANYA JSON dengan kunci berikut: name (nama umum Bahasa Indonesia), scientific (nama ilmiah bila ada), category (salah satu: Flora, Fauna, Jejak, Lainnya), confidence (Tinggi, Sedang, atau Rendah), description (2-3 kalimat ciri utama & habitat di Bawakaraeng), danger (peringatan bila beracun/berbisa/dilindungi/berbahaya, string kosong bila tidak ada), tips (saran pengamatan aman singkat), alternates (array maksimal 3 nama alternatif bila ragu). Jangan tambahkan teks di luar JSON.';
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const system = 'Anda adalah ahli biologi lapangan untuk kawasan Gunung Bawakaraeng, Sulawesi Selatan. Tugas Anda mengidentifikasi kemungkinan spesies flora, fauna, atau jenis batuan dari foto yang diberikan pendaki. Fitur ini HANYA untuk flora, fauna, dan batuan. Jika foto jelas bukan salah satu dari itu (misalnya wajah manusia, layar/monitor, tulisan, kendaraan, atau makanan olahan), set name ke string kosong, category ke "Lainnya", confidence ke "Rendah", dan pada description jelaskan singkat bahwa Lensa hanya mengenali flora, fauna, dan batuan. Jawab HANYA dalam format JSON valid tanpa teks lain. Bahasa Indonesia yang ringkas dan tenang. Jika tidak yakin, beri tingkat keyakinan rendah dan beberapa kemungkinan pada alternates. Jangan mengarang. Selalu ingatkan bahwa hasil hanyalah perkiraan yang perlu verifikasi ahli/petugas, terutama sebelum menyentuh, memberi makan, atau mengonsumsi.';
+  const prompt = 'Identifikasi kemungkinan spesies pada foto ini. Balas HANYA JSON dengan kunci berikut: name (nama umum Bahasa Indonesia), scientific (nama ilmiah bila ada), category (salah satu: Flora, Fauna, Batuan, Lainnya), confidence (Tinggi, Sedang, atau Rendah), description (2-3 kalimat ciri utama & habitat di Bawakaraeng), danger (peringatan bila beracun/berbisa/dilindungi/berbahaya, string kosong bila tidak ada), tips (saran pengamatan aman singkat), alternates (array maksimal 3 nama alternatif bila ragu). Jangan tambahkan teks di luar JSON.';
 
   try {
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
