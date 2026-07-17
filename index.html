@@ -974,8 +974,9 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
     <section class="lens-card" aria-label="Lensa Bawakaraeng — identifikasi flora dan fauna">
       <div class="lens-top"><div class="lens-orb">🔎</div><div><h3>Lensa Bawakaraeng</h3><p>Foto temuanmu, lalu kenali kemungkinan spesiesnya.</p></div><span class="lens-tag">BETA</span></div>
       <label class="lens-drop" id="lensDrop"><span>📷</span><b>Ambil atau unggah foto</b><small>Flora, fauna, jejak, atau bagian tumbuhan</small><input id="lensFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="lensPreview(this)"/></label>
-      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Foto disimpan otomatis, lalu Google Lens terbuka untuk diunggah.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
-      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Buka di Google Lens</button>
+      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>AI akan mengenali kemungkinan spesiesnya langsung di aplikasi.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
+      <button class="lens-action" id="lensAction" type="button" onclick="lensIdentify()" disabled>✨ Kenali Spesies (AI)</button>
+      <div id="lensResult" style="display:none;margin-top:12px"></div>
       <div class="lens-note"><span>🛡️</span><span>Hasil adalah perkiraan. Jangan menyentuh, memberi makan, atau mengonsumsi spesies sebelum diverifikasi petugas/ahli.</span></div>
     </section>
     <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
@@ -1419,7 +1420,7 @@ function renderSpecies(){
 }
 function openSpecies(id){
   var s=species.filter(function(x){return x.id===id})[0];
-  var hero=s.photo?'<div class="shero"><img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)" onclick="openImg(&#39;'+s.photo+'&#39;)"/><div class="shero-zoom">⤢ Ketuk untuk perbesar</div></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
+  var hero=s.photo?'<div class="shero"><img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)" onclick="openImg(&#39;'+s.photo+'&#39;)"/><div class="shero-zoom">��� Ketuk untuk perbesar</div></div>':'<div class="shero" style="background:'+s.bg+'">'+s.emoji+'</div>';
   document.getElementById('sheetBody').innerHTML=hero+'<h2>'+s.name+'</h2><div class="lat">'+s.lat+'</div>'+
     '<span class="pill" style="background:#ffe4ea;color:#e0154a">🛡️ '+s.protect+'</span><span class="pill" style="background:#e4faf0;color:#08a35f">'+s.kind+'</span>'+
     '<div class="info-row"><div class="info"><b>'+s.iucn+'</b><small>Status IUCN</small></div><div class="info"><b>'+s.pos+'</b><small>Lokasi</small></div><div class="info"><b>'+s.size+'</b><small>Ukuran</small></div></div>'+
@@ -1438,14 +1439,84 @@ function lensPreview(input){
   if(img)img.src=_lensObjectUrl;if(preview)preview.classList.add('show');if(action)action.disabled=false;
 }
 function lensReset(){var input=document.getElementById('lensFile'),preview=document.getElementById('lensPreview'),action=document.getElementById('lensAction'),img=document.getElementById('lensImage');if(input)input.value='';if(preview)preview.classList.remove('show');if(action)action.disabled=true;if(img)img.removeAttribute('src');if(_lensObjectUrl){URL.revokeObjectURL(_lensObjectUrl);_lensObjectUrl='';}}
-function lensOpenGoogle(){
+function _lensDownscale(file,maxSize,cb){
+  try{
+    var img=new Image();var u=URL.createObjectURL(file);
+    img.onload=function(){
+      var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      var scale=Math.min(1,maxSize/Math.max(w,h||1));
+      var cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+      var cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      var ctx=cv.getContext('2d');ctx.drawImage(img,0,0,cw,ch);
+      URL.revokeObjectURL(u);
+      try{cb(cv.toDataURL('image/jpeg',0.72));}catch(e){cb(null);}
+    };
+    img.onerror=function(){try{URL.revokeObjectURL(u);}catch(e){}cb(null);};
+    img.src=u;
+  }catch(e){cb(null);}
+}
+function lensIdentify(){
+  if(typeof isGuest==='function'&&isGuest()){if(typeof openGuestGate==='function'){openGuestGate('memakai Lensa Bawakaraeng (AI)');}else if(window.toast){toast('Masuk dulu untuk memakai Lensa AI','err');}return;}
   var input=document.getElementById('lensFile');
   if(!input||!input.files||!input.files[0]){if(window.toast)toast('Pilih atau ambil foto terlebih dahulu','err');return;}
   var file=input.files[0];
-  // Save the photo first (so it is ready in Downloads/gallery), then open Google Lens web to upload it.
-  try{var u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download='lensa-bawakaraeng-'+Date.now()+'.'+(((file.type||'image/jpeg').split('/')[1])||'jpg');document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);}catch(e){}
-  window.open('https://lens.google.com/','_blank','noopener');
-  if(window.toast)toast('Google Lens terbuka. Ketuk ikon kamera/unggah, lalu pilih foto yang barusan disimpan','ok');
+  var btn=document.getElementById('lensAction'),box=document.getElementById('lensResult');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Menganalisis…';}
+  if(box){box.style.display='block';box.innerHTML='<div style="padding:16px;border-radius:12px;background:rgba(16,63,68,.06);text-align:center;font-size:13px;color:var(--sub)">🔎 AI sedang mengenali spesies…</div>';}
+  var reset=function(){if(btn){btn.disabled=false;btn.textContent='✨ Kenali Spesies (AI)';}};
+  _lensDownscale(file,768,function(dataUrl){
+    if(!dataUrl){_lensFail('Foto gagal diproses');reset();return;}
+    var cli=(typeof _sbClient==='function')?_sbClient():null;
+    var sessionP=cli?cli.auth.getSession():Promise.resolve({data:{session:null}});
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},22000):null;
+    sessionP.then(function(sr){
+      var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;
+      if(!token)throw new Error('LOGIN');
+      return fetch('/api/identify',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({image:dataUrl}),signal:ctrl?ctrl.signal:undefined});
+    }).then(function(r){return r.json().catch(function(){return {};}).then(function(d){return {ok:r.ok,d:d};});})
+    .then(function(res){
+      if(!res.ok)throw new Error((res.d&&res.d.error)||'AI tidak tersedia');
+      _lensRenderResult(res.d);
+    }).catch(function(e){
+      if(String(e&&e.message)==='LOGIN'){_lensFail('Masuk dulu untuk memakai Lensa AI');}
+      else{_lensFail('AI tidak dapat dihubungi saat ini');}
+    }).finally(function(){if(timer)clearTimeout(timer);reset();});
+  });
+}
+function _lensFail(msg){
+  var box=document.getElementById('lensResult');if(!box)return;box.style.display='block';
+  box.innerHTML='<div style="padding:13px 14px;border-radius:12px;background:#fdecec;color:#8e3038;font-size:13px;line-height:1.5">⚠️ '+msg+'.<br>Alternatif manual: <a href="https://lens.google.com/" target="_blank" rel="noopener" style="color:#8e3038;font-weight:800">buka Google Lens</a> lalu unggah fotonya.</div>';
+}
+function _lensEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function lensSearchEnsiklopedia(name){var q=document.getElementById('q');if(q){q.value=name;if(typeof renderSpecies==='function')renderSpecies();q.scrollIntoView({behavior:'smooth',block:'center'});}}
+function _lensRenderResult(d){
+  var box=document.getElementById('lensResult');if(!box)return;box.style.display='block';
+  d=d||{};
+  var name=_lensEsc(d.name||'Tidak yakin');
+  var sci=d.scientific?('<span style="font-style:italic;color:var(--sub);font-weight:600"> · '+_lensEsc(d.scientific)+'</span>'):'';
+  var cat=_lensEsc(d.category||'Tidak yakin');
+  var conf=String(d.confidence||'Rendah');
+  var cc=/tinggi/i.test(conf)?'#0d8c68':(/sedang/i.test(conf)?'#c98a12':'#8e6b3a');
+  var cb=/tinggi/i.test(conf)?'#e6f7ef':(/sedang/i.test(conf)?'#fdf3dd':'#f2ece2');
+  var desc=d.description?('<p style="margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--tx)">'+_lensEsc(d.description)+'</p>'):'';
+  var danger=d.danger?('<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fdecec;color:#8e3038;font-size:12.5px;line-height:1.5">⚠️ <b>Perhatian:</b> '+_lensEsc(d.danger)+'</div>'):'';
+  var tips=d.tips?('<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#e8f1ec;color:#244e40;font-size:12.5px;line-height:1.5">🧭 '+_lensEsc(d.tips)+'</div>'):'';
+  var alts=(d.alternates&&d.alternates.length)?('<div style="margin-top:10px;font-size:12px;color:var(--sub)">Kemungkinan lain: '+d.alternates.map(function(a){return '<b style="color:var(--tx)">'+_lensEsc(a)+'</b>';}).join(', ')+'</div>'):'';
+  box.innerHTML='<div style="border:1px solid rgba(13,140,104,.28);border-radius:16px;overflow:hidden">'+
+    '<div style="padding:13px 15px;background:linear-gradient(135deg,#103f44,#126b57 60%,#0d8c68);color:#fff">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.4px;opacity:.85;text-transform:uppercase">'+_lensEsc(cat)+' · perkiraan AI</div>'+
+      '<div style="font-size:18px;font-weight:900;margin-top:2px">'+name+sci+'</div>'+
+    '</div>'+
+    '<div style="padding:13px 15px;background:var(--card,#fff)">'+
+      '<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:'+cb+';color:'+cc+';font-size:11.5px;font-weight:800">Keyakinan: '+_lensEsc(conf)+'</span>'+
+      desc+danger+tips+alts+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:13px">'+
+        '<button type="button" onclick="lensSearchEnsiklopedia(\''+_lensEsc((d.name||'').replace(/\x27/g,""))+'\')" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:10px;background:#0d8c68;color:#fff;font-weight:800;font-size:12.5px;cursor:pointer">🔍 Cari di Ensiklopedia</button>'+
+        '<button type="button" onclick="lensReset()" style="flex:1;min-width:120px;padding:10px;border:1px solid rgba(13,140,104,.4);border-radius:10px;background:transparent;color:#0d8c68;font-weight:800;font-size:12.5px;cursor:pointer">📷 Foto Lain</button>'+
+      '</div>'+
+      '<div style="margin-top:10px;font-size:11px;color:var(--sub);line-height:1.5">Hasil ini perkiraan AI, bukan penetapan resmi. Verifikasi ke ranger/ahli sebelum menyentuh atau mengonsumsi.</div>'+
+    '</div>'+
+  '</div>';
 }
 
 function renderRules(){document.getElementById('rules').innerHTML=rules.map(function(r,i){return '<div class="rule" id="rule'+i+'"><div class="head" onclick="toggleRule('+i+')"><div class="ri" style="background:'+r.bg+'">'+r.ico+'</div><h4>'+r.title+'</h4><span class="chev">▾</span></div><div class="detail"><p>'+r.body+'</p></div></div>'}).join('');}
