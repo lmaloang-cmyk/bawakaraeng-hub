@@ -979,7 +979,7 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
       <div id="lensResult" style="display:none;margin-top:12px"></div>
       <div class="lens-note"><span>🛡️</span><span>Hasil adalah perkiraan. Jangan menyentuh, memberi makan, atau mengonsumsi spesies sebelum diverifikasi petugas/ahli.</span></div>
     </section>
-    <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
+    <div class="search"><span class="mag">🔍</span><input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Cari flora atau fauna..." oninput="queueSpeciesSearch()"/></div>
     <div class="chips" id="chips"></div>
     <div id="eksplorNote">⏳ Memuat foto asli &amp; data (iNaturalist + Wikipedia)…</div>
     <div id="speciesList"></div>
@@ -1311,19 +1311,20 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
 
 <script>
 var MAC='/species-macaca.jpg';
+var WMC='https://commons.wikimedia.org/wiki/Special:FilePath/';
 var reports=[];
 var species=[
   {id:1,name:'Monyet Hitam Sulawesi',lat:'Macaca maura',kind:'Fauna Endemik',cat:'fauna',emoji:'🐒',photo:MAC,bg:'linear-gradient(135deg,#3f5b46,#243528)',protect:'Dilindungi',pos:'Pos 1–Pos 3',iucn:'Terancam (EN)',size:'50–69 cm',desc:'Monyet endemik yang hidup berkelompok 5–25 ekor. Penyebar biji penting di hutan. Sering di hutan lebat jalur bawah.'},
-  {id:2,name:'Anoa Pegunungan',lat:'Bubalus quarlesi',kind:'Fauna Endemik',cat:'fauna',emoji:'🐃',photo:null,bg:'linear-gradient(135deg,#7c6a58,#3f342b)',protect:'Dilindungi',pos:'Pos 4–Pos 6',iucn:'Genting (EN)',size:'± 75 cm',desc:'Kerbau kerdil endemik, pemalu &amp; soliter. Populasi menurun akibat perburuan. Jaga jarak, jangan diganggu.'},
-  {id:3,name:'Edelweiss Bawakaraeng',lat:'Anaphalis javanica',kind:'Flora Puncak',cat:'flora',emoji:'🩷',photo:null,bg:'linear-gradient(135deg,#8fa76a,#4d5f36)',protect:'Dilarang Memetik',pos:'Pos 8–Puncak',iucn:'Dilindungi',size:'Sabana',desc:'Bunga abadi di sabana berbatu ketinggian. Simbol pendakian yang wajib dilestarikan. Memetik = sanksi pidana.'},
-  {id:4,name:'Kantong Semar',lat:'Nepenthes maxima',kind:'Flora Endemik',cat:'flora',emoji:'🌿',photo:null,bg:'linear-gradient(135deg,#5d8a4f,#2f4a2b)',protect:'Dilindungi',pos:'Pos 2–Pos 5',iucn:'Rentan (VU)',size:'15–30 cm',desc:'Tumbuhan karnivora pemerangkap serangga. Hidup di tebing lembap. Jangan isi kantongnya dengan sampah.'},
-  {id:5,name:'Elang Sulawesi',lat:'Nisaetus lanceolatus',kind:'Fauna Endemik',cat:'fauna',emoji:'🦅',photo:null,bg:'linear-gradient(135deg,#5a7a8a,#33454d)',protect:'Dilindungi',pos:'Area Puncak',iucn:'Rentan (VU)',size:'±130 cm',desc:'Raptor endemik yang mengitari lembah Bawakaraeng. Indikator ekosistem sehat. Amati dari kejauhan.'},
-  {id:6,name:'Sikatan Lompobatang',lat:'Ficedula bonthaina',kind:'Fauna Endemik',cat:'fauna',emoji:'🐦',photo:null,bg:'linear-gradient(135deg,#5b6b8a,#2e3a52)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Rentan (VU)',size:'±13 cm',desc:'Burung sikatan endemik yang hanya hidup di massif Bawakaraeng-Lompobattang. Jantan berdada jingga khas. Salah satu burung paling langka di Sulawesi Selatan.'},
-  {id:7,name:'Anis Gunung',lat:'Turdus poliocephalus',kind:'Burung Pengicau',cat:'fauna',emoji:'���',photo:null,bg:'linear-gradient(135deg,#6b7d6a,#33402f)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Risiko Rendah (LC)',size:'±22 cm',desc:'Burung pengicau bersuara merdu yang sering teramati di hutan ketinggian. Populasi lokalnya khas kawasan Bawakaraeng dan Lompobattang.'},
-  {id:8,name:'Tikus Hutan Sulawesi',lat:'Rattus hoffmanni',kind:'Fauna Endemik',cat:'fauna',emoji:'🐀',photo:null,bg:'linear-gradient(135deg,#7a6f5f,#3b3329)',protect:'Belum Dievaluasi',pos:'Lantai Hutan',iucn:'Risiko Rendah (LC)',size:'±18 cm',desc:'Tikus hutan endemik Sulawesi, pengurai serasah &amp; penyebar biji di lantai hutan. Aktif malam hari dan jarang terlihat pendaki.'},
-  {id:9,name:'Capung Jarum Endemik',lat:'Drepanosticta',kind:'Serangga Endemik',cat:'fauna',emoji:'🦗',photo:null,bg:'linear-gradient(135deg,#3f7d8a,#274a52)',protect:'Dilindungi Habitat',pos:'Sungai &amp; Mata Air',iucn:'Terbatas',size:'3–5 cm',desc:'Capung jarum khas perairan jernih Bawakaraeng. Kawasan ini punya marga capung endemik seperti Celebargiolestes dan Drepanosticta. Penanda kualitas air bersih.'},
-  {id:10,name:'Anggrek Hutan Pegunungan',lat:'Coelogyne celebensis',kind:'Flora Endemik',cat:'flora',emoji:'🌸',photo:null,bg:'linear-gradient(135deg,#8a6f9a,#4a3559)',protect:'Dilindungi',pos:'Batang &amp; Tebing Lembap',iucn:'Rentan (VU)',size:'Epifit',desc:'Anggrek hutan endemik Sulawesi yang menempel di batang pohon lembap. Berbunga indah namun rapuh. Jangan dipetik atau dipindahkan.'},
-  {id:11,name:'Hutan Pinus &amp; Sub-Alpine',lat:'Pinus merkusii',kind:'Flora Pegunungan',cat:'flora',emoji:'🌲',photo:null,bg:'linear-gradient(135deg,#4d7a4f,#2b4a2c)',protect:'Kawasan Konservasi',pos:'Pos 1–Pos 7',iucn:'Ekosistem Kunci',size:'Hutan',desc:'Vegetasi khas sub-alpine Bawakaraeng: pohon pinus, pandan, paku-pakuan, lumut kerak, rotan hingga anggrek hutan. Penjaga utama daerah tangkapan air.'}
+  {id:2,name:'Anoa Pegunungan',lat:'Bubalus quarlesi',kind:'Fauna Endemik',cat:'fauna',emoji:'🐃',photo:WMC+'Lowland%20Anoa.JPG?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#7c6a58,#3f342b)',protect:'Dilindungi',pos:'Pos 4–Pos 6',iucn:'Genting (EN)',size:'± 75 cm',desc:'Kerbau kerdil endemik, pemalu &amp; soliter. Populasi menurun akibat perburuan. Jaga jarak, jangan diganggu.'},
+  {id:3,name:'Edelweiss Bawakaraeng',lat:'Anaphalis javanica',kind:'Flora Puncak',cat:'flora',emoji:'🩷',photo:WMC+'Edelweiss%20%28Anaphalis%20javanica%29.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#8fa76a,#4d5f36)',protect:'Dilarang Memetik',pos:'Pos 8–Puncak',iucn:'Dilindungi',size:'Sabana',desc:'Bunga abadi di sabana berbatu ketinggian. Simbol pendakian yang wajib dilestarikan. Memetik = sanksi pidana.'},
+  {id:4,name:'Kantong Semar',lat:'Nepenthes maxima',kind:'Flora Endemik',cat:'flora',emoji:'🌿',photo:WMC+'Nepenthes%20maxima%20Sulawesi1.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#5d8a4f,#2f4a2b)',protect:'Dilindungi',pos:'Pos 2–Pos 5',iucn:'Rentan (VU)',size:'15–30 cm',desc:'Tumbuhan karnivora pemerangkap serangga. Hidup di tebing lembap. Jangan isi kantongnya dengan sampah.'},
+  {id:5,name:'Elang Sulawesi',lat:'Nisaetus lanceolatus',kind:'Fauna Endemik',cat:'fauna',emoji:'🦅',photo:WMC+'Sulawesi-hawk%20eagle.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#5a7a8a,#33454d)',protect:'Dilindungi',pos:'Area Puncak',iucn:'Rentan (VU)',size:'±130 cm',desc:'Raptor endemik yang mengitari lembah Bawakaraeng. Indikator ekosistem sehat. Amati dari kejauhan.'},
+  {id:6,name:'Sikatan Lompobatang',lat:'Ficedula bonthaina',kind:'Fauna Endemik',cat:'fauna',emoji:'🐦',photo:WMC+'Ficedula_bonthaina_-_Muhammad_Sigit_-_68015974.jpeg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#5b6b8a,#2e3a52)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Rentan (VU)',size:'±13 cm',desc:'Burung sikatan endemik yang hanya hidup di massif Bawakaraeng-Lompobattang. Jantan berdada jingga khas. Salah satu burung paling langka di Sulawesi Selatan.'},
+  {id:7,name:'Anis Gunung',lat:'Turdus poliocephalus',kind:'Burung Pengicau',cat:'fauna',emoji:'���',photo:WMC+'Turdus-poliocephalus.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#6b7d6a,#33402f)',protect:'Dilindungi',pos:'Hutan Pegunungan',iucn:'Risiko Rendah (LC)',size:'±22 cm',desc:'Burung pengicau bersuara merdu yang sering teramati di hutan ketinggian. Populasi lokalnya khas kawasan Bawakaraeng dan Lompobattang.'},
+  {id:8,name:'Tikus Hutan Sulawesi',lat:'Rattus hoffmanni',kind:'Fauna Endemik',cat:'fauna',emoji:'🐀',photo:WMC+'Rattus%20Hoffmanni.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#7a6f5f,#3b3329)',protect:'Belum Dievaluasi',pos:'Lantai Hutan',iucn:'Risiko Rendah (LC)',size:'±18 cm',desc:'Tikus hutan endemik Sulawesi, pengurai serasah &amp; penyebar biji di lantai hutan. Aktif malam hari dan jarang terlihat pendaki.'},
+  {id:9,name:'Capung Jarum Endemik',lat:'Drepanosticta',kind:'Serangga Endemik',cat:'fauna',emoji:'🦗',photo:WMC+'Drepanosticta_furcata_Van_Tol%2C_2005_2432787289.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#3f7d8a,#274a52)',protect:'Dilindungi Habitat',pos:'Sungai &amp; Mata Air',iucn:'Terbatas',size:'3–5 cm',desc:'Capung jarum khas perairan jernih Bawakaraeng. Kawasan ini punya marga capung endemik seperti Celebargiolestes dan Drepanosticta. Penanda kualitas air bersih.'},
+  {id:10,name:'Anggrek Hutan Pegunungan',lat:'Coelogyne celebensis',kind:'Flora Endemik',cat:'flora',emoji:'🌸',photo:WMC+'Coelogyne_celebensis_Orchi_2012-09-14_046.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#8a6f9a,#4a3559)',protect:'Dilindungi',pos:'Batang &amp; Tebing Lembap',iucn:'Rentan (VU)',size:'Epifit',desc:'Anggrek hutan endemik Sulawesi yang menempel di batang pohon lembap. Berbunga indah namun rapuh. Jangan dipetik atau dipindahkan.'},
+  {id:11,name:'Hutan Pinus &amp; Sub-Alpine',lat:'Pinus merkusii',kind:'Flora Pegunungan',cat:'flora',emoji:'🌲',photo:WMC+'Pinus_merkusii_Toba1.jpg?width=960',photoBy:'Wikimedia Commons',bg:'linear-gradient(135deg,#4d7a4f,#2b4a2c)',protect:'Kawasan Konservasi',pos:'Pos 1–Pos 7',iucn:'Ekosistem Kunci',size:'Hutan',desc:'Vegetasi khas sub-alpine Bawakaraeng: pohon pinus, pandan, paku-pakuan, lumut kerak, rotan hingga anggrek hutan. Penjaga utama daerah tangkapan air.'}
 ];
 var rules=[
   {ico:'🚫',bg:'var(--g-brand)',title:'Dilarang Memetik Flora Endemik',body:'Sanksi pidana bagi siapa saja yang mengambil/memetik Edelweiss maupun Kantong Semar. Cukup abadikan lewat foto.'},
@@ -1358,11 +1359,11 @@ var events=[
 var _WM='https://commons.wikimedia.org/wiki/Special:FilePath/';
 var galleryItems=[
   {emoji:'🐒',bg:'var(--g-green)',photo:MAC,cap:'Macaca maura — Pos 2'},
-  {emoji:'🌅',bg:'var(--g-amber)',photo:_WM+'Sunrise%20in%20Taman%20Hidup%20Argopuro.jpg?width=800',cap:'Sunrise Puncak'},
-  {emoji:'⛺',bg:'var(--g-indigo)',photo:_WM+'Tenda%20camping%20di%20Lau%20Kawar.jpg?width=800',cap:'Camp Pos 7'},
-  {emoji:'🌼',bg:'var(--g-green)',photo:_WM+'Bunga%20Edelweiss.jpg?width=800',cap:'Ladang Edelweiss'},
-  {emoji:'🌫️',bg:'var(--g-teal)',photo:_WM+'Hamparan%20Sabana%20di%20Kawasan%20Gunung%20Merbabu.jpg?width=800',cap:'Kabut Sabana'},
-  {emoji:'🦅',bg:'var(--g-blue)',photo:_WM+'Sulawesi%20Hawk%20Eagle%20%28Spizaetus%20lanceolatus%29%20Juvenile%20in%20a%20playful%20mood%20-%20peek-a-boo%20-%20Flickr%20-%20Lip%20Kee%20%281%29.jpg?width=800',cap:'Elang Sulawesi'}
+  {emoji:'🌅',bg:'var(--g-amber)',photo:WMC+'Sunrise%20in%20Taman%20Hidup%20Argopuro.jpg?width=800',cap:'Sunrise Puncak'},
+  {emoji:'⛺',bg:'var(--g-indigo)',photo:WMC+'Tenda%20camping%20di%20Lau%20Kawar.jpg?width=800',cap:'Camp Pos 7'},
+  {emoji:'🌼',bg:'var(--g-green)',photo:WMC+'Bunga%20Edelweiss.jpg?width=800',cap:'Ladang Edelweiss'},
+  {emoji:'🌫️',bg:'var(--g-teal)',photo:WMC+'Hamparan%20Sabana%20di%20Kawasan%20Gunung%20Merbabu.jpg?width=800',cap:'Kabut Sabana'},
+  {emoji:'🦅',bg:'var(--g-blue)',photo:WMC+'Sulawesi%20Hawk%20Eagle%20%28Spizaetus%20lanceolatus%29%20Juvenile%20in%20a%20playful%20mood%20-%20peek-a-boo%20-%20Flickr%20-%20Lip%20Kee%20%281%29.jpg?width=800',cap:'Elang Sulawesi'}
 ];
 
 function go(id){
@@ -1372,7 +1373,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){/* Data spesies lokal sudah langsung tersedia; pembaruan jaringan tidak dipaksa. */}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(function(){try{enrichSpecies();}catch(e){}},40);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1406,17 +1407,53 @@ function renderFcar(){
 
 var filter='semua';
 var cats=[{id:'semua',l:'Semua'},{id:'fauna',l:'🐒 Fauna'},{id:'flora',l:'🌿 Flora'},{id:'endemik',l:'⭐ Endemik'}];
+var _speciesApiTimer=0,_speciesApiQuery='',_speciesApiState='idle',_speciesApiResults=[];
 function renderChips(){var host=document.getElementById('chips');if(!host)return;host.innerHTML=cats.map(function(c){return '<button class="chip'+(filter===c.id?' on':'')+'" onclick="setFilter(\''+c.id+'\')">'+c.l+'</button>'}).join('');}
 function setFilter(f){filter=f;renderChips();renderSpecies();}
+function queueSpeciesSearch(){
+  clearTimeout(_speciesApiTimer);
+  var q=(document.getElementById('q').value||'').trim();
+  _speciesApiQuery=q;_speciesApiResults=[];
+  if(q.length<2){_speciesApiState='idle';renderSpecies();return;}
+  _speciesApiState='loading';renderSpecies();
+  _speciesApiTimer=setTimeout(function(){searchSpeciesApi(q);},420);
+}
+async function searchSpeciesApi(q){
+  try{
+    var r=await fetch('/api/species-search?q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});
+    var d=await r.json().catch(function(){return {};});
+    if(q!==_speciesApiQuery)return;
+    _speciesApiResults=Array.isArray(d.results)?d.results:[];
+    _speciesApiState=r.ok?'done':'error';
+  }catch(e){
+    if(q!==_speciesApiQuery)return;
+    _speciesApiResults=[];_speciesApiState='error';
+  }
+  renderSpecies();
+}
+function renderApiSpecies(){
+  if(!_speciesApiQuery||_speciesApiQuery.length<2)return '';
+  var title='<div style="font-size:12px;font-weight:800;color:var(--sub);margin:16px 2px 8px">Hasil tambahan dari iNaturalist</div>';
+  if(_speciesApiState==='loading')return title+'<div class="empty" style="padding:15px 0">🔎 Mencari spesies…</div>';
+  if(_speciesApiState==='error')return title+'<div class="empty" style="padding:15px 0">Tidak dapat menghubungi pencarian online. Coba lagi.</div>';
+  if(!_speciesApiResults.length)return title+'<div class="empty" style="padding:15px 0">Tidak ada hasil tambahan.</div>';
+  return title+_speciesApiResults.map(function(s){
+    var name=escapeHtml(s.name||s.scientific||'Spesies');var scientific=escapeHtml(s.scientific||'');var category=escapeHtml(s.category||'Organisme');
+    var photo=(typeof s.photo==='string'&&/^https:\/\//.test(s.photo))?'<img loading="lazy" decoding="async" src="'+escapeHtml(s.photo)+'" alt="Foto '+name+'" onerror="_pf(this,&#39;📷&#39;)"/>':'📷';
+    return '<div class="species"><div class="hero2" style="background:linear-gradient(135deg,#3c6556,#1e3e39)">'+photo+'<div class="badge">🌐 iNaturalist</div></div><div class="body"><div class="hd"><div><h3>'+name+'</h3><div class="lat">'+scientific+'</div></div><span class="kind">'+category+'</span></div><div class="desc">Hasil pencarian online. Identifikasi lapangan tetap perlu diverifikasi.</div></div></div>';
+  }).join('');
+}
 function renderSpecies(){
   var q=(document.getElementById('q').value||'').toLowerCase();
   var list=species.filter(function(s){var mF=filter==='semua'||s.cat===filter||(filter==='endemik'&&s.kind.toLowerCase().indexOf('endemik')>-1);var mQ=s.name.toLowerCase().indexOf(q)>-1||s.lat.toLowerCase().indexOf(q)>-1;return mF&&mQ;});
   var el=document.getElementById('speciesList');
-  if(!list.length){el.innerHTML='<div class="empty">🔍 Tidak ada hasil.</div>';return;}
-  el.innerHTML=list.map(function(s){
+  var local=list.map(function(s){
     var im=s.photo?'<img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':s.emoji;
     return '<div class="species" onclick="openSpecies('+s.id+')"><div class="hero2" style="background:'+s.bg+'">'+im+'<div class="badge">🛡️ '+s.protect+'</div>'+(s.photoBy?'<div class="credit">📷 '+s.photoBy+'</div>':'')+'</div><div class="body"><div class="hd"><div><h3>'+s.name+'</h3><div class="lat">'+s.lat+'</div></div><span class="kind">'+s.kind+'</span></div>'+(s.inatCount!=null?'<span class="obschip">📍 '+s.inatCount+' di sekitar</span>':'')+'<div class="desc">'+s.desc+'</div></div></div>';
   }).join('');
+  var remote=renderApiSpecies();
+  el.innerHTML=local||(remote?'<div class="empty">🔎 Tidak ada hasil lokal.</div>':'<div class="empty">🔍 Tidak ada hasil.</div>');
+  if(remote)el.innerHTML+=remote;
 }
 function openSpecies(id){
   var s=species.filter(function(x){return x.id===id})[0];
@@ -2505,20 +2542,15 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="lens-extras.js" defer></script>
 <script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script>
 <style id="profcss">
-#profil .phead{background:linear-gradient(135deg,#ff8a3d 0%,#ff5e62 45%,#ff2d6f 100%);background-size:220% 220%;box-shadow:0 18px 40px rgba(255,64,110,.35);animation:pheadGrad 9s ease infinite,pheadIn .6s ease both}
-#profil .phead::before{content:'';position:absolute;inset:-40%;z-index:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 42%),radial-gradient(circle at 80% 75%,rgba(255,190,110,.42),transparent 46%);animation:pheadAura 12s ease-in-out infinite;pointer-events:none}
-#profil .phead::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;z-index:1;background:linear-gradient(105deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);animation:pheadShine 6.5s ease-in-out infinite;pointer-events:none}
+/* Profil: lanskap Bawakaraeng statis agar tetap ringan di ponsel. */
+#profil .phead{min-height:236px;box-sizing:border-box;padding:28px 20px 24px;background:radial-gradient(circle at 77% 18%,rgba(255,221,137,.96) 0 15px,rgba(255,221,137,.18) 16px 26px,transparent 27px),radial-gradient(circle at 15% 17%,rgba(255,255,255,.21) 0 1px,transparent 2px),radial-gradient(circle at 31% 30%,rgba(255,255,255,.20) 0 1px,transparent 2px),radial-gradient(circle at 51% 12%,rgba(255,255,255,.16) 0 1px,transparent 2px),linear-gradient(150deg,#123a57 0%,#176c75 47%,#259678 100%);box-shadow:0 14px 30px rgba(20,83,86,.28);isolation:isolate}
+#profil .phead::before{content:'';position:absolute;inset:auto -6% -1px;width:112%;height:45%;z-index:0;background:linear-gradient(145deg,transparent 0 20%,#176b66 20.5% 36%,transparent 36.5% 48%,#10534f 48.5% 67%,transparent 67.5%),linear-gradient(32deg,transparent 0 30%,rgba(9,60,59,.72) 30.5% 49%,transparent 49.5% 61%,rgba(12,72,67,.65) 61.5%);clip-path:polygon(0 50%,12% 27%,24% 45%,38% 8%,49% 38%,62% 18%,75% 48%,89% 20%,100% 44%,100% 100%,0 100%);opacity:.9;pointer-events:none}
+#profil .phead::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 50%),repeating-linear-gradient(115deg,transparent 0 20px,rgba(255,255,255,.035) 21px 22px);pointer-events:none}
 #profil .phead>*{position:relative;z-index:2}
-#profil .phead .pav{position:relative;background:rgba(255,255,255,.2);border:0;box-shadow:0 8px 22px rgba(0,0,0,.22);animation:pavFloat 4.5s ease-in-out infinite}
-#profil .phead .pav::before{content:'';position:absolute;inset:-5px;border-radius:50%;z-index:-1;background:conic-gradient(from 0deg,#fff,#ffd27a,#ff6a95,#ffd27a,#fff);animation:pavSpin 7s linear infinite}
-#profil .phead .lv{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.38);opacity:1}
-#profil .phead h2{text-shadow:0 2px 10px rgba(0,0,0,.25)}
-@keyframes pheadGrad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes pheadAura{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(3%,3%) scale(1.08)}}
-@keyframes pheadShine{0%,58%{left:-60%}100%{left:130%}}
-@keyframes pavFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes pavSpin{to{transform:rotate(360deg)}}
-@keyframes pheadIn{0%{opacity:0;transform:translateY(12px) scale(.98)}100%{opacity:1;transform:none}}
+#profil .phead .pav{position:relative;background:#ffffff;border:4px solid rgba(232,255,243,.94);box-shadow:0 7px 16px rgba(6,43,48,.3);animation:none}
+#profil .phead .pav::before{content:'';position:absolute;inset:-8px;border-radius:50%;z-index:-1;background:rgba(205,255,234,.22);border:1px solid rgba(224,255,241,.54);animation:none}
+#profil .phead .lv{display:inline-block;margin-top:8px;padding:5px 12px;border-radius:20px;background:rgba(7,56,62,.30);border:1px solid rgba(226,255,245,.42);opacity:1}
+#profil .phead h2{text-shadow:0 2px 8px rgba(4,43,47,.42)}
 @media(prefers-reduced-motion:reduce){#profil .phead,#profil .phead::after,#profil .phead .pav,#profil .phead .pav::before{animation:none!important}}
 </style>
 </body>
