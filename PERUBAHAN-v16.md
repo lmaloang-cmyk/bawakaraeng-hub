@@ -1,12 +1,10 @@
-# Bawakaraeng Hub v16 — Pengamanan
+# Pintu Angin v13 — AI Pendamping
 
-- Menambahkan security headers Vercel dan Content Security Policy.
-- Membatasi origin, metode, payload, dan frekuensi request API.
-- AI cloud kini memverifikasi token pengguna Supabase.
-- Menambahkan timeout dan validasi parameter untuk BMKG serta hotspot.
-- Memvalidasi foto laporan (JPEG/PNG/WebP, maksimum 5 MB).
-- Membersihkan dan membatasi panjang input pengguna.
-- Mengamankan toast dari injeksi HTML dan menambahkan anti-spam chat.
-- Menambahkan `supabase-security.sql` untuk RLS database.
-- Menambahkan `SECURITY.md` dan `.env.example` untuk deployment aman.
-- Memperbarui aplikasi dan cache PWA ke v16.
+- Menambahkan AI Pendamping sebagai tab utama pada fitur percakapan.
+- Mode lokal gratis menjawab keselamatan, cuaca, SIMAKSI, jalur, perlengkapan, pelaporan, dan konservasi.
+- Menambahkan endpoint `/api/ai.js` untuk Gemini melalui environment variable `GEMINI_API_KEY`.
+- Jika Gemini belum dikonfigurasi, kuota habis, atau jaringan gagal, jawaban otomatis memakai panduan lokal.
+- Riwayat AI disimpan lokal di perangkat, maksimal 40 pesan.
+- Pertanyaan dibatasi 600 karakter dan jawaban Gemini dibatasi 420 token.
+- Instruksi keselamatan mencegah AI mengarang status jalur, cuaca, izin, atau informasi darurat.
+- Versi dan cache PWA diperbarui ke v13.
