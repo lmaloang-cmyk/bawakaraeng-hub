@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
+<script>(function(){try{var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;var lite=(c&&c.saveData)||(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4);if(lite)document.documentElement.classList.add('perf-lite');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Bawakaraeng Hub</title>
 <link rel="manifest" href="/manifest.json"/>
@@ -869,6 +870,11 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
 }
 
 </style>
+/* Mode ringan: otomatis pada perangkat hemat-data/berdaya rendah. */
+html.perf-lite *,html.perf-lite *::before,html.perf-lite *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .login-ov::before,html.perf-lite .login-ov::after,html.perf-lite .home-tools .catbtn::before{display:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -1347,7 +1353,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(enrichSpecies,80);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1372,7 +1378,8 @@ function openFeedReport(idx){var r=_feedRows[idx];if(!r)return;var photo=safeRep
 function renderFeed(){var el=document.getElementById('feed');if(!el)return;var em='text-align:center;color:#59627a;padding:22px 12px;font-size:13px';var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){renderFeed._n=(renderFeed._n||0)+1;if(renderFeed._n<40){el.innerHTML='<div style="'+em+'">Memuat laporan…</div>';setTimeout(renderFeed,200);}else{el.innerHTML='<div style="'+em+'">Sambungkan internet untuk melihat laporan.</div>';}return;}renderFeed._n=0;c.from('reports').select('*').eq('astatus','disetujui').order('created_at',{ascending:false}).limit(30).then(function(res){if(res.error){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.<br><small>'+escapeHtml(res.error.message||'')+'</small></div>';return;}_feedRows=res.data||[];if(!_feedRows.length){el.innerHTML='<div style="'+em+'">Belum ada laporan terverifikasi.</div>';return;}el.innerHTML=_feedRows.slice(0,1).map(function(r,i){return _feedCard(r,i);}).join('');}).catch(function(){el.innerHTML='<div style="'+em+'">Gagal memuat laporan.</div>';});}
 function _pf(el,e){el.onerror=null;var pn=el.parentNode;if(pn){pn.setAttribute('data-fb',e);pn.classList.add('photofail');}}
 function renderFcar(){
-  document.getElementById('fcar').innerHTML=species.map(function(s){
+  var host=document.getElementById('fcar');if(!host)return;
+  host.innerHTML=species.map(function(s){
     var im=s.photo?'<img loading="lazy" decoding="async" src="'+s.photo+'" onerror="_pf(this,&#39;'+s.emoji+'&#39;)"/>':'<div class="im" style="background:'+s.bg+'">'+s.emoji+'</div>';
     return '<div class="fc" onclick="openSpecies('+s.id+')">'+im+'<div class="ov"></div><div class="bdg">'+s.protect+'</div><div class="t"><b>'+s.name+'</b><small>'+s.lat+'</small></div></div>';
   }).join('');
@@ -1380,7 +1387,7 @@ function renderFcar(){
 
 var filter='semua';
 var cats=[{id:'semua',l:'Semua'},{id:'fauna',l:'🐒 Fauna'},{id:'flora',l:'🌿 Flora'},{id:'endemik',l:'⭐ Endemik'}];
-function renderChips(){document.getElementById('chips').innerHTML=cats.map(function(c){return '<button class="chip'+(filter===c.id?' on':'')+'" onclick="setFilter(\''+c.id+'\')">'+c.l+'</button>'}).join('');}
+function renderChips(){var host=document.getElementById('chips');if(!host)return;host.innerHTML=cats.map(function(c){return '<button class="chip'+(filter===c.id?' on':'')+'" onclick="setFilter(\''+c.id+'\')">'+c.l+'</button>'}).join('');}
 function setFilter(f){filter=f;renderChips();renderSpecies();}
 function renderSpecies(){
   var q=(document.getElementById('q').value||'').toLowerCase();
@@ -1532,7 +1539,7 @@ function _initPantau(){
 function openZone(i){var z=zones[i];var pct=Math.round(z.planted/z.need*100);if(pantauMap){pantauMap.setView(z.c,14);}document.getElementById('sheetBody').innerHTML='<span class="pill" style="background:'+zc[z.st]+'22;color:'+zc[z.st]+'">● '+zt[z.st]+'</span><h2 style="margin-top:8px">'+z.n+'</h2><div class="lat" style="color:#2b6fff;font-style:normal;font-weight:800">🔥 Terdampak sejak '+z.year+'</div><div class="info-row"><div class="info"><b>'+z.ha+' ha</b><small>Luas Kritis</small></div><div class="info"><b>'+fmt(z.need)+'</b><small>Pohon Dibutuhkan</small></div><div class="info"><b>'+pct+'%</b><small>Progress</small></div></div><p class="body">'+z.cause+'</p><div class="quota" style="margin-top:12px"><i style="width:'+pct+'%;background:'+zc[z.st]+'"></i></div><div class="zmeta" style="margin-top:6px">'+fmt(z.planted)+' dari '+fmt(z.need)+' pohon telah ditanam</div><button class="btn g-green" onclick="adopt('+i+')">🌱 Adopsi 250 Bibit Pohon</button>';openSheet();}
 function adopt(i){if(typeof isGuest==='function'&&isGuest()){openGuestGate('mengadopsi pohon');return;}var z=zones[i];z.planted=Math.min(z.need,z.planted+250);_lsSet('bwkZones',zones.map(function(x){return x.planted;}));_incStat('bwkMyTrees',250);renderPantauStats();renderZones();openZone(i);toast('250 bibit diadopsi untuk '+z.n,'ok');}
 renderPantauStats();renderZones();
-tick();setInterval(tick,10000);[renderFeed,renderFcar,renderChips,renderSpecies,renderRules,renderMap,renderKom,renderDates,updateTotal].forEach(function(f){try{f();}catch(e){console.warn('render skip',e);}});
+tick();setInterval(tick,10000);[renderFeed,renderFcar,renderChips,renderSpecies,renderRules,updateTotal].forEach(function(f){try{f();}catch(e){console.warn('render skip',e);}});var _deferHome=function(){[renderMap,renderKom,renderDates].forEach(function(f){try{f();}catch(e){}});};if(window.requestIdleCallback){window.requestIdleCallback(_deferHome,{timeout:1600});}else{setTimeout(_deferHome,650);}
 var hb=document.getElementById('holdbtn');
 hb.addEventListener('mousedown',startHold);hb.addEventListener('mouseup',cancelHold);hb.addEventListener('mouseleave',cancelHold);
 hb.addEventListener('touchstart',function(e){e.preventDefault();startHold();},{passive:false});

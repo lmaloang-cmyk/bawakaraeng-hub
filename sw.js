@@ -1,5 +1,6 @@
-const CACHE='bwk-v32-instansi-logos';
-const ASSETS=['/bg-fajar.svg','/bg-siang.svg','/bg-senja.svg','/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/rc-logo.jpg','/hike.js','/logo-klh.png','/logo-kemenhut.webp','/PANDUAN.html','/guide-assets/01-login.png','/guide-assets/02-guest-home.png','/guide-assets/03-login-gate.png','/guide-assets/04-ai-pendamping.png','/species-macaca.jpg','/og.jpg'];
+const CACHE='bwk-v33-light';
+// Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
+const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/apple-touch-icon.png','/rc-logo.jpg','/sk.js','/sos.js','/chat.js','/hike.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
@@ -10,18 +11,21 @@ self.addEventListener('activate',function(e){
 });
 self.addEventListener('fetch',function(e){
   const req=e.request;
-  if(req.method!=='GET'){return;}
+  if(req.method!=='GET')return;
   const url=new URL(req.url);
-  // Jangan cache panggilan API (cuaca/hotspot) - selalu ambil dari jaringan
-  if(url.pathname.indexOf('/api/')===0){return;}
+  // Live data and third-party requests must stay fresh and are never cached.
+  if(url.origin!==location.origin || url.pathname.indexOf('/api/')===0)return;
   if(req.mode==='navigate'){
     e.respondWith(fetch(req).then(function(res){
       const copy=res.clone();caches.open(CACHE).then(function(c){c.put('/index.html',copy);});return res;
     }).catch(function(){return caches.match('/index.html');}));
     return;
   }
-  e.respondWith(caches.match(req).then(function(hit){return hit||fetch(req).then(function(res){
-    if(res&&res.status===200&&url.origin===location.origin){const copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
-    return res;
-  }).catch(function(){return hit;});}));
+  e.respondWith(caches.match(req).then(function(hit){
+    if(hit)return hit;
+    return fetch(req).then(function(res){
+      if(res&&res.status===200){const copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
+      return res;
+    });
+  }));
 });
