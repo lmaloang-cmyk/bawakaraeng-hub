@@ -974,8 +974,8 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
     <section class="lens-card" aria-label="Lensa Bawakaraeng — identifikasi flora dan fauna">
       <div class="lens-top"><div class="lens-orb">🔎</div><div><h3>Lensa Bawakaraeng</h3><p>Foto temuanmu, lalu kenali kemungkinan spesiesnya.</p></div><span class="lens-tag">BETA</span></div>
       <label class="lens-drop" id="lensDrop"><span>📷</span><b>Ambil atau unggah foto</b><small>Flora, fauna, jejak, atau bagian tumbuhan</small><input id="lensFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="lensPreview(this)"/></label>
-      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Google Lens akan dibuka untuk menemukan kemungkinan spesies.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
-      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Analisis dengan Google Lens</button>
+      <div class="lens-preview" id="lensPreview"><img id="lensImage" alt="Pratinjau foto untuk identifikasi"/><div><b>Foto siap dianalisis</b><small>Kirim foto ke Google Lens lewat menu Bagikan perangkat.</small></div><button class="lens-reset" type="button" onclick="lensReset()" aria-label="Ganti foto">↺</button></div>
+      <button class="lens-action" id="lensAction" type="button" onclick="lensOpenGoogle()" disabled>✨ Kirim ke Google Lens</button>
       <div class="lens-note"><span>🛡️</span><span>Hasil adalah perkiraan. Jangan menyentuh, memberi makan, atau mengonsumsi spesies sebelum diverifikasi petugas/ahli.</span></div>
     </section>
     <div class="search"><span class="mag">🔍</span><input id="q" type="text" placeholder="Cari flora atau fauna..." oninput="renderSpecies()"/></div>
@@ -1440,11 +1440,16 @@ function lensPreview(input){
 function lensReset(){var input=document.getElementById('lensFile'),preview=document.getElementById('lensPreview'),action=document.getElementById('lensAction'),img=document.getElementById('lensImage');if(input)input.value='';if(preview)preview.classList.remove('show');if(action)action.disabled=true;if(img)img.removeAttribute('src');if(_lensObjectUrl){URL.revokeObjectURL(_lensObjectUrl);_lensObjectUrl='';}}
 function lensOpenGoogle(){
   var input=document.getElementById('lensFile');if(!input||!input.files||!input.files[0]){if(window.toast)toast('Pilih foto terlebih dahulu','err');return;}
-  // Google Lens does not provide a public embedded API. Submitting the selected photo opens its own result page in a new tab.
-  var form=document.createElement('form');form.method='post';form.enctype='multipart/form-data';form.action='https://lens.google.com/v3/upload?hl=id';form.target='_blank';form.style.display='none';
-  var home=document.getElementById('lensDrop');document.body.appendChild(form);input.name='encoded_image';form.appendChild(input);form.submit();
-  setTimeout(function(){if(home)home.appendChild(input);input.name='lensFile';if(form.parentNode)form.parentNode.removeChild(form);},700);
-  if(window.toast)toast('Membuka Google Lens untuk analisis foto','ok');
+  var file=input.files[0];
+  // Google blocks direct browser uploads to Lens (403). On Android, share the real file so Lens/Google Photos can receive it.
+  if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+    navigator.share({files:[file],title:'Lensa Bawakaraeng',text:'Identifikasi awal flora atau fauna Bawakaraeng'}).then(function(){if(window.toast)toast('Pilih Google Lens di menu Bagikan','ok');}).catch(function(){});
+    return;
+  }
+  // Desktop and browsers without Web Share: download the selected file, then open Lens for manual upload.
+  var u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download='lensa-bawakaraeng-'+Date.now()+'.'+((file.type||'image/jpeg').split('/')[1]||'jpg');document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1200);
+  window.open('https://lens.google.com/','_blank','noopener');
+  if(window.toast)toast('Foto diunduh. Di Google Lens pilih Upload untuk melanjutkan','ok');
 }
 
 function renderRules(){document.getElementById('rules').innerHTML=rules.map(function(r,i){return '<div class="rule" id="rule'+i+'"><div class="head" onclick="toggleRule('+i+')"><div class="ri" style="background:'+r.bg+'">'+r.ico+'</div><h4>'+r.title+'</h4><span class="chev">▾</span></div><div class="detail"><p>'+r.body+'</p></div></div>'}).join('');}
