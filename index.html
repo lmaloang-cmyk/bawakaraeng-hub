@@ -1473,13 +1473,21 @@ function lensIdentify(){
       var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;
       if(!token)throw new Error('LOGIN');
       return fetch('/api/identify',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({image:dataUrl}),signal:ctrl?ctrl.signal:undefined});
-    }).then(function(r){return r.json().catch(function(){return {};}).then(function(d){return {ok:r.ok,d:d};});})
+    }).then(function(r){var st=r.status;return r.json().catch(function(){return {};}).then(function(d){return {ok:r.ok,st:st,d:d};});})
     .then(function(res){
-      if(!res.ok)throw new Error((res.d&&res.d.error)||'AI tidak tersedia');
+      if(!res.ok)throw {st:res.st,msg:(res.d&&res.d.error)||'',code:(res.d&&res.d.code)||''};
       _lensRenderResult(res.d);
     }).catch(function(e){
-      if(String(e&&e.message)==='LOGIN'){_lensFail('Masuk dulu untuk memakai Lensa AI');}
-      else{_lensFail('AI tidak dapat dihubungi saat ini');}
+      if(e&&e.message==='LOGIN'){_lensFail('Masuk dulu untuk memakai Lensa AI');return;}
+      var st=e&&e.st,code=e&&e.code,msg=e&&e.msg,t;
+      if(st===401){t='Sesi login berakhir. Keluar lalu masuk lagi dengan Google, baru coba lagi.';}
+      else if(st===503||code==='NO_KEY'){t='AI belum dikonfigurasi di server: isi GEMINI_API_KEY di Environment Variables Vercel, lalu Redeploy.';}
+      else if(st===404){t='Endpoint AI belum ada (api/identify). Pastikan file api/identify.js ikut ter-upload, lalu redeploy.';}
+      else if(st===429){t='Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';}
+      else if(st===413){t='Foto terlalu besar. Coba foto lain yang lebih kecil.';}
+      else if(st===400){t='Format foto tidak didukung. Gunakan JPG/PNG/WebP.';}
+      else{t='AI tidak dapat dihubungi saat ini'+(msg?(' — '+msg):'')+(st?(' [kode '+st+']'):'');}
+      _lensFail(t);
     }).finally(function(){if(timer)clearTimeout(timer);reset();});
   });
 }
