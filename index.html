@@ -2426,8 +2426,30 @@ document.addEventListener('visibilitychange',function(){if(document.hidden){if(h
 })();
 </script>
 <script>
-function _incStat(k,n){try{var v=(+localStorage.getItem(k)||0)+(n||1);localStorage.setItem(k,v);}catch(e){}}
-function _statN(k){var v=+localStorage.getItem(k);return isNaN(v)?0:v;}
+var _PROFILE_STAT_KEYS=['bwkMyReports','bwkMyJurnal','bwkMyTrees','bwkMyEvents','bwkTrailCheckins','bwkMyCleanups','bwkConductWarnings'];
+function _profileId(email){return String(email||'').toLowerCase().trim();}
+function _profileProgressKey(email){return 'bwkProfileProgress:'+_profileId(email);}
+function _profileMetaKey(email){return 'bwkProfileMeta:'+_profileId(email);}
+function _ensureProfileAccount(email){
+  var id=_profileId(email);if(!id)return {ts:Date.now()};
+  var meta=_lsGet(_profileMetaKey(id),null);
+  if(!meta||!meta.ts){meta={ts:Date.now()};_lsSet(_profileMetaKey(id),meta);}
+  var progress=_lsGet(_profileProgressKey(id),null);
+  if(!progress||typeof progress!=='object'){
+    progress={};var owner='';try{owner=_profileId(localStorage.getItem('bwkOwner'));}catch(e){}
+    if(!owner||owner===id){_PROFILE_STAT_KEYS.forEach(function(k){var v=+localStorage.getItem(k);if(!isNaN(v)&&v>0)progress[k]=v;});}
+    _lsSet(_profileProgressKey(id),progress);
+  }
+  return meta;
+}
+function _incStat(k,n){try{
+  var add=n||1;var v=(+localStorage.getItem(k)||0)+add;localStorage.setItem(k,v);
+  var owner=_profileId(localStorage.getItem('bwkOwner'));if(owner){var p=_lsGet(_profileProgressKey(owner),{});p[k]=(+p[k]||0)+add;_lsSet(_profileProgressKey(owner),p);}
+}catch(e){}}
+function _statN(k){try{
+  var owner=_profileId(localStorage.getItem('bwkOwner'));if(owner){var p=_lsGet(_profileProgressKey(owner),null);if(p&&typeof p==='object')return +p[k]||0;}
+  var v=+localStorage.getItem(k);return isNaN(v)?0:v;
+}catch(e){return 0;}}
 var PROF_BADGES=[
  {id:'checkin',e:'📍',c:'g-blue',l:'Tertib Check-in',desc:'Check-in pos menjaga keselamatan perjalanan.',need:'Lakukan 3 check-in pos saat pendakian.',ok:function(d){return d.checkin>=3;},prog:function(d){return d.checkin+'/3 check-in pos';}},
  {id:'simaksi',e:'🎫',c:'g-indigo',l:'SIMAKSI Tuntas',desc:'Pengajuan SIMAKSI telah selesai sampai dokumen terbit.',need:'Selesaikan satu pengajuan SIMAKSI.',ok:function(d){return d.simaksi>=1;},prog:function(d){return d.simaksi?'Dokumen SIMAKSI terbit':'Belum ada dokumen terbit';}},
@@ -2490,7 +2512,25 @@ function sbInsert(table,row){var allowed={reports:1,simaksi:1,jurnal:1};var c=_s
 window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});};
-function _fromGoogle(su){try{var m=su.user_metadata||{};var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');var _own='';try{_own=localStorage.getItem('bwkOwner')||'';}catch(e){}if(email&&_own&&_own!==email){try{['bwkMyReports','bwkMyJurnal','bwkMyTrees','bwkMyEvents','bwkReports','bwkJurnal','bwkSimaksi','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});localStorage.setItem('bwkOwner',email);localStorage.setItem('bwkUser',JSON.stringify({name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:Date.now(),google:true}));}catch(e){}location.reload();return;}if(email){try{localStorage.setItem('bwkOwner',email);}catch(e){}}var prev=(typeof bwkUser==='function'?bwkUser():null)||{};var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:prev.ts||Date.now(),google:true};localStorage.setItem('bwkUser',JSON.stringify(nu));if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}}catch(e){}}
+function _fromGoogle(su){try{
+  var m=su.user_metadata||{};
+  var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();
+  var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');
+  var owner='';try{owner=(localStorage.getItem('bwkOwner')||'').toLowerCase().trim();}catch(e){}
+  if(email&&owner&&owner!==email){
+    /* Data tampilan lama dibersihkan, tetapi progres akun tersimpan di kunci per-email. */
+    try{['bwkReports','bwkJurnal','bwkSimaksi','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});localStorage.setItem('bwkOwner',email);}catch(e){}
+    var movedMeta=_ensureProfileAccount(email);
+    localStorage.setItem('bwkUser',JSON.stringify({name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:movedMeta.ts,google:true}));
+    location.reload();return;
+  }
+  if(email){try{localStorage.setItem('bwkOwner',email);}catch(e){}}
+  var meta=_ensureProfileAccount(email);
+  var nu={name:name,email:email,role:_mapRole(email),photo:m.avatar_url||m.picture||'',ts:meta.ts,google:true};
+  localStorage.setItem('bwkUser',JSON.stringify(nu));
+  if(typeof applyUser==='function'){applyUser(nu);}try{renderProfile();}catch(e){}
+  if(typeof hideLogin==='function'){hideLogin();}if(window.toast){toast('Halo, '+name+' \uD83D\uDC4B','ok');}
+}catch(e){}}
 function initAuth(){var c=_sbClient();if(!c){initAuth._n=(initAuth._n||0)+1;if(initAuth._n<40){setTimeout(initAuth,150);}return;}try{c.auth.getSession().then(function(r){var sn=r&&r.data&&r.data.session;if(sn&&sn.user){_fromGoogle(sn.user);}});c.auth.onAuthStateChange(function(ev,session){if(session&&session.user){_fromGoogle(session.user);}});}catch(e){}}
 try{initAuth();}catch(e){}
 if(document.readyState!=='loading'){setTimeout(initAuth,80);}else{window.addEventListener('DOMContentLoaded',function(){setTimeout(initAuth,80);});}
