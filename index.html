@@ -586,8 +586,12 @@ html.dark .catclose{color:var(--ink);border-color:rgba(255,255,255,.14)}
   html.dark body{background:#05080f}
   html.dark .nav{background:rgba(16,23,40,.97)}
   html.dark .tab.on{background:#301523}
-  html.dark .fld input,html.dark .fld select{background:#0f1728;border-color:#2a3550;color:var(--ink)}
-  html.dark .seg button.on{background:#26314d;color:var(--ink)}
+html.dark .fld input,html.dark .fld select{background:#0f1728;border-color:#2a3550;color:var(--ink)}
+/* Form dalam sheet tetap memakai bidang terang agar teks isian tidak hilang saat mode gelap. */
+html.dark .sheet input:not([type="checkbox"]):not([type="radio"]),html.dark .sheet select,html.dark .sheet textarea{background:#f8fafc!important;color:#142033!important;border-color:#cbd5e1!important;caret-color:#142033;color-scheme:light}
+html.dark .sheet input::placeholder,html.dark .sheet textarea::placeholder{color:#64748b!important;opacity:1}
+html.dark .sheet label{color:#cbd5e1!important;opacity:1!important}
+html.dark .seg button.on{background:#26314d;color:var(--ink)}
   html.dark .subnav .sn-home{background:#22304d;color:var(--ink)}
   html.dark .node .lbl{background:#161f33;color:var(--ink)}
   html.dark .chip{color:var(--ink)}html.dark .q span,html.dark .bdg2 span,html.dark .rcard .who span,html.dark .sheet p.body,html.dark .tdesc,html.dark .catbtn{color:var(--sub)}html.dark label.fld,html.dark .catopt,html.dark .catdesc b,html.dark .liveinfo b,html.dark .wquake b{color:var(--ink)}
