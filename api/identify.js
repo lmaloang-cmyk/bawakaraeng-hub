@@ -1,6 +1,5 @@
-import { bodyWithin, cleanText, rateLimit, secureApi, verifySupabaseUser } from '../lib/security.js';
+import { bodyWithin, rateLimit, secureApi, verifySupabaseUser } from '../lib/security.js';
 
-// Lensa Bawakaraeng: in-app species identification (Google Lens alternative) via Gemini vision.
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
@@ -13,55 +12,61 @@ export default async function handler(req, res) {
   if (!rateLimit(req, res, { prefix: 'idf-user', id: user.id, limit: 15, windowMs: 10 * 60_000 })) return;
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(503).json({ error: 'AI cloud belum dikonfigurasi', code: 'NO_KEY' });
+  if (!key) return res.status(503).json({ error: 'AI belum dikonfigurasi', code: 'NO_KEY' });
 
   const body = req.body || {};
-  const raw = typeof body.image === 'string' ? body.image : '';
-  const m = raw.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
-  if (!m) return res.status(400).json({ error: 'Format foto tidak valid' });
+  const image = typeof body.image === 'string' ? body.image : '';
+  const m = image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+\/=]+)$/);
+  if (!m) return res.status(400).json({ error: 'Format foto tidak didukung (pakai JPG/PNG/WebP)' });
   const mime = m[1];
   const b64 = m[2];
   if (b64.length > 2_100_000) return res.status(413).json({ error: 'Foto terlalu besar' });
 
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const system = 'Anda ahli biologi lapangan untuk kawasan Gunung Bawakaraeng, Sulawesi Selatan. Dari foto, identifikasi kemungkinan flora atau fauna. Jawab dalam Bahasa Indonesia. Jika foto bukan makhluk hidup atau tidak jelas, katakan jujur dan beri confidence Rendah. Jangan mengarang. Utamakan spesies yang realistis untuk ekosistem pegunungan tropis Sulawesi. Selalu ingatkan bahwa hasil adalah perkiraan dan perlu verifikasi ahli sebelum menyentuh atau mengonsumsi.';
-  const prompt = 'Identifikasi objek utama pada foto ini. Kembalikan HANYA JSON dengan field: name (nama umum Indonesia), scientific (nama ilmiah bila mungkin, jika tidak ""), category (salah satu: "Flora","Fauna","Jamur","Serangga","Tidak yakin"), confidence (salah satu: "Tinggi","Sedang","Rendah"), description (2-3 kalimat ringkas), danger (peringatan bahaya/berbisa/dilindungi bila ada, jika tidak ada ""), tips (saran pengamatan aman singkat), alternates (array maksimal 2 kemungkinan lain berupa string, boleh []).';
+  const system = 'Anda adalah ahli biologi lapangan untuk kawasan Gunung Bawakaraeng, Sulawesi Selatan. Tugas Anda mengidentifikasi kemungkinan spesies flora atau fauna dari foto yang diberikan pendaki. Jawab HANYA dalam format JSON valid tanpa teks lain. Bahasa Indonesia yang ringkas dan tenang. Jika tidak yakin, katakan tingkat keyakinan rendah dan berikan beberapa kemungkinan pada alternates. Jangan mengarang. Jika foto bukan makhluk hidup atau tidak jelas, set name ke string kosong dan jelaskan pada description. Selalu ingatkan bahwa hasil hanyalah perkiraan yang perlu verifikasi ahli/petugas, terutama sebelum menyentuh, memberi makan, atau mengonsumsi.';
+  const prompt = 'Identifikasi kemungkinan spesies pada foto ini. Balas HANYA JSON dengan kunci berikut: name (nama umum Bahasa Indonesia), scientific (nama ilmiah bila ada), category (salah satu: Flora, Fauna, Jejak, Lainnya), confidence (Tinggi, Sedang, atau Rendah), description (2-3 kalimat ciri utama & habitat di Bawakaraeng), danger (peringatan bila beracun/berbisa/dilindungi/berbahaya, string kosong bila tidak ada), tips (saran pengamatan aman singkat), alternates (array maksimal 3 nama alternatif bila ragu). Jangan tambahkan teks di luar JSON.';
 
   try {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
     const r = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 600, responseMimeType: 'application/json' }
+        generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: 'application/json' }
       }),
       signal: AbortSignal.timeout(20_000)
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) return res.status(502).json({ error: 'AI tidak tersedia' });
-    const parts = data?.candidates?.[0]?.content?.parts;
-    let txt = Array.isArray(parts) ? parts.map(p => p.text || '').join('').trim() : '';
-    let parsed = null;
-    try { parsed = JSON.parse(txt); } catch {
-      const mm = txt.match(/\{[\s\S]*\}/);
-      if (mm) { try { parsed = JSON.parse(mm[0]); } catch {} }
+    if (!r.ok) {
+      const gmsg = String((data && data.error && data.error.message) || '').slice(0, 200);
+      return res.status(502).json({ error: gmsg ? ('Gemini menolak: ' + gmsg) : 'AI tidak tersedia', code: 'UPSTREAM' });
     }
-    if (!parsed || typeof parsed !== 'object') return res.status(502).json({ error: 'Hasil AI tidak terbaca' });
-    const out = {
-      name: cleanText(parsed.name, 80) || 'Tidak yakin',
-      scientific: cleanText(parsed.scientific, 80),
-      category: cleanText(parsed.category, 20) || 'Tidak yakin',
-      confidence: cleanText(parsed.confidence, 10) || 'Rendah',
-      description: cleanText(parsed.description, 400),
-      danger: cleanText(parsed.danger, 200),
-      tips: cleanText(parsed.tips, 200),
-      alternates: Array.isArray(parsed.alternates) ? parsed.alternates.slice(0, 2).map(x => cleanText(x, 60)).filter(Boolean) : [],
-      source: 'Gemini Vision · akun terverifikasi'
+    const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+    let text = Array.isArray(parts) ? parts.map(function (p) { return p.text || ''; }).join('\n').trim() : '';
+    let out = null;
+    try { out = JSON.parse(text); } catch (e1) {
+      const mm = text.match(/\{[\s\S]*\}/);
+      if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} }
+    }
+    if (!out || typeof out !== 'object') return res.status(502).json({ error: 'Jawaban AI tidak terbaca', code: 'PARSE' });
+    const clip = function (v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; };
+    const result = {
+      name: clip(out.name, 80),
+      scientific: clip(out.scientific, 120),
+      category: clip(out.category, 40),
+      confidence: clip(out.confidence, 20),
+      description: clip(out.description, 600),
+      danger: clip(out.danger, 300),
+      tips: clip(out.tips, 300),
+      alternates: Array.isArray(out.alternates) ? out.alternates.slice(0, 3).map(function (a) { return clip(a, 80); }).filter(Boolean) : [],
+      source: 'Gemini Vision \u00b7 perkiraan'
     };
-    return res.status(200).json(out);
-  } catch {
-    return res.status(502).json({ error: 'AI gagal dihubungi' });
+    if (!result.name) result.name = 'Belum bisa dipastikan';
+    return res.status(200).json(result);
+  } catch (e) {
+    const msg = (e && e.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI cloud gagal dihubungi';
+    return res.status(502).json({ error: msg, code: 'NET' });
   }
 }
