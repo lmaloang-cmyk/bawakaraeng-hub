@@ -1052,6 +1052,52 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
     </div>
   </section>
 
+  <!-- KOMPAS TREKKING -->
+  <section id="kompas" class="view">
+    <div class="sec-title">Kompas Trekking 🧭</div>
+    <div class="sec-sub">Arahkan ponsel mendatar, lalu aktifkan sensor untuk membaca arah hadap.</div>
+    <div class="compass-panel">
+      <div class="compass-dial" aria-label="Penunjuk arah kompas">
+        <span class="compass-mark north">N</span><span class="compass-mark east">T</span><span class="compass-mark south">S</span><span class="compass-mark west">B</span>
+        <div class="compass-needle" id="compassNeedle"><i></i><b></b></div>
+        <div class="compass-core">●</div>
+      </div>
+      <div class="compass-reading"><b id="compassCardinal">—</b><span id="compassDegrees">Belum aktif</span></div>
+      <button class="btn g-brand compass-btn" onclick="startCompass()">🧭 Aktifkan Kompas</button>
+      <p class="compass-status" id="compassStatus">Sensor ponsel belum digunakan.</p>
+    </div>
+    <div class="compass-guide">
+      <b>Tips navigasi</b>
+      <p>Kalibrasi dengan gerakan angka delapan, jauhkan dari magnet/logam, lalu cocokkan arah dengan peta jalur. Jangan mengandalkan kompas digital sebagai satu-satunya alat keselamatan.</p>
+    </div>
+    <p class="note">Kompas memakai sensor perangkat dan membutuhkan HTTPS serta izin sensor pada beberapa ponsel. Koneksi Garmin belum diaktifkan: Garmin Health API memerlukan akun mitra dan kredensial resmi Garmin.</p>
+  </section>
+
+  <!-- BAROMETER & ALTIMETER -->
+  <section id="baro" class="view">
+    <div class="sec-title">Barometer &amp; Altimeter ⛰️</div>
+    <div class="sec-sub">Tekanan udara dan ketinggian untuk membantu membaca perubahan kondisi saat trekking.</div>
+    <div class="baro-panel">
+      <div class="baro-top"><span>TEKANAN UDARA</span><b id="baroPressure">— <small>hPa</small></b><em id="baroTrend">Belum diperbarui</em></div>
+      <div class="alt-read"><div><span>ALTIMETER</span><b id="altimeterValue">— <small>mdpl</small></b></div><div class="alt-icon">⛰️</div></div>
+      <button class="btn g-brand compass-btn" onclick="startBaro()">📡 Perbarui Barometer &amp; Altimeter</button>
+      <p class="compass-status" id="baroStatus">Gunakan lokasi GPS untuk membaca kondisi di sekitar Anda.</p>
+    </div>
+    <div class="baro-guide"><b>Cara membaca</b><p>Tekanan yang turun cepat dapat menandakan perubahan cuaca. Gunakan bersama prakiraan BMKG dan kondisi lapangan—bukan sebagai satu-satunya dasar keselamatan.</p></div>
+    <p class="note">Tekanan diperoleh dari model cuaca Open-Meteo di lokasi GPS; ketinggian memakai GPS bila tersedia, lalu elevasi medan sebagai cadangan. Browser tidak membuka sensor barometer fisik HP secara standar.</p>
+  </section>
+
+  <style>
+    .compass-panel{background:linear-gradient(145deg,#123f46,#197d72);border-radius:22px;padding:22px 18px 16px;color:#fff;text-align:center;box-shadow:0 9px 24px rgba(13,80,70,.2)}
+    .compass-dial{width:222px;height:222px;border:8px solid rgba(234,255,245,.78);border-radius:50%;margin:0 auto 15px;position:relative;background:radial-gradient(circle at center,#f6fffb 0 16%,#d7f3e8 17% 18%,transparent 19%),repeating-conic-gradient(from 0deg,rgba(233,255,247,.78) 0deg 2deg,transparent 2deg 10deg);box-shadow:inset 0 0 0 5px rgba(9,55,59,.35),0 8px 18px rgba(0,0,0,.18)}
+    .compass-mark{position:absolute;color:#f8fffb;font-weight:900;font-size:18px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+    .compass-mark.north{top:8px;left:50%;transform:translateX(-50%);color:#ff6a6a}.compass-mark.east{right:10px;top:50%;transform:translateY(-50%)}.compass-mark.south{bottom:8px;left:50%;transform:translateX(-50%)}.compass-mark.west{left:10px;top:50%;transform:translateY(-50%)}
+    .compass-needle{position:absolute;inset:35px;transition:transform .16s ease-out}.compass-needle i,.compass-needle b{position:absolute;left:50%;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;transform:translateX(-50%)}.compass-needle i{top:0;border-bottom:74px solid #e85055}.compass-needle b{bottom:0;border-top:74px solid #2f6e7d}.compass-core{position:absolute;top:50%;left:50%;width:19px;height:19px;line-height:17px;border:3px solid #fff;border-radius:50%;transform:translate(-50%,-50%);background:#174b54;color:#fff;font-size:11px;z-index:2}
+    .compass-reading{display:flex;align-items:baseline;justify-content:center;gap:9px;margin:2px 0 13px}.compass-reading b{font-size:26px}.compass-reading span{font-size:14px;opacity:.86}.compass-btn{width:100%;max-width:260px}.compass-status{min-height:18px;margin:10px 0 0;font-size:12px;opacity:.88}.compass-guide{margin-top:14px;padding:14px 15px;border-radius:14px;background:#e8f4ed;color:#26453d;font-size:13px;line-height:1.5}.compass-guide p{margin:5px 0 0}
+    .baro-panel{border-radius:22px;padding:20px 18px 16px;background:linear-gradient(145deg,#293b69,#245c81);color:#fff;box-shadow:0 9px 24px rgba(28,61,106,.2)}.baro-top{text-align:center;padding:2px 0 18px;border-bottom:1px solid rgba(255,255,255,.2)}.baro-top span,.alt-read span{display:block;font-size:11px;letter-spacing:.11em;font-weight:800;opacity:.75}.baro-top b{display:block;margin:5px 0 1px;font-size:35px;letter-spacing:-.04em}.baro-top b small,.alt-read b small{font-size:14px;letter-spacing:0}.baro-top em{font-size:12px;font-style:normal;opacity:.84}.alt-read{display:flex;align-items:center;justify-content:space-between;padding:15px 8px 16px}.alt-read b{display:block;margin-top:4px;font-size:28px;letter-spacing:-.035em}.alt-icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.14);font-size:29px}.baro-guide{margin-top:14px;padding:14px 15px;border-radius:14px;background:#eaf1fb;color:#294261;font-size:13px;line-height:1.5}.baro-guide p{margin:5px 0 0}
+    @media (prefers-reduced-motion:reduce){.compass-needle{transition:none}}
+  </style>
+
   <!-- KOMUNITAS -->
   <section id="komunitas" class="view">
     <div class="sec-title">Komunitas 👥</div>
@@ -2126,8 +2172,10 @@ var catData=[
    {a:"go('checklist')",ic:'g-green',e:'backpack',l:'Checklist'},
    {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'}
  ]},
- {id:'adv',name:'Adventurer',full:'Adventurer',emoji:'mountain',grad:'var(--g-amber)',desc:'Aktivitas pendakian, jurnal, agenda & komunitas.',tiles:[
+ {id:'adv',name:'Trekking',full:'Trekking',emoji:'mountain',grad:'var(--g-amber)',desc:'Aktivitas pendakian, navigasi, jurnal, agenda & komunitas.',tiles:[
    {a:"go('survival')",ic:'g-sunset',e:'shield',l:'Survival Kit'},
+   {a:"go('kompas')",ic:'g-teal',e:'compass',l:'Kompas'},
+   {a:"go('baro')",ic:'g-indigo',e:'mountain',l:'Baro & Altimeter'},
    {a:"go('jurnal')",ic:'g-blue',e:'compass',l:'Jurnal Pendaki'},
    {a:"go('agenda')",ic:'g-amber',e:'calendar',l:'Agenda'},
    {a:"go('komunitas')",ic:'g-pink',e:'users',l:'Komunitas'}
@@ -2594,5 +2642,59 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 #profil .phead h2{text-shadow:0 2px 8px rgba(4,43,47,.42)}
 @media(prefers-reduced-motion:reduce){#profil .phead,#profil .phead::after,#profil .phead .pav,#profil .phead .pav::before{animation:none!important}}
 </style>
+<script>
+/* Kompas perangkat: tidak mengirim lokasi atau data sensor ke server. */
+var _compassListening=false;
+function _compassText(deg){var dirs=['Utara','Timur Laut','Timur','Tenggara','Selatan','Barat Daya','Barat','Barat Laut'];return dirs[Math.round((((deg%360)+360)%360)/45)%8];}
+function _updateCompass(event){
+  var h=(typeof event.webkitCompassHeading==='number')?event.webkitCompassHeading:null;
+  if(h===null&&typeof event.alpha==='number'){h=(360-event.alpha)%360;}
+  if(h===null||isNaN(h))return;
+  h=Math.round((h+360)%360);
+  var needle=document.getElementById('compassNeedle'),card=document.getElementById('compassCardinal'),degrees=document.getElementById('compassDegrees'),status=document.getElementById('compassStatus');
+  if(needle)needle.style.transform='rotate('+(-h)+'deg)';
+  if(card)card.textContent=_compassText(h);
+  if(degrees)degrees.textContent=h+'°';
+  if(status)status.textContent='Kompas aktif · arah hadap perangkat.';
+}
+async function startCompass(){
+  var status=document.getElementById('compassStatus');
+  if(!window.DeviceOrientationEvent){if(status)status.textContent='Sensor kompas tidak tersedia pada perangkat ini.';return;}
+  try{
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+      var permission=await DeviceOrientationEvent.requestPermission();
+      if(permission!=='granted')throw new Error('Izin sensor ditolak');
+    }
+    if(!_compassListening){window.addEventListener('deviceorientation',_updateCompass,true);_compassListening=true;}
+    if(status)status.textContent='Gerakkan ponsel membentuk angka delapan untuk kalibrasi.';
+  }catch(e){if(status)status.textContent=(e&&e.message)||'Izin sensor belum tersedia.';}
+}
+window.startCompass=startCompass;
+function _geoPosition(){return new Promise(function(resolve,reject){if(!navigator.geolocation){reject(new Error('GPS tidak tersedia pada perangkat ini.'));return;}navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:12000,maximumAge:30000});});}
+function _baroPut(pressure,altitude){
+  var p=document.getElementById('baroPressure'),a=document.getElementById('altimeterValue'),trend=document.getElementById('baroTrend');
+  if(p)p.innerHTML=Math.round(pressure)+' <small>hPa</small>';
+  if(a)a.innerHTML=Math.round(altitude)+' <small>mdpl</small>';
+  if(trend)trend.textContent='Data lokasi terkini';
+}
+async function startBaro(){
+  var status=document.getElementById('baroStatus'),trend=document.getElementById('baroTrend');
+  if(status)status.textContent='Mengambil lokasi GPS…';
+  if(trend)trend.textContent='Memuat data cuaca…';
+  try{
+    var pos=await _geoPosition(),lat=pos.coords.latitude,lng=pos.coords.longitude;
+    if(status)status.textContent='Membaca tekanan udara sekitar…';
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lng)+'&current=surface_pressure&timezone=auto';
+    var res=await fetch(url,{signal:AbortSignal.timeout(10000)});if(!res.ok)throw new Error('Data tekanan belum tersedia.');
+    var data=await res.json(),pressure=data&&data.current&&data.current.surface_pressure;
+    if(typeof pressure!=='number')throw new Error('Data tekanan belum tersedia.');
+    var altitude=(typeof pos.coords.altitude==='number'&&pos.coords.altitude>-500)?pos.coords.altitude:data.elevation;
+    if(typeof altitude!=='number')altitude=0;
+    _baroPut(pressure,altitude);
+    if(status)status.textContent='Diperbarui untuk lokasi Anda. Akurasi ketinggian bergantung GPS/medan.';
+  }catch(e){if(status)status.textContent=(e&&e.message)||'Tidak dapat memperbarui data.';if(trend)trend.textContent='Coba lagi saat GPS & internet aktif.';}
+}
+window.startBaro=startBaro;
+</script>
 </body>
 </html>
