@@ -1,8 +1,11 @@
-# Pintu Angin v12
+# Pintu Angin v15 — Panduan Visual
 
-- Beranda responsif: layout lebar di desktop dan tetap nyaman di mobile.
-- Status kawasan dan peringatan ditempatkan sebagai prioritas utama.
-- Empat aksi cepat: SIMAKSI, Peta Jalur, Laporan, dan SOS.
-- Navigasi dan identitas visual memakai navy, hijau konservasi, amber, dan merah semantik.
-- Layanan, laporan lapangan, dan spesies unggulan memiliki hierarki yang lebih jelas.
-- Nomor versi dan cache PWA diperbarui ke v12.
+- Mendesain ulang PANDUAN.html sebagai panduan visual responsif.
+- Menambahkan alur mode tamu dan login Google.
+- Menjelaskan beranda, peta fitur, AI Pendamping, SIMAKSI, laporan, SOS, serta instalasi PWA.
+- Menggunakan tangkapan layar aplikasi agar langkah mudah diikuti.
+- Menambahkan checklist laporan dan FAQ interaktif.
+- Panduan siap dibuka offline, dicetak, atau disimpan sebagai PDF.
+- Menambahkan akses Panduan Penggunaan dari halaman Profil dan Bantuan.
+- Memasukkan panduan beserta seluruh gambar ke cache PWA.
+- Memperbarui versi aplikasi dan cache menjadi v15.

@@ -1,44 +1,8 @@
-{
-  "name": "Pintu Angin",
-  "short_name": "Bawakaraeng",
-  "description": "Pantau cuaca, jalur, keselamatan, pelaporan, dan konservasi Gunung Bawakaraeng bersama Reichas Chelebes.",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#10243D",
-  "theme_color": "#10243D",
-  "lang": "id",
-  "categories": [
-    "travel",
-    "education",
-    "lifestyle"
-  ],
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "id": "/"
-}
+# Pintu Angin v12
+
+- Beranda responsif: layout lebar di desktop dan tetap nyaman di mobile.
+- Status kawasan dan peringatan ditempatkan sebagai prioritas utama.
+- Empat aksi cepat: SIMAKSI, Peta Jalur, Laporan, dan SOS.
+- Navigasi dan identitas visual memakai navy, hijau konservasi, amber, dan merah semantik.
+- Layanan, laporan lapangan, dan spesies unggulan memiliki hierarki yang lebih jelas.
+- Nomor versi dan cache PWA diperbarui ke v12.

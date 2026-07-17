@@ -1,76 +1,84 @@
-# Pintu Angin — Versi Online (dengan API Pemerintah)
+/* SOS proximity alarm + gaya sumber air. Alarm berbunyi di perangkat lain yang <=100m dari pengirim SOS (saat aplikasi terbuka). */
+(function(){
+  try{var css=`
+  .sosal{position:fixed;inset:0;z-index:99999;background:rgba(120,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:sosalflash 1s infinite}
+  @keyframes sosalflash{0%,100%{background:rgba(150,0,0,.55)}50%{background:rgba(220,20,40,.72)}}
+  .sosal-card{width:100%;max-width:360px;background:#fff;border-radius:20px;padding:22px 18px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+  .sosal-ic{font-size:52px;animation:sosalpulse .8s infinite}
+  @keyframes sosalpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+  .sosal-tt{font-size:18px;font-weight:900;color:#e0154a;letter-spacing:.5px;margin-top:6px}
+  .sosal-nm{font-size:15px;font-weight:700;color:#20263a;margin-top:8px}
+  .sosal-ds{font-size:14px;color:#c0333c;font-weight:800;margin-top:2px}
+  .sosal-bs{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+  .sosal-b{border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:block}
+  .sosal-b.map{background:#2b6fff;color:#fff}
+  .sosal-b.wa{background:#25D366;color:#fff}
+  .sosal-b.off{background:#eef1f6;color:#42506b}
+  .wdrop-wrap{background:transparent;border:none}
+  .wdrop{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:#2b6fff;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:14px}
+  .wrow{width:100%;display:flex;align-items:center;gap:10px;background:var(--card,#fff);border:1px solid var(--line,#e6e9ef);border-radius:12px;padding:10px 12px;margin:6px 0;cursor:pointer;text-align:left}
+  .wrow .wro-ic{font-size:18px}
+  .wrow .wro-tx{flex:1;display:flex;flex-direction:column}
+  .wrow .wro-tx b{font-size:13px}
+  .wrow .wro-tx small{color:#8b98ad;font-size:11px}
+  .wrow .wro-go{color:#2b6fff;font-size:18px}
+  `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
-Paket ini membuat aplikasi kamu **online** dan menariknya **data resmi pemerintah**:
+  var SOS_RADIUS=100;      // meter
+  var POLL_MS=25000;       // interval pantau
+  var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
+  var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;
 
-- 🌦️ **Cuaca & Gempa** dari **BMKG** (`data.bmkg.go.id` / `api.bmkg.go.id`)
-- 🔥 **Titik panas / hotspot kebakaran** di sekitar Gunung Bawakaraeng (default NASA FIRMS/VIIRS — sumber yang juga dipakai SIPONGI-KLHK)
+  function _devId(){try{var d=localStorage.getItem('bwkDev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',d);}return d;}catch(e){return 'd0';}}
+  function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
+  function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
+  function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
 
-Data ini muncul otomatis di tab **Pantau Pohon** (kartu "Data Langsung" + titik api merah di peta). Kalau API/koneksi gagal, aplikasi tetap jalan memakai data statis (fallback aman).
+  window._sosStop=function(){try{if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);}catch(e){}};
 
----
+  function _alarm(a,dist){
+    try{
+      var name=(a.name||'Seorang pendaki');
+      var maps=(a.lat!=null&&a.lng!=null)?('https://maps.google.com/?q='+a.lat+','+a.lng):'#';
+      var wa='https://wa.me/'+((window._rcWA&&_rcWA())||'6282320124040')+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+name+' sekitar '+Math.round(dist)+' m dari saya di jalur Bawakaraeng. Lokasi: '+maps);
+      var old=document.getElementById('sosAlarm');if(old)old.remove();
+      var d=document.createElement('div');d.className='sosal';d.id='sosAlarm';
+      d.innerHTML=`<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>DARURAT DI DEKATMU</div><div class='sosal-nm'>${name} butuh bantuan</div><div class='sosal-ds'>± ${Math.round(dist)} m dari lokasimu</div><div class='sosal-bs'><a class='sosal-b map' href='${maps}' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='${wa}' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b off' onclick='_sosStop()'>🔇 Matikan Alarm</button></div></div>`;
+      document.body.appendChild(d);
+      _beep();_vibe();
+      if(_alarmTimer)clearInterval(_alarmTimer);
+      _alarmTimer=setInterval(function(){if(!document.getElementById('sosAlarm')){clearInterval(_alarmTimer);_alarmTimer=null;return;}_beep();_vibe();},3200);
+    }catch(e){}
+  }
 
-## Struktur folder
+  // Dipanggil dari sosShareUI ketika lokasi pengirim SOS didapat
+  window._sosPublish=function(lat,lng,name){
+    var c=(typeof _sbClient==='function')?_sbClient():null;if(!c||lat==null||lng==null)return;
+    var row={lat:lat,lng:lng,name:name||'Pendaki',device:_devId(),active:true};
+    try{c.from('sos_alerts').insert(row).select().then(function(res){if(res&&res.data&&res.data[0]){_myAlerts[res.data[0].id]=1;_seen[res.data[0].id]=1;}}).catch(function(){});}catch(e){}
+    _sosStart();
+  };
 
-```
-bawakaraeng-online/
-├── index.html        # aplikasi (sudah berisi kode integrasi + fallback)
-├── api/
-│   ├── bmkg.js       # proxy cuaca + gempa BMKG
-│   └── hotspot.js    # proxy titik panas (NASA FIRMS / bisa diganti SIPONGI)
-└── vercel.json
-```
+  function _tick(){
+    var c=(typeof _sbClient==='function')?_sbClient():null;if(!c||!navigator.geolocation)return;
+    navigator.geolocation.getCurrentPosition(function(p){
+      _myPos={la:p.coords.latitude,ln:p.coords.longitude};
+      var since=new Date(Date.now()-MAX_AGE_MIN*60000).toISOString();
+      c.from('sos_alerts').select('*').gte('created_at',since).order('created_at',{ascending:false}).limit(60).then(function(res){
+        if(res.error||!res.data)return;
+        res.data.forEach(function(a){
+          if(!a||a.lat==null||a.lng==null)return;
+          if(a.active===false)return;
+          if(a.device&&a.device===_devId())return;
+          if(_myAlerts[a.id]||_seen[a.id])return;
+          var dd=_dist(_myPos.la,_myPos.ln,+a.lat,+a.lng);
+          if(dd<=SOS_RADIUS){_seen[a.id]=1;_alarm(a,dd);}
+        });
+      }).catch(function(){});
+    },function(){},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+  }
 
-> Kenapa perlu "proxy"? Browser tidak boleh memanggil API pemerintah langsung (aturan CORS). Fungsi di folder `api/` berjalan di server (Vercel) dan meneruskan data ke aplikasi.
-
----
-
-## Cara deploy (gratis, ~10 menit)
-
-### Opsi A — via GitHub + Vercel (paling mudah)
-1. Buat akun gratis di **https://vercel.com** (login pakai GitHub).
-2. Upload folder `bawakaraeng-online` ke sebuah repository GitHub.
-3. Di Vercel: **Add New → Project → Import** repo tersebut → **Deploy**.
-4. Selesai. Aplikasi live di `https://<nama-proyek>.vercel.app`.
-
-### Opsi B — via Vercel CLI
-```bash
-npm i -g vercel
-cd bawakaraeng-online
-vercel        # ikuti prompt, pilih deploy
-vercel --prod # untuk rilis produksi
-```
-
----
-
-## Environment Variables (diisi di dashboard Vercel → Settings → Environment Variables)
-
-| Nama | Wajib? | Isi |
-|------|--------|-----|
-| `FIRMS_MAP_KEY` | untuk hotspot | MAP KEY gratis dari https://firms.modaps.eosdis.nasa.gov/api/ |
-| `BMKG_ADM4` | opsional | Kode wilayah (adm4) desa/kelurahan terdekat Bawakaraeng (Kab. Gowa). Default sudah diisi contoh. |
-
-Setelah menambah/mengubah env var, lakukan **Redeploy**.
-
----
-
-## Menguji API
-Setelah live, buka di browser:
-- `https://<proyek>.vercel.app/api/bmkg` → harus muncul JSON cuaca + gempa
-- `https://<proyek>.vercel.app/api/hotspot` → JSON daftar titik panas
-
-Aplikasi otomatis memanggil `/api/bmkg` dan `/api/hotspot` di domain yang sama, jadi tidak perlu konfigurasi tambahan. (Kalau API kamu taruh di domain berbeda, ubah `window.API_BASE` di bagian bawah `index.html`.)
-
----
-
-## Menyesuaikan / catatan penting
-- **Kode wilayah cuaca BMKG**: cari kode adm4 desa terdekat Bawakaraeng, lalu set `BMKG_ADM4`. Pemetaan field JSON BMKG bisa berubah sewaktu-waktu — sesuaikan di `api/bmkg.js` bila perlu.
-- **Ganti ke sumber resmi Indonesia (SIPONGI-KLHK)**: ganti blok `fetch(...)` di `api/hotspot.js` dengan endpoint SIPONGI (format GeoJSON/JSON) setelah akses/token diperoleh. Struktur output (`{hotspots:[{lat,lng,date,conf}]}`) dipertahankan agar aplikasi tidak perlu diubah.
-- **Sumber pemerintah lain** yang mudah ditambah dengan pola proxy yang sama: InaRISK-BNPB (indeks risiko), BPS (statistik kehutanan), Badan Informasi Geospasial (basemap RBI), Satu Data Indonesia.
-
----
-
-## Lanjut ke Play Store
-Setelah online:
-1. Jadikan **PWA** (tambah `manifest.json` + service worker + ikon).
-2. Bungkus jadi APK/AAB dengan **PWABuilder** (https://www.pwabuilder.com) atau **Bubblewrap**.
-3. Upload AAB ke **Google Play Console** (biaya daftar sekali ~$25). Siapkan ikon, screenshot, privacy policy, dan data safety.
+  window._sosStart=function(){if(_started)return;if(typeof _sbClient!=='function'||!_sbClient()){setTimeout(window._sosStart,2000);return;}_started=true;_tick();setInterval(_tick,POLL_MS);};
+  window.addEventListener('load',function(){setTimeout(window._sosStart,3500);});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&_started){_tick();}});
+})();

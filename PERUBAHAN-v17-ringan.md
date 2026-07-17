@@ -1,10 +1,7 @@
-# Pintu Angin v14 — Mode Tamu
+# Pintu Angin v17 — Mode Ringan
 
-- Menambahkan tombol Jelajahi sebagai Tamu pada halaman masuk.
-- Tamu dapat melihat beranda, cuaca, peta, spesies, regulasi, checklist, survival, komunitas baca-saja, dan informasi konservasi.
-- SOS tetap dapat digunakan tanpa login.
-- SIMAKSI, laporan, jurnal, adopsi, donasi, sertifikat, dan kirim pesan komunitas meminta login Google.
-- AI Pendamping untuk tamu selalu memakai panduan lokal gratis agar kuota Gemini terlindungi.
-- Menambahkan indikator Mode Tamu dan banner ajakan login.
-- Dialog login menjelaskan alasan identitas diperlukan tanpa mengeluarkan tamu dari halaman.
-- Versi dan cache PWA diperbarui ke v14.
+- Menambahkan mode ringan otomatis untuk perangkat hemat-data, RAM rendah, atau CPU rendah.
+- Menonaktifkan animasi dekoratif berulang pada mode ringan; seluruh fitur tetap tersedia.
+- Menunda render elemen beranda yang tidak kritis sampai antarmuka siap.
+- Memperkecil cache awal PWA menjadi app shell inti; panduan dan media dicache saat benar-benar digunakan.
+- Memperbarui cache service worker ke `bwk-v33-light` agar versi ringan langsung aktif setelah pembaruan.
