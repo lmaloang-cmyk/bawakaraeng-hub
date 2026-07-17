@@ -1439,8 +1439,10 @@ function renderApiSpecies(){
   if(!_speciesApiResults.length)return title+'<div class="empty" style="padding:15px 0">Tidak ada hasil tambahan.</div>';
   return title+_speciesApiResults.map(function(s){
     var name=escapeHtml(s.name||s.scientific||'Spesies');var scientific=escapeHtml(s.scientific||'');var category=escapeHtml(s.category||'Organisme');
-    var photo=(typeof s.photo==='string'&&/^https:\/\//.test(s.photo))?'<img loading="lazy" decoding="async" src="'+escapeHtml(s.photo)+'" alt="Foto '+name+'" onerror="_pf(this,&#39;📷&#39;)"/>':'📷';
-    return '<div class="species"><div class="hero2" style="background:linear-gradient(135deg,#3c6556,#1e3e39)">'+photo+'<div class="badge">🌐 iNaturalist</div></div><div class="body"><div class="hd"><div><h3>'+name+'</h3><div class="lat">'+scientific+'</div></div><span class="kind">'+category+'</span></div><div class="desc">Hasil pencarian online. Identifikasi lapangan tetap perlu diverifikasi.</div></div></div>';
+    var hasPhoto=(typeof s.photo==='string'&&/^https:\/\//.test(s.photo));
+    var photo=hasPhoto?'<img loading="lazy" decoding="async" src="'+escapeHtml(s.photo)+'" alt="Foto '+name+'" onerror="_pf(this,&#39;📷&#39;)"/>':'📷';
+    var zoom=hasPhoto?' onclick="openImg(&#39;'+escapeHtml(s.photo)+'&#39;)" style="cursor:zoom-in"':'';
+    return '<div class="species"'+zoom+'><div class="hero2" style="background:linear-gradient(135deg,#3c6556,#1e3e39)">'+photo+'<div class="badge">🌐 iNaturalist</div>'+(hasPhoto?'<div class="shero-zoom">🔍 Ketuk untuk perbesar</div>':'')+'</div><div class="body"><div class="hd"><div><h3>'+name+'</h3><div class="lat">'+scientific+'</div></div><span class="kind">'+category+'</span></div><div class="desc">Hasil pencarian online. Identifikasi lapangan tetap perlu diverifikasi.</div></div></div>';
   }).join('');
 }
 function renderSpecies(){
