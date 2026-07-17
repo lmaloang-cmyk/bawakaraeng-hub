@@ -1,4 +1,4 @@
-const CACHE='bwk-v34-lensshare';
+const CACHE='bwk-v35-lensweb';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/apple-touch-icon.png','/rc-logo.jpg','/sk.js','/sos.js','/chat.js','/hike.js'];
 self.addEventListener('install',function(e){
