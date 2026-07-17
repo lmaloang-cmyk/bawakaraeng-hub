@@ -870,6 +870,7 @@ html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)
 }
 
 </style>
+<style>
 /* Mode ringan: otomatis pada perangkat hemat-data/berdaya rendah. */
 html.perf-lite *,html.perf-lite *::before,html.perf-lite *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .login-ov::before,html.perf-lite .login-ov::after,html.perf-lite .home-tools .catbtn::before{display:none!important}
@@ -1994,7 +1995,7 @@ function renderCat(){
  var d=document.getElementById('catdesc');var g0=document.getElementById('catGrid');var sc0=document.getElementById('subcatbar');
  if(!curCat){if(d)d.innerHTML='<div class="cathint">'+ic('hand')+' Pilih kategori di atas untuk membuka menunya.</div>';if(sc0){sc0.style.display='none';sc0.innerHTML='';}if(g0)g0.innerHTML='';return;}
  var c=_catById(curCat);if(!c)return;
- if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+ic(c.emoji)+' '+c.full+'</b> — '+c.desc+'</span><button class="catclose" onclick="closeCat()">'+ic('x')+' Tutup</button></div>';
+ if(d)d.innerHTML='<div class="catdesc-row"><span class="catdesc-tx"><b>'+ic(c.emoji)+' '+c.full+'</b> ��� '+c.desc+'</span><button class="catclose" onclick="closeCat()">'+ic('x')+' Tutup</button></div>';
  var g=document.getElementById('catGrid');
  var sc=document.getElementById('subcatbar');
  if(c.subs){
