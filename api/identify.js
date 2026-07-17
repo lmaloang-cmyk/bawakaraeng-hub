@@ -44,7 +44,8 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: gmsg ? ('Gemini menolak: ' + gmsg) : 'AI tidak tersedia', code: 'UPSTREAM' });
     }
     const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-    let text = Array.isArray(parts) ? parts.map(function (p) { return p.text || ''; }).join('\n').trim() : '';
+    let text = Array.isArray(parts) ? parts.map(function (p) { return p.text || ''; }).join('').trim() : '';
+    text = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
     let out = null;
     try { out = JSON.parse(text); } catch (e1) {
       const mm = text.match(/\{[\s\S]*\}/);
