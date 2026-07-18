@@ -1,6 +1,7 @@
-const CACHE='bwk-v43-reichas-floating';
+const CACHE='bwk-v46-logo-blessing';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
-const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/og.jpg','/screenshots/home-mobile.png','/screenshots/home-wide.png','/rc-logo.png','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
+const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/og.jpg','/screenshots/home-mobile.png','/screenshots/home-wide.png','/rc-logo.png',
+  '/logo-blessing.js','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
