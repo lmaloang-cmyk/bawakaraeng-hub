@@ -2735,5 +2735,19 @@ async function startBaro(){
 }
 window.startBaro=startBaro;
 </script>
+<script>
+/* Pintasan manifest: buka langsung ke area yang dipilih dari ikon aplikasi. */
+(function(){
+  var view=new URLSearchParams(window.location.search).get('view');
+  var allowed={pantau:true,sos:true,peta:true};
+  if(!allowed[view])return;
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      if(typeof closeIntro==='function')closeIntro();
+      if(typeof go==='function')go(view);
+    },180);
+  });
+})();
+</script>
 </body>
 </html>

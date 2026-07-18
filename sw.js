@@ -1,6 +1,6 @@
-const CACHE='bwk-v39-profil';
+const CACHE='bwk-v40-pwa-store';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
-const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/apple-touch-icon.png','/rc-logo.jpg','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
+const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/og.jpg','/screenshots/home-mobile.png','/screenshots/home-wide.png','/rc-logo.jpg','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
