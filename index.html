@@ -920,6 +920,20 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
 .brand .logo,.intro-icon,.login-ic,.node .circle:has(img),.in-ic:has(img){animation:reichasNeonGlow 2.2s ease-in-out infinite;will-change:box-shadow}
 @media(prefers-reduced-motion:reduce){.brand .logo,.intro-icon,.login-ic,.node .circle:has(img),.in-ic:has(img){animation:none!important}}
 </style>
+
+<style id="splash-signal-upgrade">
+/* Splash signal: layered radar pulses around the floating Reichas crest. */
+#introOverlay .intro-icon{overflow:visible;isolation:isolate;animation:introLogoFloat 3.4s ease-in-out infinite,reichasNeonGlow 2.2s ease-in-out infinite}
+#introOverlay .intro-icon img{position:relative;z-index:4;filter:drop-shadow(0 4px 9px rgba(0,0,0,.48));transform:translateZ(0)}
+#introOverlay .intro-icon .splash-signal{position:absolute!important;inset:-7px!important;z-index:1!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;border-radius:50%!important;border:2px solid rgba(122,225,255,.88)!important;background:transparent!important;box-shadow:0 0 12px rgba(90,204,255,.72),inset 0 0 10px rgba(226,31,42,.26)!important;pointer-events:none!important;animation:splashSignal 2.8s cubic-bezier(.18,.72,.28,1) infinite!important}
+#introOverlay .intro-icon .signal-b{border-color:rgba(255,75,79,.84)!important;box-shadow:0 0 14px rgba(240,47,54,.68),inset 0 0 10px rgba(95,213,255,.24)!important;animation-delay:.92s!important}
+#introOverlay .intro-icon .signal-c{border-color:rgba(238,245,255,.76)!important;animation-delay:1.84s!important}
+#introOverlay .intro-icon::before,#introOverlay .intro-icon::after{content:"";position:absolute;inset:-7px;border-radius:50%;z-index:1;pointer-events:none;will-change:transform,opacity;opacity:0;border:2px solid rgba(122,225,255,.86);box-shadow:0 0 12px rgba(90,204,255,.72),inset 0 0 10px rgba(226,31,42,.26);animation:splashSignal 2.8s cubic-bezier(.18,.72,.28,1) infinite}
+#introOverlay .intro-icon::after{border-color:rgba(255,75,79,.84);box-shadow:0 0 14px rgba(240,47,54,.68),inset 0 0 10px rgba(95,213,255,.24);animation-delay:1.4s}
+@keyframes splashSignal{0%{transform:scale(.88);opacity:.72}12%{opacity:1}66%{opacity:.28}100%{transform:scale(2.18);opacity:0}}
+@keyframes introLogoFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.025)}}
+@media(prefers-reduced-motion:reduce){#introOverlay .intro-icon,#introOverlay .intro-icon::before,#introOverlay .intro-icon::after{animation:none!important}#introOverlay .intro-icon::before{opacity:.68;transform:scale(1.22)}#introOverlay .intro-icon::after{display:none}}
+</style>
 </head>
 <body>
 <div class="phone">
@@ -2291,7 +2305,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
   </svg>
   <div class="intro-scrim"></div>
   <div class="intro-card">
-    <div class="intro-icon"><img id="introLogo" src="rc-logo.png" alt="Reichas Chelebes"/></div>
+    <div class="intro-icon"><span class="splash-signal signal-a" aria-hidden="true"></span><span class="splash-signal signal-b" aria-hidden="true"></span><span class="splash-signal signal-c" aria-hidden="true"></span><img id="introLogo" src="rc-logo.png" alt="Reichas Chelebes"/></div>
     <h1 class="intro-title">PANTAU<br/>BAWAKARAENG</h1>
     <div class="intro-eco">Ekosistem Gunung Bulu Bawakaraeng</div>
     <p class="intro-sub">Pantau cuaca, jalur, keselamatan, dan aksi konservasi Bawakaraeng dalam satu aplikasi.</p>
