@@ -12,7 +12,7 @@ drop policy if exists "leaderboard readable" on public.game_leaderboard;
 create policy "leaderboard readable" on public.game_leaderboard for select to anon, authenticated using (true);
 revoke all on public.game_leaderboard from anon, authenticated;
 grant select on public.game_leaderboard to anon, authenticated;
-create or replace function public.submit_game_score(p_game_key text,p_score integer,p_player_name text) returns void language plpgsql security invoker set search_path=public as $$
+create or replace function public.submit_game_score(p_game_key text,p_score integer,p_player_name text) returns void language plpgsql security definer set search_path=public as $$
 begin
  if auth.uid() is null then raise exception 'Login diperlukan'; end if;
  if p_game_key not in ('flyer','ngopi') or p_score < 0 or p_score > 100000 then raise exception 'Skor tidak valid'; end if;
