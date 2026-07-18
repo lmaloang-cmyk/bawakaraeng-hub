@@ -1102,50 +1102,50 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
 
   <!-- KOMPAS TREKKING -->
   <section id="kompas" class="view">
-    <div class="sec-title">Kompas Trekking 🧭</div>
-    <div class="sec-sub">Arahkan ponsel mendatar, lalu aktifkan sensor untuk membaca arah hadap.</div>
-    <div class="compass-panel">
-      <div class="compass-dial" aria-label="Penunjuk arah kompas">
+    <div class="sec-title">KOMPAS TAKTIS <span class="tactical-tag">FIELD NAV</span></div>
+    <div class="sec-sub">Orientasi medan • akurasi bergantung sensor perangkat, posisi mendatar, dan kalibrasi.</div>
+    <div class="compass-panel tactical-panel">
+      <div class="module-strip"><span>◉ NAV-01</span><span id="compassSignal">SENSOR SIAGA</span><span>GPS / MAG</span></div>
+      <div class="compass-dial" aria-label="Penunjuk arah kompas taktis">
         <span class="compass-mark north">N</span><span class="compass-mark east">T</span><span class="compass-mark south">S</span><span class="compass-mark west">B</span>
-        <div class="compass-needle" id="compassNeedle"><i></i><b></b></div>
-        <div class="compass-core">●</div>
+        <span class="degree-label d0">000</span><span class="degree-label d1">045</span><span class="degree-label d2">090</span><span class="degree-label d3">135</span><span class="degree-label d4">180</span><span class="degree-label d5">225</span><span class="degree-label d6">270</span><span class="degree-label d7">315</span>
+        <div class="compass-needle" id="compassNeedle"><i></i><b></b></div><div class="compass-core">✦</div>
       </div>
       <div class="compass-reading"><b id="compassCardinal">—</b><span id="compassDegrees">Belum aktif</span></div>
-      <button class="btn g-brand compass-btn" onclick="startCompass()">🧭 Aktifkan Kompas</button>
-      <p class="compass-status" id="compassStatus">Sensor ponsel belum digunakan.</p>
+      <button class="btn g-brand compass-btn tactical-btn" onclick="startCompass()">◉ AKTIFKAN KOMPAS</button>
+      <button class="calibrate-btn" type="button" onclick="toggleCompassCalibration()">⌁ TUTOR KALIBRASI</button>
+      <p class="compass-status" id="compassStatus" role="status">Sensor ponsel belum digunakan.</p>
+      <div id="compassCalibration" class="calibration hidden" aria-live="polite">
+        <div class="cal-motion"><span class="phone-mark">▯</span><svg viewBox="0 0 180 100" aria-hidden="true"><path d="M18,50 C18,15 78,15 90,50 C102,85 162,85 162,50 C162,15 102,15 90,50 C78,85 18,85 18,50"/></svg></div>
+        <div class="cal-copy"><b>GERAKAN ANGKA DELAPAN</b><span>Putar ponsel perlahan 2–3 kali, tetap mendatar, jauhkan dari logam atau magnet.</span></div>
+      </div>
     </div>
-    <div class="compass-guide">
-      <b>Tips navigasi</b>
-      <p>Kalibrasi dengan gerakan angka delapan, jauhkan dari magnet/logam, lalu cocokkan arah dengan peta jalur. Jangan mengandalkan kompas digital sebagai satu-satunya alat keselamatan.</p>
-    </div>
-    <p class="note">Kompas memakai sensor perangkat dan membutuhkan HTTPS serta izin sensor pada beberapa ponsel. Koneksi Garmin belum diaktifkan: Garmin Health API memerlukan akun mitra dan kredensial resmi Garmin.</p>
+    <div class="compass-guide tactical-guide"><b>PROTOKOL NAVIGASI</b><p>Kalibrasi dahulu, cocokkan dengan peta jalur, lalu verifikasi arah menggunakan penanda medan. Kompas digital bukan satu-satunya alat keselamatan.</p></div>
+    <p class="note">Sensor diproses hanya di perangkat dan memerlukan HTTPS. Bawa kompas fisik serta peta cadangan untuk navigasi lapangan.</p>
   </section>
 
   <!-- BAROMETER & ALTIMETER -->
   <section id="baro" class="view">
-    <div class="sec-title">Barometer &amp; Altimeter ⛰️</div>
-    <div class="sec-sub">Tekanan udara dan ketinggian untuk membantu membaca perubahan kondisi saat trekking.</div>
-    <div class="baro-panel">
-      <div class="baro-top"><span>TEKANAN UDARA</span><b id="baroPressure">— <small>hPa</small></b><em id="baroTrend">Belum diperbarui</em></div>
-      <div class="alt-read"><div><span>ALTIMETER</span><b id="altimeterValue">— <small>mdpl</small></b></div><div class="alt-icon">⛰️</div></div>
-      <button class="btn g-brand compass-btn" onclick="startBaro()">📡 Perbarui Barometer &amp; Altimeter</button>
-      <p class="compass-status" id="baroStatus">Gunakan lokasi GPS untuk membaca kondisi di sekitar Anda.</p>
+    <div class="sec-title">BARO / ALTI <span class="tactical-tag amber">FIELD METRICS</span></div>
+    <div class="sec-sub">Pembacaan tekanan dan elevasi untuk membantu membaca perubahan kondisi medan.</div>
+    <div class="baro-panel tactical-panel">
+      <div class="module-strip"><span>◉ MET-02</span><span id="baroSource">GPS + WEATHER</span><span>LIVE</span></div>
+      <div class="baro-top"><span>TEKANAN UDARA</span><b id="baroPressure">— <small>hPa</small></b><em id="baroTrend">Menunggu pembacaan</em><div class="pressure-line"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="alt-read"><div><span>ELEVASI TERBACA</span><b id="altimeterValue">— <small>mdpl</small></b><small class="alt-source" id="altSource">Sumber: belum diperbarui</small></div><div class="alt-icon">△</div></div>
+      <button class="btn g-brand compass-btn tactical-btn" onclick="startBaro()">↻ PERBARUI PEMBACAAN</button>
+      <p class="compass-status" id="baroStatus" role="status">Aktifkan GPS untuk pembacaan lokasi yang lebih presisi.</p>
     </div>
-    <div class="baro-guide"><b>Cara membaca</b><p>Tekanan yang turun cepat dapat menandakan perubahan cuaca. Gunakan bersama prakiraan BMKG dan kondisi lapangan—bukan sebagai satu-satunya dasar keselamatan.</p></div>
-    <p class="note">Tekanan diperoleh dari model cuaca Open-Meteo di lokasi GPS; ketinggian memakai GPS bila tersedia, lalu elevasi medan sebagai cadangan. Browser tidak membuka sensor barometer fisik HP secara standar.</p>
+    <div class="baro-guide tactical-guide"><b>INTERPRETASI LAPANGAN</b><p>Tekanan yang turun cepat dapat menandakan perubahan cuaca. Konfirmasi dengan prakiraan resmi dan kondisi lapangan sebelum mengambil keputusan.</p></div>
+    <p class="note">Tekanan bersumber dari model cuaca lokasi; elevasi memakai GPS jika tersedia atau elevasi medan sebagai cadangan. Ini bukan pengganti instrumen outdoor profesional.</p>
   </section>
 
-  <style>
-    .compass-panel{background:linear-gradient(145deg,#123f46,#197d72);border-radius:22px;padding:22px 18px 16px;color:#fff;text-align:center;box-shadow:0 9px 24px rgba(13,80,70,.2)}
-    .compass-dial{width:222px;height:222px;border:8px solid rgba(234,255,245,.78);border-radius:50%;margin:0 auto 15px;position:relative;background:radial-gradient(circle at center,#f6fffb 0 16%,#d7f3e8 17% 18%,transparent 19%),repeating-conic-gradient(from 0deg,rgba(233,255,247,.78) 0deg 2deg,transparent 2deg 10deg);box-shadow:inset 0 0 0 5px rgba(9,55,59,.35),0 8px 18px rgba(0,0,0,.18)}
-    .compass-mark{position:absolute;color:#f8fffb;font-weight:900;font-size:18px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
-    .compass-mark.north{top:8px;left:50%;transform:translateX(-50%);color:#ff6a6a}.compass-mark.east{right:10px;top:50%;transform:translateY(-50%)}.compass-mark.south{bottom:8px;left:50%;transform:translateX(-50%)}.compass-mark.west{left:10px;top:50%;transform:translateY(-50%)}
-    .compass-needle{position:absolute;inset:35px;transition:transform .16s ease-out}.compass-needle i,.compass-needle b{position:absolute;left:50%;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;transform:translateX(-50%)}.compass-needle i{top:0;border-bottom:74px solid #e85055}.compass-needle b{bottom:0;border-top:74px solid #2f6e7d}.compass-core{position:absolute;top:50%;left:50%;width:19px;height:19px;line-height:17px;border:3px solid #fff;border-radius:50%;transform:translate(-50%,-50%);background:#174b54;color:#fff;font-size:11px;z-index:2}
-    .compass-reading{display:flex;align-items:baseline;justify-content:center;gap:9px;margin:2px 0 13px}.compass-reading b{font-size:26px}.compass-reading span{font-size:14px;opacity:.86}.compass-btn{width:100%;max-width:260px}.compass-status{min-height:18px;margin:10px 0 0;font-size:12px;opacity:.88}.compass-guide{margin-top:14px;padding:14px 15px;border-radius:14px;background:#e8f4ed;color:#26453d;font-size:13px;line-height:1.5}.compass-guide p{margin:5px 0 0}
-    .baro-panel{border-radius:22px;padding:20px 18px 16px;background:linear-gradient(145deg,#293b69,#245c81);color:#fff;box-shadow:0 9px 24px rgba(28,61,106,.2)}.baro-top{text-align:center;padding:2px 0 18px;border-bottom:1px solid rgba(255,255,255,.2)}.baro-top span,.alt-read span{display:block;font-size:11px;letter-spacing:.11em;font-weight:800;opacity:.75}.baro-top b{display:block;margin:5px 0 1px;font-size:35px;letter-spacing:-.04em}.baro-top b small,.alt-read b small{font-size:14px;letter-spacing:0}.baro-top em{font-size:12px;font-style:normal;opacity:.84}.alt-read{display:flex;align-items:center;justify-content:space-between;padding:15px 8px 16px}.alt-read b{display:block;margin-top:4px;font-size:28px;letter-spacing:-.035em}.alt-icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.14);font-size:29px}.baro-guide{margin-top:14px;padding:14px 15px;border-radius:14px;background:#eaf1fb;color:#294261;font-size:13px;line-height:1.5}.baro-guide p{margin:5px 0 0}
-    @media (prefers-reduced-motion:reduce){.compass-needle{transition:none}}
+  <style id="tactical-trekking-upgrade">
+    .tactical-tag{display:inline-block;margin-left:7px;padding:3px 7px;border:1px solid rgba(88,241,199,.52);border-radius:4px;color:#58f1c7;background:rgba(41,135,113,.14);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.09em;vertical-align:middle}.tactical-tag.amber{border-color:rgba(255,204,91,.62);color:#ffdc82;background:rgba(156,102,18,.15)}
+    .tactical-panel{position:relative;overflow:hidden;border:1px solid rgba(175,221,203,.24)!important;border-radius:12px!important;background:linear-gradient(135deg,#101e20,#193632 55%,#0d181a)!important;box-shadow:0 12px 30px rgba(3,14,14,.3),inset 0 1px rgba(255,255,255,.07)!important}.tactical-panel:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.16;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(255,255,255,.1) 6px);mix-blend-mode:screen}.module-strip{position:relative;display:flex;justify-content:space-between;gap:8px;padding-bottom:11px;margin-bottom:15px;border-bottom:1px solid rgba(201,244,226,.18);color:#9ebcb4;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}.module-strip span:nth-child(2){color:#5cf2c4}.baro-panel .module-strip span:nth-child(2){color:#ffd477}
+    .compass-dial{width:234px;height:234px;border:8px solid #8eaaa1!important;border-radius:50%;margin:0 auto 15px;position:relative;isolation:isolate;background:radial-gradient(circle at center,#101c1b 0 14%,#769086 14.5% 16%,transparent 16.5%),repeating-conic-gradient(from 0deg,rgba(202,225,214,.88) 0deg 1deg,transparent 1deg 5deg),#2c4641!important;box-shadow:inset 0 0 0 4px #132524,inset 0 0 0 10px rgba(225,245,231,.15),0 0 0 2px #0b1414,0 11px 25px rgba(0,0,0,.38)!important}.compass-dial:after{content:'';position:absolute;inset:-12px;border-radius:50%;background:repeating-conic-gradient(transparent 0deg 8deg,rgba(85,249,200,.2) 8.5deg 9deg,transparent 9.5deg 18deg);z-index:-1}.compass-mark{z-index:3;color:#d9ebe2!important;font:900 18px/1 ui-monospace,SFMono-Regular,Menlo,monospace;text-shadow:none!important}.compass-mark.north{color:#ff776c!important}.compass-needle{inset:34px!important;z-index:2}.compass-needle i{border-bottom-color:#f05d54!important;filter:drop-shadow(0 0 5px rgba(240,93,84,.7))}.compass-needle b{border-top-color:#d8e6df!important}.compass-core{background:#152b28!important;color:#ffdb79!important;border-color:#b6d2c4!important;z-index:4!important}.degree-label{position:absolute;color:rgba(221,239,229,.66);font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;z-index:3}.d0{top:31px;left:50%;transform:translateX(-50%)}.d1{top:54px;right:43px}.d2{right:26px;top:50%;transform:translateY(-50%)}.d3{right:43px;bottom:54px}.d4{bottom:30px;left:50%;transform:translateX(-50%)}.d5{bottom:54px;left:43px}.d6{left:25px;top:50%;transform:translateY(-50%)}.d7{top:54px;left:43px}
+    .compass-reading{position:relative;z-index:1}.compass-reading b{font:900 28px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#f1fff8;letter-spacing:.04em}.compass-reading span{color:#83e5c4;font:800 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.tactical-btn{position:relative;z-index:1;max-width:none!important;background:linear-gradient(135deg,#67efca,#36bb94)!important;color:#09211d!important;border:1px solid #9effdc!important;font-weight:900!important;letter-spacing:.06em}.calibrate-btn{position:relative;z-index:1;width:100%;margin-top:9px;padding:11px;border:1px solid rgba(214,236,225,.26);border-radius:7px;background:rgba(255,255,255,.06);color:#dcf5ea;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}.calibration{position:relative;z-index:1;display:flex;align-items:center;gap:10px;margin-top:11px;padding:10px;border:1px solid rgba(89,241,196,.28);border-radius:8px;background:rgba(7,22,20,.75);text-align:left}.hidden{display:none!important}.cal-motion{position:relative;width:104px;min-width:104px;height:60px}.cal-motion svg{position:absolute;inset:0;width:104px;height:60px;fill:none;stroke:#5ff1c6;stroke-width:2.5;stroke-dasharray:6 4;filter:drop-shadow(0 0 4px rgba(95,241,198,.48))}.phone-mark{position:absolute;z-index:1;left:48px;top:20px;color:#fff;font-size:24px;animation:figureEight 2.2s ease-in-out infinite;transform-origin:4px 8px}.cal-copy{display:grid;gap:4px;color:#b8cec4;font-size:11px;line-height:1.38}.cal-copy b{color:#ffe09a;font:900 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}@keyframes figureEight{0%,100%{transform:translate(-34px,-14px) rotate(-28deg)}25%{transform:translate(27px,14px) rotate(28deg)}50%{transform:translate(-4px,0) rotate(-8deg)}75%{transform:translate(-34px,14px) rotate(-28deg)}}
+    .tactical-guide{border-left:4px solid #5cefc3!important;border-radius:7px!important;background:linear-gradient(135deg,#e9f3ee,#d6e7dd)!important;color:#19352e!important}.tactical-guide b{font:900 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.07em}.baro-panel{background:linear-gradient(135deg,#171d25,#303834 55%,#161c1e)!important;border-color:rgba(255,216,122,.25)!important}.baro-top{position:relative;border-color:rgba(255,255,255,.18)!important}.baro-top span,.alt-read span{font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.13em!important}.baro-top b{color:#f5fbf7;text-shadow:0 0 13px rgba(179,255,218,.15)}.baro-top em{color:#9bd2b8}.pressure-line{display:flex;align-items:end;justify-content:center;gap:4px;height:22px;margin-top:9px}.pressure-line i{width:15px;background:#85e6bd;opacity:.65}.pressure-line i:nth-child(1){height:7px}.pressure-line i:nth-child(2){height:12px}.pressure-line i:nth-child(3){height:19px;background:#ffcf70}.pressure-line i:nth-child(4){height:14px}.pressure-line i:nth-child(5){height:9px}.alt-read{position:relative}.alt-read b{color:#ffdc82;font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important}.alt-source{display:block;margin-top:5px;color:#a7c5b8;font-size:10px}.alt-icon{border:1px solid rgba(255,218,126,.4)!important;border-radius:6px!important;background:linear-gradient(135deg,rgba(255,215,115,.2),rgba(255,255,255,.05))!important;color:#ffdb84;font:900 37px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important}.baro-guide{border-left-color:#ffcd69!important}.tactical-panel .compass-status{position:relative;z-index:1;color:#b7d4c9;opacity:1!important}@media(max-width:390px){.compass-dial{transform:scale(.92);margin:-9px auto 2px}.module-strip{font-size:8px}.module-strip span:last-child{display:none}.cal-motion{width:88px;min-width:88px}.cal-motion svg{width:88px}.cal-copy{font-size:10px}}@media(prefers-reduced-motion:reduce){.phone-mark{animation:none!important}.compass-needle{transition:none!important}}
   </style>
-
   <!-- KOMUNITAS -->
   <section id="komunitas" class="view">
     <div class="sec-title">Komunitas 👥</div>
@@ -2227,7 +2227,7 @@ var catData=[
    {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'},
    {a:'openDontPanic()',ic:'g-violet',e:'gamepad',l:'DONT PANIC'}
  ]},
- {id:'adv',name:'Trekking',full:'Trekking',emoji:'mountain',grad:'var(--g-amber)',desc:'Aktivitas pendakian, navigasi, jurnal, agenda & komunitas.',tiles:[
+ {id:'adv',name:'TREKKING',full:'TREKKING',emoji:'mountain',grad:'var(--g-amber)',desc:'Aktivitas pendakian, navigasi, jurnal, agenda & komunitas.',tiles:[
    {a:"go('survival')",ic:'g-sunset',e:'shield',l:'Survival Kit'},
    {a:"go('kompas')",ic:'g-teal',e:'compass',l:'Kompas'},
    {a:"go('baro')",ic:'g-indigo',e:'mountain',l:'Baro & Altimeter'},
@@ -2729,12 +2729,15 @@ async function startCompass(){
     if(status)status.textContent='Gerakkan ponsel membentuk angka delapan untuk kalibrasi.';
   }catch(e){if(status)status.textContent=(e&&e.message)||'Izin sensor belum tersedia.';}
 }
+function toggleCompassCalibration(){var el=document.getElementById('compassCalibration');if(!el)return;var open=el.classList.toggle('hidden');var status=document.getElementById('compassStatus');if(!open&&status)status.textContent='Tutor aktif · gerakkan ponsel membentuk angka delapan.';}
+window.toggleCompassCalibration=toggleCompassCalibration;
 window.startCompass=startCompass;
 function _geoPosition(){return new Promise(function(resolve,reject){if(!navigator.geolocation){reject(new Error('GPS tidak tersedia pada perangkat ini.'));return;}navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:12000,maximumAge:30000});});}
 function _baroPut(pressure,altitude){
   var p=document.getElementById('baroPressure'),a=document.getElementById('altimeterValue'),trend=document.getElementById('baroTrend');
   if(p)p.innerHTML=Math.round(pressure)+' <small>hPa</small>';
   if(a)a.innerHTML=Math.round(altitude)+' <small>mdpl</small>';
+  var source=document.getElementById('altSource');if(source)source.textContent='Sumber: GPS / elevasi medan';
   if(trend)trend.textContent='Data lokasi terkini';
 }
 async function startBaro(){
@@ -2745,7 +2748,7 @@ async function startBaro(){
     var pos=await _geoPosition(),lat=pos.coords.latitude,lng=pos.coords.longitude;
     if(status)status.textContent='Membaca tekanan udara sekitar…';
     var url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lng)+'&current=surface_pressure&timezone=auto';
-    var res=await fetch(url,{signal:AbortSignal.timeout(10000)});if(!res.ok)throw new Error('Data tekanan belum tersedia.');
+    var controller=window.AbortController?new AbortController():null;var timer=controller?setTimeout(function(){controller.abort();},10000):null;var res;try{res=await fetch(url,controller?{signal:controller.signal}:{});}finally{if(timer)clearTimeout(timer);}if(!res.ok)throw new Error('Data tekanan belum tersedia.');
     var data=await res.json(),pressure=data&&data.current&&data.current.surface_pressure;
     if(typeof pressure!=='number')throw new Error('Data tekanan belum tersedia.');
     var altitude=(typeof pos.coords.altitude==='number'&&pos.coords.altitude>-500)?pos.coords.altitude:data.elevation;
