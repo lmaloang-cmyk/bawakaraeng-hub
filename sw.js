@@ -1,4 +1,4 @@
-const CACHE='bwk-v50-reference-instruments';
+const CACHE='bwk-v51-leaderboard-session-fix';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
