@@ -1,4 +1,4 @@
-const CACHE='bwk-v43-reichas-floating';
+const CACHE='bwk-v44-reichas-full-bleed';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/icon-192.png','/icon-512.png','/apple-touch-icon.png','/og.jpg','/screenshots/home-mobile.png','/screenshots/home-wide.png','/rc-logo.png','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
