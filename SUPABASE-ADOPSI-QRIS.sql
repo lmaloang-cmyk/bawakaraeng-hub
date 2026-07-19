@@ -24,3 +24,14 @@ create policy "adoption admin reads" on public.adoption_requests for select to a
 create policy "adoption admin updates" on public.adoption_requests for update to authenticated using (public.is_app_admin()) with check (public.is_app_admin());
 create index if not exists adoption_requests_user_idx on public.adoption_requests(user_id, created_at desc);
 create index if not exists adoption_requests_code_idx on public.adoption_requests(adoption_code);
+
+-- Pembaruan v18.8: simpan nomor WhatsApp penerima kode.
+alter table public.adoption_requests
+  add column if not exists whatsapp text;
+
+-- Opsional: hanya menerima format nomor internasional Indonesia 62xxxxxxxxxx.
+alter table public.adoption_requests
+  drop constraint if exists adoption_requests_whatsapp_format;
+alter table public.adoption_requests
+  add constraint adoption_requests_whatsapp_format
+  check (whatsapp is null or whatsapp ~ '^62[0-9]{8,13}$');
