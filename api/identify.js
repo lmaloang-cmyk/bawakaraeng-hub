@@ -146,9 +146,10 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
   if (!key) return { error: '' };
   const aiBase = (cfg.base || 'https://api.openai.com/v1').replace(/\/+$/, '');
   const isOfficialOpenAI = /api\.openai\.com/i.test(aiBase);
+  const isGroq = /groq\.com/i.test(aiBase);
   const model = cfg.model ||
-    (/groq\.com/i.test(aiBase) ? 'meta-llama/llama-4-scout-17b-16e-instruct'
-      : /openrouter/i.test(aiBase) ? 'meta-llama/llama-3.2-11b-vision-instruct:free'
+    (isGroq ? 'meta-llama/llama-4-scout-17b-16e-instruct'
+      : /openrouter/i.test(aiBase) ? 'openrouter/free'
         : 'gpt-4o-mini');
   const payload = {
     model: model,
@@ -159,7 +160,7 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
       { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
     ]
   };
-  if (isOfficialOpenAI) payload.response_format = { type: 'json_object' };
+  if (isOfficialOpenAI || isGroq) payload.response_format = { type: 'json_object' };
   const body = JSON.stringify(payload);
   const sleep = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); };
   const isRetryable = function (status, msg) { return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
@@ -190,7 +191,7 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
     if (parsed && typeof parsed === 'object') {
       return { out: parsed, provider: isOfficialOpenAI ? 'OpenAI Vision' : ('AI Vision \u00b7 ' + model) };
     }
-    return { error: 'Jawaban AI tidak terbaca' };
+    return { error: 'jawaban tak terbaca: ' + String(text || '(kosong)').replace(/\s+/g, ' ').slice(0, 90) };
   }
   return { error: firstErr || 'AI tidak tersedia' };
 }
