@@ -14,7 +14,8 @@ export default async function handler(req, res) {
 
   const key = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
-  if (!key && !openaiKey) return res.status(503).json({ error: 'AI belum dikonfigurasi', code: 'NO_KEY' });
+  const openaiKey2 = process.env.AI2_API_KEY;
+  if (!key && !openaiKey && !openaiKey2) return res.status(503).json({ error: 'AI belum dikonfigurasi', code: 'NO_KEY' });
 
   const body = req.body || {};
   const image = typeof body.image === 'string' ? body.image : '';
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
       generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } }
     });
     // Coba model utama, lalu model cadangan bila Gemini sibuk/overload (502/503/429/high demand).
-    const preferOpenAI = !!openaiKey && String(process.env.AI_PROVIDER || '').toLowerCase() === 'openai';
+    const preferOpenAI = (!!openaiKey || !!openaiKey2) && String(process.env.AI_PROVIDER || '').toLowerCase() === 'openai';
     const models = (!key || preferOpenAI) ? [] : ((modelFallback && modelFallback !== model) ? [model, modelFallback] : [model, model]);
     const sleep = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); };
     const isRetryable = function (status, msg) { return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
@@ -76,42 +77,15 @@ export default async function handler(req, res) {
       const g = parseSpeciesJson(text);
       if (g && typeof g === 'object') { out = g; usedProvider = 'Gemini Vision'; }
     }
-    // Alternatif GRATIS: penyedia OpenAI-compatible (Groq / OpenRouter / dll). Dipakai bila diprioritaskan atau bila Gemini sibuk/tak terbaca.
-    if ((!out || typeof out !== 'object') && openaiKey) {
-      try {
-        const aiBase = (process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-        const isOfficialOpenAI = /api\.openai\.com/i.test(aiBase);
-        const oaModel = process.env.OPENAI_MODEL || process.env.AI_MODEL ||
-          (/groq\.com/i.test(aiBase) ? 'meta-llama/llama-4-scout-17b-16e-instruct'
-            : /openrouter/i.test(aiBase) ? 'meta-llama/llama-3.2-11b-vision-instruct:free'
-              : 'gpt-4o-mini');
-        const oaPayload = {
-          model: oaModel,
-          temperature: 0.2,
-          max_tokens: 1024,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
-          ]
-        };
-        if (isOfficialOpenAI) oaPayload.response_format = { type: 'json_object' };
-        const orsp = await fetch(aiBase + '/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openaiKey, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
-          body: JSON.stringify(oaPayload),
-          signal: AbortSignal.timeout(18_000)
-        });
-        const od = await orsp.json().catch(() => ({}));
-        if (orsp.ok) {
-          const otext = od && od.choices && od.choices[0] && od.choices[0].message && od.choices[0].message.content;
-          const oo = parseSpeciesJson((otext || '').trim());
-          if (oo && typeof oo === 'object') { out = oo; usedProvider = isOfficialOpenAI ? 'OpenAI Vision' : ('AI Vision \u00b7 ' + oaModel); }
-        } else if (!firstErr) {
-          firstErr = String((od && od.error && od.error.message) || 'OpenAI tidak tersedia').slice(0, 200);
-        }
-      } catch (e3) {
-        if (!firstErr) firstErr = (e3 && e3.name === 'TimeoutError') ? 'OpenAI terlalu lama merespons' : 'OpenAI gagal dihubungi';
-      }
+    // Lapis cadangan OpenAI-compatible (Groq, OpenRouter, dll). Bisa dua sekaligus (lapis 2 & 3).
+    const compatChain = [];
+    if (openaiKey) compatChain.push({ key: openaiKey, base: process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL, model: process.env.OPENAI_MODEL || process.env.AI_MODEL });
+    if (openaiKey2) compatChain.push({ key: openaiKey2, base: process.env.AI2_BASE_URL, model: process.env.AI2_MODEL });
+    for (let ci = 0; ci < compatChain.length; ci++) {
+      if (out && typeof out === 'object') break;
+      const rc = await askCompatible(compatChain[ci], system, prompt, mime, b64);
+      if (rc && rc.out) { out = rc.out; usedProvider = rc.provider; }
+      else if (!firstErr && rc && rc.error) firstErr = rc.error;
     }
     // Bila OpenAI diprioritaskan tapi gagal, jatuhkan ke Gemini sebagai cadangan.
     if ((!out || typeof out !== 'object') && preferOpenAI && key) {
@@ -130,11 +104,11 @@ export default async function handler(req, res) {
           firstErr = String((d && d.error && d.error.message) || '').slice(0, 200);
         }
       } catch (eg) {
-        if (!firstErr) firstErr = 'Gemini gagal dihubungi';
+        if (!firstErr) firstErr = (eg && eg.name === 'TimeoutError') ? 'Gemini terlalu lama merespons' : 'Gemini gagal dihubungi';
       }
     }
     if (!out || typeof out !== 'object') {
-      return res.status(503).json({ error: firstErr ? ('AI sedang sibuk: ' + firstErr) : 'AI sedang sibuk, coba lagi sebentar.', code: 'BUSY' });
+      return res.status(503).json({ error: firstErr || 'Semua layanan AI sedang sibuk', code: 'BUSY' });
     }
     const clip = function (v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; };
     const result = {
@@ -154,6 +128,61 @@ export default async function handler(req, res) {
     const msg = (e && e.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI cloud gagal dihubungi';
     return res.status(502).json({ error: msg, code: 'NET' });
   }
+}
+
+// Penyedia OpenAI-compatible (Groq / OpenRouter / OpenAI / dll) sebagai lapis cadangan.
+async function askCompatible(cfg, system, prompt, mime, b64) {
+  const key = cfg && cfg.key;
+  if (!key) return { error: '' };
+  const aiBase = (cfg.base || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const isOfficialOpenAI = /api\.openai\.com/i.test(aiBase);
+  const model = cfg.model ||
+    (/groq\.com/i.test(aiBase) ? 'meta-llama/llama-4-scout-17b-16e-instruct'
+      : /openrouter/i.test(aiBase) ? 'meta-llama/llama-3.2-11b-vision-instruct:free'
+        : 'gpt-4o-mini');
+  const payload = {
+    model: model,
+    temperature: 0.2,
+    max_tokens: 800,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
+    ]
+  };
+  if (isOfficialOpenAI) payload.response_format = { type: 'json_object' };
+  const body = JSON.stringify(payload);
+  const sleep = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); };
+  const isRetryable = function (status, msg) { return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
+  let rsp = null, d = {}, firstErr = '';
+  try {
+    for (let i = 0; i < 2; i++) {
+      rsp = await fetch(aiBase + '/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
+        body: body,
+        signal: AbortSignal.timeout(15_000)
+      });
+      d = await rsp.json().catch(() => ({}));
+      if (rsp.ok) break;
+      const emsg = String((d && d.error && d.error.message) || '');
+      if (!firstErr) firstErr = emsg.slice(0, 200);
+      if (!isRetryable(rsp.status, emsg) || i === 1) break;
+      const wm = emsg.match(/try again in ([\d.]+)\s*s/i);
+      const ws = wm ? Math.min(3000, Math.ceil(parseFloat(wm[1]) * 1000) + 200) : 1200;
+      await sleep(ws);
+    }
+  } catch (e) {
+    return { error: (e && e.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI gagal dihubungi' };
+  }
+  if (rsp && rsp.ok) {
+    const text = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+    const parsed = parseSpeciesJson((text || '').trim());
+    if (parsed && typeof parsed === 'object') {
+      return { out: parsed, provider: isOfficialOpenAI ? 'OpenAI Vision' : ('AI Vision \u00b7 ' + model) };
+    }
+    return { error: 'Jawaban AI tidak terbaca' };
+  }
+  return { error: firstErr || 'AI tidak tersedia' };
 }
 
 // Robust parser for Gemini's answer: tolerant to markdown fences, thinking

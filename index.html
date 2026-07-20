@@ -1603,7 +1603,7 @@ function lensIdentify(){
   if(btn){btn.disabled=true;btn.textContent='⏳ Menganalisis…';}
   if(box){box.style.display='block';box.innerHTML='<div style="padding:16px;border-radius:12px;background:rgba(16,63,68,.06);text-align:center;font-size:13px;color:var(--sub)">🔎 AI sedang mengenali spesies…</div>';}
   var reset=function(){if(btn){btn.disabled=false;btn.textContent='✨ Kenali Spesies (AI)';}};
-  _lensDownscale(file,768,function(dataUrl){
+  _lensDownscale(file,512,function(dataUrl){
     if(!dataUrl){_lensFail('Foto gagal diproses');reset();return;}
     var cli=(typeof _sbClient==='function')?_sbClient():null;
     var sessionP=cli?cli.auth.getSession():Promise.resolve({data:{session:null}});
