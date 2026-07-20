@@ -13,7 +13,8 @@ export default async function handler(req, res) {
   if (!rateLimit(req, res, { prefix: 'idf-user', id: user.id, limit: 15, windowMs: 10 * 60_000 })) return;
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(503).json({ error: 'AI belum dikonfigurasi', code: 'NO_KEY' });
+  const openaiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
+  if (!key && !openaiKey) return res.status(503).json({ error: 'AI belum dikonfigurasi', code: 'NO_KEY' });
 
   const body = req.body || {};
   const image = typeof body.image === 'string' ? body.image : '';
@@ -24,40 +25,116 @@ export default async function handler(req, res) {
   if (b64.length > 2_100_000) return res.status(413).json({ error: 'Foto terlalu besar' });
 
   const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const modelFallback = process.env.GEMINI_MODEL_FALLBACK || 'gemini-2.0-flash';
   const system = 'Anda adalah ahli biologi lapangan untuk kawasan Gunung Bawakaraeng, Sulawesi Selatan. Tugas Anda mengidentifikasi kemungkinan spesies flora, fauna, atau jenis batuan dari foto yang diberikan pendaki. Fitur ini HANYA untuk flora, fauna, dan batuan. Jika foto jelas bukan salah satu dari itu (misalnya wajah manusia, layar/monitor, tulisan, kendaraan, atau makanan olahan), set name ke string kosong, category ke "Lainnya", confidence ke "Rendah", dan pada description jelaskan singkat bahwa Lensa hanya mengenali flora, fauna, dan batuan. Jawab HANYA dalam format JSON valid tanpa teks lain. Bahasa Indonesia yang ringkas dan tenang. Jika tidak yakin, beri tingkat keyakinan rendah dan beberapa kemungkinan pada alternates. Jangan mengarang. Selalu ingatkan bahwa hasil hanyalah perkiraan yang perlu verifikasi ahli/petugas, terutama sebelum menyentuh, memberi makan, atau mengonsumsi.';
   const prompt = 'Identifikasi kemungkinan spesies pada foto ini. Balas HANYA JSON dengan kunci berikut: name (nama umum Bahasa Indonesia), scientific (nama ilmiah bila ada), category (salah satu: Flora, Fauna, Batuan, Lainnya), confidence (Tinggi, Sedang, atau Rendah), description (2-3 kalimat ciri utama & habitat di Bawakaraeng), danger (peringatan bila beracun/berbisa/dilindungi/berbahaya, string kosong bila tidak ada), tips (saran pengamatan aman singkat), alternates (array maksimal 3 nama alternatif bila ragu). Jangan tambahkan teks di luar JSON.';
 
   try {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } }
-      }),
-      signal: AbortSignal.timeout(20_000)
+    const genBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } }
     });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      const gmsg = String((data && data.error && data.error.message) || '').slice(0, 200);
-      return res.status(502).json({ error: gmsg ? ('Gemini menolak: ' + gmsg) : 'AI tidak tersedia', code: 'UPSTREAM' });
+    // Coba model utama, lalu model cadangan bila Gemini sibuk/overload (502/503/429/high demand).
+    const preferOpenAI = !!openaiKey && String(process.env.AI_PROVIDER || '').toLowerCase() === 'openai';
+    const models = (!key || preferOpenAI) ? [] : ((modelFallback && modelFallback !== model) ? [model, modelFallback] : [model, model]);
+    const sleep = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); };
+    const isRetryable = function (status, msg) { return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
+    let data = null, okResp = false, firstErr = '';
+    for (let i = 0; i < models.length; i++) {
+      if (i > 0) await sleep(700);
+      try {
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(models[i]) + ':generateContent';
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: genBody,
+          signal: AbortSignal.timeout(9_000)
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) { data = d; okResp = true; break; }
+        const gmsg = String((d && d.error && d.error.message) || '').slice(0, 200);
+        if (!firstErr) firstErr = gmsg;
+        if (!isRetryable(r.status, gmsg)) {
+          return res.status(502).json({ error: gmsg ? ('Gemini menolak: ' + gmsg) : 'AI tidak tersedia', code: 'UPSTREAM' });
+        }
+      } catch (e2) {
+        if (!firstErr) firstErr = (e2 && e2.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI cloud gagal dihubungi';
+      }
     }
-    const cand = data && data.candidates && data.candidates[0];
-    const parts = cand && cand.content && cand.content.parts;
-    // Only join the real answer parts; skip Gemini "thinking" parts that break JSON parsing.
-    let text = Array.isArray(parts)
-      ? parts.filter(function (p) { return p && p.thought !== true; }).map(function (p) { return (p && p.text) || ''; }).join('').trim()
-      : '';
-    if (!text && Array.isArray(parts)) {
-      text = parts.map(function (p) { return (p && p.text) || ''; }).join('').trim();
+    let out = null, usedProvider = '';
+    if (okResp) {
+      const cand = data && data.candidates && data.candidates[0];
+      const parts = cand && cand.content && cand.content.parts;
+      // Only join the real answer parts; skip Gemini "thinking" parts that break JSON parsing.
+      let text = Array.isArray(parts)
+        ? parts.filter(function (p) { return p && p.thought !== true; }).map(function (p) { return (p && p.text) || ''; }).join('').trim()
+        : '';
+      if (!text && Array.isArray(parts)) {
+        text = parts.map(function (p) { return (p && p.text) || ''; }).join('').trim();
+      }
+      const g = parseSpeciesJson(text);
+      if (g && typeof g === 'object') { out = g; usedProvider = 'Gemini Vision'; }
     }
-    const out = parseSpeciesJson(text);
+    // Alternatif GRATIS: penyedia OpenAI-compatible (Groq / OpenRouter / dll). Dipakai bila diprioritaskan atau bila Gemini sibuk/tak terbaca.
+    if ((!out || typeof out !== 'object') && openaiKey) {
+      try {
+        const aiBase = (process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+        const isOfficialOpenAI = /api\.openai\.com/i.test(aiBase);
+        const oaModel = process.env.OPENAI_MODEL || process.env.AI_MODEL ||
+          (/groq\.com/i.test(aiBase) ? 'meta-llama/llama-4-scout-17b-16e-instruct'
+            : /openrouter/i.test(aiBase) ? 'meta-llama/llama-3.2-11b-vision-instruct:free'
+              : 'gpt-4o-mini');
+        const oaPayload = {
+          model: oaModel,
+          temperature: 0.2,
+          max_tokens: 1024,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
+          ]
+        };
+        if (isOfficialOpenAI) oaPayload.response_format = { type: 'json_object' };
+        const orsp = await fetch(aiBase + '/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openaiKey, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
+          body: JSON.stringify(oaPayload),
+          signal: AbortSignal.timeout(18_000)
+        });
+        const od = await orsp.json().catch(() => ({}));
+        if (orsp.ok) {
+          const otext = od && od.choices && od.choices[0] && od.choices[0].message && od.choices[0].message.content;
+          const oo = parseSpeciesJson((otext || '').trim());
+          if (oo && typeof oo === 'object') { out = oo; usedProvider = isOfficialOpenAI ? 'OpenAI Vision' : ('AI Vision \u00b7 ' + oaModel); }
+        } else if (!firstErr) {
+          firstErr = String((od && od.error && od.error.message) || 'OpenAI tidak tersedia').slice(0, 200);
+        }
+      } catch (e3) {
+        if (!firstErr) firstErr = (e3 && e3.name === 'TimeoutError') ? 'OpenAI terlalu lama merespons' : 'OpenAI gagal dihubungi';
+      }
+    }
+    // Bila OpenAI diprioritaskan tapi gagal, jatuhkan ke Gemini sebagai cadangan.
+    if ((!out || typeof out !== 'object') && preferOpenAI && key) {
+      try {
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: genBody, signal: AbortSignal.timeout(9_000) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) {
+          const cand = d && d.candidates && d.candidates[0];
+          const parts = cand && cand.content && cand.content.parts;
+          let text = Array.isArray(parts) ? parts.filter(function (p) { return p && p.thought !== true; }).map(function (p) { return (p && p.text) || ''; }).join('').trim() : '';
+          if (!text && Array.isArray(parts)) text = parts.map(function (p) { return (p && p.text) || ''; }).join('').trim();
+          const g2 = parseSpeciesJson(text);
+          if (g2 && typeof g2 === 'object') { out = g2; usedProvider = 'Gemini Vision'; }
+        } else if (!firstErr) {
+          firstErr = String((d && d.error && d.error.message) || '').slice(0, 200);
+        }
+      } catch (eg) {
+        if (!firstErr) firstErr = 'Gemini gagal dihubungi';
+      }
+    }
     if (!out || typeof out !== 'object') {
-      const fr = (cand && cand.finishReason) || '';
-      const snip = (text || '').slice(0, 100);
-      return res.status(502).json({ error: 'Jawaban AI tidak terbaca' + (fr ? (' [' + fr + ']') : '') + (snip ? (': ' + snip) : ''), code: 'PARSE' });
+      return res.status(503).json({ error: firstErr ? ('AI sedang sibuk: ' + firstErr) : 'AI sedang sibuk, coba lagi sebentar.', code: 'BUSY' });
     }
     const clip = function (v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; };
     const result = {
@@ -69,7 +146,7 @@ export default async function handler(req, res) {
       danger: clip(out.danger, 300),
       tips: clip(out.tips, 300),
       alternates: Array.isArray(out.alternates) ? out.alternates.slice(0, 3).map(function (a) { return clip(a, 80); }).filter(Boolean) : [],
-      source: 'Gemini Vision \u00b7 perkiraan'
+      source: (usedProvider || 'Gemini Vision') + ' \u00b7 perkiraan'
     };
     if (!result.name) result.name = 'Belum bisa dipastikan';
     return res.status(200).json(result);
