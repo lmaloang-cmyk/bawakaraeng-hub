@@ -63,7 +63,7 @@ export default async function handler(req, res) {
         if (!firstErr) firstErr = (e2 && e2.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI cloud gagal dihubungi';
       }
     }
-    let out = null, usedProvider = '';
+    let out = null, usedProvider = '', geminiErr = '';
     if (okResp) {
       const cand = data && data.candidates && data.candidates[0];
       const parts = cand && cand.content && cand.content.parts;
@@ -77,16 +77,19 @@ export default async function handler(req, res) {
       const g = parseSpeciesJson(text);
       if (g && typeof g === 'object') { out = g; usedProvider = 'Gemini Vision'; }
     }
-    // Lapis cadangan OpenAI-compatible (Groq, OpenRouter, dll). Bisa dua sekaligus (lapis 2 & 3).
-    const compatChain = [];
-    if (openaiKey) compatChain.push({ key: openaiKey, base: process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL, model: process.env.OPENAI_MODEL || process.env.AI_MODEL });
-    if (openaiKey2) compatChain.push({ key: openaiKey2, base: process.env.AI2_BASE_URL, model: process.env.AI2_MODEL });
-    for (let ci = 0; ci < compatChain.length; ci++) {
-      if (out && typeof out === 'object') break;
-      const rc = await askCompatible(compatChain[ci], system, prompt, mime, b64);
+    if (!out && key && !preferOpenAI) geminiErr = firstErr || (okResp ? 'jawaban tak terbaca' : 'gagal');
+    // Lapis cadangan OpenAI-compatible (Groq, OpenRouter, dll) + diagnostik per-lapis.
+    const compatDiag = [];
+    const runCompat = async function (cfg, label) {
+      if (out && typeof out === 'object') return;
+      const rc = await askCompatible(cfg, system, prompt, mime, b64);
       if (rc && rc.out) { out = rc.out; usedProvider = rc.provider; }
-      else if (!firstErr && rc && rc.error) firstErr = rc.error;
-    }
+      else { compatDiag.push(label + ': ' + ((rc && rc.error) || 'gagal')); if (!firstErr && rc && rc.error) firstErr = rc.error; }
+    };
+    if (openaiKey) await runCompat({ key: openaiKey, base: process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL, model: process.env.OPENAI_MODEL || process.env.AI_MODEL }, 'Lapis2');
+    else compatDiag.push('Lapis2: belum diisi (AI_API_KEY)');
+    if (openaiKey2) await runCompat({ key: openaiKey2, base: process.env.AI2_BASE_URL, model: process.env.AI2_MODEL }, 'Lapis3');
+    else compatDiag.push('Lapis3: belum diisi (AI2_API_KEY)');
     // Bila OpenAI diprioritaskan tapi gagal, jatuhkan ke Gemini sebagai cadangan.
     if ((!out || typeof out !== 'object') && preferOpenAI && key) {
       try {
@@ -100,15 +103,22 @@ export default async function handler(req, res) {
           if (!text && Array.isArray(parts)) text = parts.map(function (p) { return (p && p.text) || ''; }).join('').trim();
           const g2 = parseSpeciesJson(text);
           if (g2 && typeof g2 === 'object') { out = g2; usedProvider = 'Gemini Vision'; }
-        } else if (!firstErr) {
-          firstErr = String((d && d.error && d.error.message) || '').slice(0, 200);
+        } else {
+          geminiErr = String((d && d.error && d.error.message) || 'gagal').slice(0, 200);
+          if (!firstErr) firstErr = geminiErr;
         }
       } catch (eg) {
-        if (!firstErr) firstErr = (eg && eg.name === 'TimeoutError') ? 'Gemini terlalu lama merespons' : 'Gemini gagal dihubungi';
+        geminiErr = (eg && eg.name === 'TimeoutError') ? 'Gemini terlalu lama merespons' : 'Gemini gagal dihubungi';
+        if (!firstErr) firstErr = geminiErr;
       }
     }
     if (!out || typeof out !== 'object') {
-      return res.status(503).json({ error: firstErr || 'Semua layanan AI sedang sibuk', code: 'BUSY' });
+      const diag = [];
+      if (!key) diag.push('Gemini: belum diisi (GEMINI_API_KEY)');
+      else if (geminiErr) diag.push('Gemini: ' + geminiErr);
+      for (let di = 0; di < compatDiag.length; di++) diag.push(compatDiag[di]);
+      const detail = diag.length ? diag.join(' \u2022 ') : (firstErr || 'Semua layanan AI sedang sibuk');
+      return res.status(503).json({ error: detail.slice(0, 340), code: 'BUSY' });
     }
     const clip = function (v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; };
     const result = {
