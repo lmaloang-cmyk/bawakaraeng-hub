@@ -2,19 +2,22 @@
 
 File ini menjelaskan perubahan yang dilakukan dari versi asli (`Pintu-Angin-v18.8.5-TOMBOL-KAPITAL.zip`) agar lebih ringan dan hemat saat diakses dari ponsel entry-level serta di-deploy di server gratis (Vercel free tier).
 
+**Perbaikan terbaru:** style tag yang diubah langsung JavaScript (mode malam, profil, kompas, adopsi, dsb.) sekarang tetap inline; hanya CSS utama yang dipisahkan ke file terpisah.
+
 ## Ringkasan perubahan
 
 | Aspek | Sebelum | Sesudah | Manfaat |
 |---|---|---|---|
 | Ukuran ZIP | 6.3 MB | 4.1 MB | ~35% lebih kecil, unduh & deploy lebih cepat |
-| CSS | 118 KB inline di `index.html` | file terpisah `styles.css` (bisa di-cache browser) | HTML lebih kecil, CSS tidak diunduh ulang setiap kali HTML berubah |
+| CSS utama | 69 KB inline di `index.html` | file terpisah `styles.css` | HTML lebih kecil, CSS bisa di-cache |
+| Style tag dinamis | 15 tag dipindahkan | tetap inline | mode malam, profil, kompas, adopsi, dsb. tetap berfungsi |
 | Gambar logo | `rc-logo.png` 848 KB | `rc-logo.webp` 104 KB | ~88% lebih kecil, muat beranda jauh lebih cepat |
-| Gambar lain | PNG/JPG besar | dikompresi (lihat tabel di bawah) | mengurangi data dan waktu muat |
+| Gambar lain | PNG/JPG besar | dikompresi (lihat tabel) | mengurangi data dan waktu muat |
 | Service Worker | cache minimalis | cache lebih lengkap + stale-while-revalidate | PWA lebih responsif, hemat kuota |
 | Gambar HTML | tidak lazy | non-kritis pakai `loading="lazy"` | mengurangi jumlah request awal |
 | Resource hints | tidak ada | `preconnect` & `dns-prefetch` ke CDN Supabase | koneksi lebih cepat |
 | Animasi | banyak glow/pulse/neon | dihapus untuk mode `perf-lite` dan `prefers-reduced-motion` | lebih halus di HP murah & hemat baterai |
-| API AI Pendamping | 1 model, timeout 12 s, no retry | multi-model fallback, timeout 10 s, retry | jarang gagal total, jadi tetap ada jawaban |
+| API AI Pendamping | 1 model, timeout 12 s, no retry | multi-model fallback, timeout 10 s, retry | jarang gagal total |
 | API Lensa Bawakaraeng | 1 model, timeout 20 s, no retry | multi-model fallback, timeout 12 s, retry | identifikasi lebih stabil |
 | Client chat AI | timeout 14 s, langsung fallback | retry 1× + timeout 11 s, baru fallback | user tidak merasa putus |
 
@@ -38,7 +41,8 @@ File ini menjelaskan perubahan yang dilakukan dari versi asli (`Pintu-Angin-v18.
 
 ## Catatan penting
 
-- **JavaScript tetap inline** di `index.html` untuk menghindari risiko merusak fungsi yang kompleks (chat, SIMAKSI, SOS, lensa, dll). Jika ingin memisahkan JS juga, disarankan memakai bundler (Vite/webpack) agar urutan dan escape string tetap benar.
+- **JavaScript tetap inline** di `index.html` untuk menghindari risiko merusak fungsi kompleks (chat, SIMAKSI, SOS, lensa, dll).
+- **Style tag dinamis tetap inline**, jadi dark mode, profil, kompas, adopsi, pembayaran, dan lainnya tidak rusak.
 - **Semua fungsi asli dipertahankan**: laporan, SIMAKSI, adopsi, donasi, SOS, kompas, peta, leaderboard, AI pendamping, admin, dll.
 - **Service worker** sekarang meng-cache CSS, ikon, SVG, dan JS eksternal (`sk.js`, `sos.js`, `chat.js`, `hike.js`, `lens-extras.js`) dengan strategi stale-while-revalidate untuk asset statis.
 - **Mode `perf-lite`** otomatis aktif saat deteksi `saveData`, RAM ≤ 4 GB, atau CPU core ≤ 4. Mode ini menonaktifkan animasi berat untuk mengurangi jank di HP entry-level.
@@ -50,5 +54,3 @@ File ini menjelaskan perubahan yang dilakukan dari versi asli (`Pintu-Angin-v18.
 2. Import ke GitHub atau drag-and-drop ke Vercel.
 3. Pastikan environment variables (Supabase URL/key, Gemini API key, FIRMS key, dsb.) sudah diisi.
 4. Redeploy.
-
-Selamat mencoba.
