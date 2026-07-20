@@ -1620,7 +1620,8 @@ function lensIdentify(){
       if(e&&e.message==='LOGIN'){_lensFail('Masuk dulu untuk memakai Lensa AI');return;}
       var st=e&&e.st,code=e&&e.code,msg=e&&e.msg,t;
       if(st===401){t='Sesi login berakhir. Keluar lalu masuk lagi dengan Google, baru coba lagi.';}
-      else if(st===503||code==='NO_KEY'){t='AI belum dikonfigurasi di server: isi GEMINI_API_KEY di Environment Variables Vercel, lalu Redeploy.';}
+      else if(code==='NO_KEY'){t='AI belum dikonfigurasi di server: isi GEMINI_API_KEY, atau AI_API_KEY (untuk Groq/OpenRouter yang gratis) di Environment Variables Vercel, lalu Redeploy.';}
+      else if(code==='BUSY'||st===503){t='AI sedang sibuk'+(msg?(' — '+msg):'')+'. Tunggu sebentar lalu coba lagi.';}
       else if(st===404){t='Endpoint AI belum ada (api/identify). Pastikan file api/identify.js ikut ter-upload, lalu redeploy.';}
       else if(st===429){t='Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';}
       else if(st===413){t='Foto terlalu besar. Coba foto lain yang lebih kecil.';}
