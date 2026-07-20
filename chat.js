@@ -109,32 +109,15 @@
     _loadAiHistory();var now=new Date().toISOString();
     _aiMsgs.push({id:'u'+Date.now(),name:_name(),body:t,mine:true,created_at:now});
     var wait={id:'wait',name:'AI Pendamping',body:'Sedang menyusun jawaban…',created_at:now,source:'Memproses'};_aiMsgs.push(wait);_aiRender();
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},14000):null;
     var guest=false;try{var gu=(typeof bwkUser==='function')?bwkUser():null;guest=!!(gu&&gu.guest);}catch(e){}
-    if(guest){wait.body=_localAi(t);wait.source='Panduan lokal · mode tamu';_saveAiHistory();_aiRender();return;}
-
+    if(guest){wait.body=_localAi(t);wait.source='Panduan lokal · mode tamu';if(timer)clearTimeout(timer);_saveAiHistory();_aiRender();return;}
     var cli=_sb();var sessionP=cli?cli.auth.getSession():Promise.resolve({data:{session:null}});
-    function tryFetch(retries){
-      var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
-      var timer=ctrl?setTimeout(function(){ctrl.abort();},11000):null;
-      sessionP.then(function(sr){
-        var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;
-        if(!token)throw new Error('Login required');
-        return fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:t,context:_weatherContext()}),signal:ctrl?ctrl.signal:undefined});
-      }).then(function(r){
-        if(timer)clearTimeout(timer);
-        if(!r.ok)throw new Error('AI cloud unavailable');
-        return r.json();
-      }).then(function(d){
-        wait.body=(d&&d.answer)?d.answer:_localAi(t);
-        wait.source=(d&&d.source)||'Gemini';
-        _saveAiHistory();_aiRender();
-      }).catch(function(){
-        if(timer)clearTimeout(timer);
-        if(retries>0){setTimeout(function(){tryFetch(retries-1);},800);}
-        else{wait.body=_localAi(t);wait.source='Panduan lokal · gratis';_saveAiHistory();_aiRender();}
-      });
-    }
-    tryFetch(1);
+    sessionP.then(function(sr){var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;if(!token)throw new Error('Login required');return fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:t,context:_weatherContext()}),signal:ctrl?ctrl.signal:undefined});})
+      .then(function(r){if(!r.ok)throw new Error('AI cloud unavailable');return r.json();})
+      .then(function(d){wait.body=(d&&d.answer)?d.answer:_localAi(t);wait.source=(d&&d.source)||'Gemini';})
+      .catch(function(){wait.body=_localAi(t);wait.source='Panduan lokal · gratis';})
+      .finally(function(){if(timer)clearTimeout(timer);_saveAiHistory();_aiRender();});
   }
 
   window.chatGo=function(ch){curCh=ch;var tb=document.getElementById('chatTabs');if(tb)tb.innerHTML=_tabsHtml();_lastSig='';_syncChatMode();loadMsgs(true);};
