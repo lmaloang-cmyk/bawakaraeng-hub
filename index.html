@@ -917,7 +917,9 @@ html.perf-lite .topbar::before,html.perf-lite .topbar::after,html.perf-lite .log
 
 <style id="reichas-glow">
 @keyframes reichasNeonGlow{0%,100%{box-shadow:0 0 0 2px rgba(255,255,255,.34),0 0 10px rgba(93,211,255,.72),0 0 24px rgba(226,31,42,.46)}50%{box-shadow:0 0 0 2px rgba(255,255,255,.62),0 0 20px rgba(93,211,255,1),0 0 46px rgba(226,31,42,.78)}}
-.brand .logo,.intro-icon,.login-ic,.node .circle:has(img),.in-ic:has(img){animation:reichasNeonGlow 2.2s ease-in-out infinite;will-change:box-shadow}
+.brand .logo,.intro-icon,.login-ic{animation:reichasNeonGlow 2.2s ease-in-out infinite;will-change:box-shadow}
+.node .circle:has(img),.in-ic:has(img){animation:reichasNeonGlow 2.2s ease-in-out infinite;will-change:box-shadow}
+html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,html.perf-lite .node .circle:has(img),html.perf-lite .in-ic:has(img){animation-duration:2.2s!important;animation-iteration-count:infinite!important}
 @media(prefers-reduced-motion:reduce){.brand .logo,.intro-icon,.login-ic,.node .circle:has(img),.in-ic:has(img){animation:none!important}}
 </style>
 
@@ -2514,10 +2516,7 @@ function downloadSurvival(){
    +".sv-warn{background:#fff6e6;border:1px solid #ffe0a3;color:#8a5a00;border-radius:14px;padding:11px 13px;font-size:13px;margin-top:10px}"
    +".btn{display:inline-block;color:#fff;font-weight:800;padding:12px 18px;border-radius:14px;text-decoration:none;margin-top:14px}.g-sunset{background:var(--g-sunset)}.g-brand{background:var(--g-brand)}"
    +"footer{margin-top:26px;font-size:12px;color:var(--sub);border-top:1px solid var(--line);padding-top:14px}@media print{.btn{display:none}body{background:#fff}}";
-  var doc='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Survival Kit — Gunung Bawakaraeng</title><style>'+css+'</style></head><body><div class="wrap"><div class="doc-head"><div class="doc-logo">⛰️</div><div><h1>Survival Kit — Gunung Bawakaraeng</h1><p>Panduan bertahan hidup di alam bebas · Reichas Chelebes Rangers</p></div></div>'+_SV_INNER+'<footer>Dokumen edukasi Reichas Chelebes Rangers · Bukan pengganti pelatihan resmi. Utamakan SIMAKSI, pendamping berpengalaman, &amp; hubungi SOS bila darurat.</footer></div>
-
-
-</body></html>';
+  var doc='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Survival Kit — Gunung Bawakaraeng</title><style>'+css+'</style></head><body><div class="wrap"><div class="doc-head"><div class="doc-logo">⛰️</div><div><h1>Survival Kit — Gunung Bawakaraeng</h1><p>Panduan bertahan hidup di alam bebas · Reichas Chelebes Rangers</p></div></div>'+_SV_INNER+'<footer>Dokumen edukasi Reichas Chelebes Rangers · Bukan pengganti pelatihan resmi. Utamakan SIMAKSI, pendamping berpengalaman, &amp; hubungi SOS bila darurat.</footer></div></body></html>';
   try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download='Survival-Kit-Gunung-Bawakaraeng.html';document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},1500);if(window.toast)toast('Panduan Survival Kit diunduh','ok');}catch(e){if(window.toast)toast('Gagal mengunduh','err');}
 }
 window.downloadSurvival=downloadSurvival;
