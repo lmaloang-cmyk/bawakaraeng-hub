@@ -78,6 +78,9 @@
     },function(){},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
 
+  function _unlockAudio(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();}catch(e){}}
+  ['pointerdown','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,_unlockAudio,{passive:true});});
+
   window._sosStart=function(){if(_started)return;if(typeof _sbClient!=='function'||!_sbClient()){setTimeout(window._sosStart,2000);return;}_started=true;_tick();setInterval(_tick,POLL_MS);};
   window.addEventListener('load',function(){setTimeout(window._sosStart,3500);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&_started){_tick();}});
