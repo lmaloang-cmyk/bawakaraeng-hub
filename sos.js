@@ -34,6 +34,18 @@
   function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
   function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
   function _fmtDist(m){m=Math.round(m);return m>=1000?((m/1000).toFixed(m>=10000?0:1)+' km'):(m+' m');}
+  // --- Penanda SOS milik sendiri (persisten) supaya HP pengirim tidak bunyi sendiri ---
+  function _myIds(){try{return JSON.parse(localStorage.getItem('bwkMyAlertIds')||'[]');}catch(e){return [];}}
+  function _addMyId(id){try{if(id==null)return;var a=_myIds();if(a.map(String).indexOf(String(id))<0){a.push(id);localStorage.setItem('bwkMyAlertIds',JSON.stringify(a.slice(-50)));}}catch(e){}}
+  function _mySigs(){try{return JSON.parse(localStorage.getItem('bwkMySos')||'[]');}catch(e){return [];}}
+  function _addMySig(s){try{var a=_mySigs();a.push(s);localStorage.setItem('bwkMySos',JSON.stringify(a.slice(-20)));}catch(e){}}
+  function _isMine(a){try{
+    if(a.device&&a.device===_devId())return true;
+    if(a.id!=null&&_myIds().map(String).indexOf(String(a.id))>=0)return true;
+    if(a.lat!=null&&a.lng!=null){var sigs=_mySigs();var t=a.created_at?Date.parse(a.created_at):Date.now();
+      for(var i=0;i<sigs.length;i++){var s=sigs[i];
+        if(s&&s.name&&a.name===s.name&&_dist(+a.lat,+a.lng,s.lat,s.lng)<=60&&Math.abs(t-s.t)<=35*60000)return true;}}
+  }catch(e){}return false;}
 
   window._sosStop=function(){try{if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);}catch(e){}};
 
@@ -54,9 +66,12 @@
 
   // Dipanggil dari sosShareUI ketika lokasi pengirim SOS didapat
   window._sosPublish=function(lat,lng,name){
-    var c=(typeof _sbClient==='function')?_sbClient():null;if(!c||lat==null||lng==null)return;
+    if(lat==null||lng==null)return;
+    // Tandai SOS ini milik sendiri SEKARANG (lokal) — pengaman utama walau DB/RLS gagal mengembalikan id
+    _addMySig({t:Date.now(),name:(name||'Pendaki'),lat:+lat,lng:+lng});
+    var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){_sosStart();return;}
     var row={lat:lat,lng:lng,name:name||'Pendaki',device:_devId(),active:true};
-    try{c.from('sos_alerts').insert(row).select().then(function(res){if(res&&res.data&&res.data[0]){_myAlerts[res.data[0].id]=1;_seen[res.data[0].id]=1;}}).catch(function(){});}catch(e){}
+    try{c.from('sos_alerts').insert(row).select().then(function(res){if(res&&res.data&&res.data[0]){var id=res.data[0].id;_myAlerts[id]=1;_seen[id]=1;_addMyId(id);}}).catch(function(){});}catch(e){}
     _sosStart();
   };
 
@@ -70,7 +85,7 @@
         res.data.forEach(function(a){
           if(!a||a.lat==null||a.lng==null)return;
           if(a.active===false)return;
-          if(a.device&&a.device===_devId())return;
+          if(_isMine(a))return;
           if(_myAlerts[a.id]||_seen[a.id])return;
           var dd=_dist(_myPos.la,_myPos.ln,+a.lat,+a.lng);
           if(dd<=SOS_RADIUS){_seen[a.id]=1;_alarm(a,dd);}
