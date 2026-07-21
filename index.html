@@ -1607,7 +1607,7 @@ function lensIdentify(){
     if(!dataUrl){_lensFail('Foto gagal diproses');reset();return;}
     var cli=(typeof _sbClient==='function')?_sbClient():null;
     var sessionP=cli?cli.auth.getSession():Promise.resolve({data:{session:null}});
-    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},22000):null;
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var timer=ctrl?setTimeout(function(){ctrl.abort();},30000):null;
     sessionP.then(function(sr){
       var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;
       if(!token)throw new Error('LOGIN');

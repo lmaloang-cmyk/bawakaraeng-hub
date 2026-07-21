@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     const preferOpenAI = (!!openaiKey || !!openaiKey2) && String(process.env.AI_PROVIDER || '').toLowerCase() === 'openai';
     const models = (!key || preferOpenAI) ? [] : ((modelFallback && modelFallback !== model) ? [model, modelFallback] : [model, model]);
     const sleep = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); };
-    const isRetryable = function (status, msg) { return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
+    const isRetryable = function (status, msg) { if (/quota|billing|exceeded|exhaust/i.test(msg || '')) return false; return status === 429 || status === 500 || status === 502 || status === 503 || /overload|high demand|unavailable|temporar|try again/i.test(msg || ''); };
     let data = null, okResp = false, firstErr = '';
     for (let i = 0; i < models.length; i++) {
       if (i > 0) await sleep(700);
@@ -56,9 +56,7 @@ export default async function handler(req, res) {
         if (r.ok) { data = d; okResp = true; break; }
         const gmsg = String((d && d.error && d.error.message) || '').slice(0, 200);
         if (!firstErr) firstErr = gmsg;
-        if (!isRetryable(r.status, gmsg)) {
-          return res.status(502).json({ error: gmsg ? ('Gemini menolak: ' + gmsg) : 'AI tidak tersedia', code: 'UPSTREAM' });
-        }
+        if (!isRetryable(r.status, gmsg)) break; // non-transient (kuota/billing/kunci salah): stop coba Gemini, jatuh ke Groq/OpenRouter
       } catch (e2) {
         if (!firstErr) firstErr = (e2 && e2.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI cloud gagal dihubungi';
       }
@@ -154,7 +152,7 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
   const payload = {
     model: model,
     temperature: 0.2,
-    max_tokens: 1000,
+    max_tokens: 800,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
@@ -184,19 +182,6 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
     }
   } catch (e) {
     return { error: (e && e.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI gagal dihubungi' };
-  }
-  // If JSON-mode was rejected (e.g. Groq "failed to validate JSON"), retry once as plain text; the robust parser can salvage it.
-  if ((!rsp || !rsp.ok) && payload.response_format && /json|validate|response_format|failed_generation/i.test(firstErr)) {
-    try {
-      delete payload.response_format;
-      rsp = await fetch(aiBase + '/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15_000)
-      });
-      d = await rsp.json().catch(() => ({}));
-    } catch (e2) {}
   }
   if (rsp && rsp.ok) {
     const text = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
