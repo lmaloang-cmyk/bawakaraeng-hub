@@ -429,6 +429,25 @@
   .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
   .evt .ebtn.done{background:#c7ccd6}
   #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .sig-dot{width:12px;height:12px;border-radius:50%;align-self:center;flex:0 0 auto;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+  .sigmark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #2ecc71;border-radius:50%;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .signav{margin-top:12px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#0b1f3a,#132e4d);color:#eaf2ff;border:1px solid rgba(120,180,255,.25)}
+  .signav-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .signav-hd b{font-size:15px}
+  .signav-x{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:9px;padding:6px 10px;font-weight:700}
+  .signav-target{font-size:13px;margin-bottom:10px;line-height:1.5}
+  .signav-arrowbox{display:flex;justify-content:center;margin:6px 0 12px}
+  .signav-arrow{font-size:64px;line-height:1;transition:transform .3s ease;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));color:#78e1ad}
+  .signav-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+  .signav-stats>div{background:rgba(255,255,255,.08);border-radius:11px;padding:8px 4px}
+  .signav-stats b{display:block;font-size:14px}
+  .signav-stats small{display:block;font-size:10px;opacity:.75;margin-top:2px}
+  .signav-note{font-size:12px;opacity:.9;margin-top:10px;line-height:1.5}
+  .signav-gps{font-size:11px;opacity:.7;margin-top:8px}
+  .signav-tips{font-size:12px;margin-top:8px;padding:8px 10px;background:rgba(120,225,173,.12);border-radius:10px;line-height:1.5}
+  .signav-arrived{margin-top:8px;padding:8px 10px;background:rgba(46,204,113,.2);border-radius:10px;font-size:13px;font-weight:700}
+  .signav-loading{text-align:center;font-size:13px;padding:10px}
+  .signav .btn.alt{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff}
   .jhint{font-size:12px;color:var(--sub);margin:8px 4px 2px;text-align:center;line-height:1.5}
   .trailwrap{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .tcard{background:var(--card);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid #d5803b}
@@ -1066,6 +1085,13 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     <div class="jhint">Titik pos jalur via Lembanna (perkiraan koordinat). Ketinggian dari peta resmi Gunungbagging 2020.</div>
     <div class="elevwrap"><div class="li-hd">📈 Profil Ketinggian (Via Lembanna)</div><div id="elevProfile"></div></div>
     <div class="elevwrap" style="margin-top:14px"><div class="li-hd">💧 Sumber Air di Jalur</div><div id="waterList"></div></div>
+    <div class="elevwrap" style="margin-top:14px">
+      <div class="li-hd">📶 Titik Sinyal HP (Perkiraan)</div>
+      <div id="signalList"></div>
+      <button class="btn g-brand" id="signalNavBtn" onclick="signalFindNearest()" style="margin-top:10px;width:100%">📡 Cari Sinyal Terdekat (Offline)</button>
+      <div id="signalNav" class="signav" style="display:none"></div>
+      <div class="jhint" style="margin-top:6px">⚠️ Titik sinyal adalah PERKIRAAN dari pengalaman umum pendaki &amp; dapat berubah tergantung operator, cuaca, dan perangkat. GPS tetap berfungsi walau tidak ada sinyal seluler.</div>
+    </div>
     <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
     <div class="trailwrap" id="jalurTrails"></div>
   </section>
@@ -1475,7 +1501,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);}if(id==='eksplor'){setTimeout(function(){try{enrichSpecies();}catch(e){}},40);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);setTimeout(function(){try{renderSignal();}catch(e){}},140);}else{try{if(typeof signalStopNav==='function')signalStopNav();}catch(e){}}if(id==='eksplor'){setTimeout(function(){try{enrichSpecies();}catch(e){}},40);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -1946,8 +1972,66 @@ var waterPos=[
   {n:'Sumber Air Pos 2',f:0.225,el:1810,type:'Mata air / aliran',note:'Aliran air kecil dekat Pos 2. Cocok untuk isi ulang & area mendirikan tenda.'},
   {n:'Sumber Air Pos 5',f:0.499,el:2170,type:'Mata air (TERAKHIR)',note:'Titik air TERAKHIR sebelum puncak - WAJIB isi penuh semua persediaan di sini.'}
 ];
+var signalPos=[
+  {n:'Lembanna (Basecamp)',f:0,el:1514,q:'kuat',op:'Telkomsel / XL',d:'Desa terakhir & titik registrasi. Sinyal paling stabil — kirim kabar dan unduh peta di sini sebelum naik.'},
+  {n:'Punggungan Pos 1',f:0.156,el:1719,q:'lemah',op:'Telkomsel',d:'Area tugu cukup terbuka. Sinyal timbul-tenggelam; coba angkat HP tinggi menghadap arah lembah/kota.'},
+  {n:'Padang Pos 3',f:0.331,el:1950,q:'lemah',op:'Telkomsel',d:'Padang rumput terbuka. Saat kabut tipis kadang dapat sinyal untuk SMS atau telepon darurat.'},
+  {n:'Punggungan Pos 8',f:0.703,el:2440,q:'lemah',op:'Telkomsel',d:'Vegetasi menipis dan terbuka ke arah barat. Sinyal muncul di titik-titik tertentu saja.'},
+  {n:'Pertigaan Pos 9 (Ridge Sinjai)',f:0.833,el:2610,q:'kuat',op:'Telkomsel / XL',d:'Punggungan tinggi dengan pandangan lepas. Salah satu titik sinyal terbaik di jalur atas.'},
+  {n:'Puncak Bawakaraeng',f:1,el:2830,q:'kuat',op:'Telkomsel / XL',d:'Puncak terbuka 2.830 mdpl. Umumnya dapat sinyal untuk kabar singkat — hemat baterai HP.'}
+];
 function openWater(w){var c=_jc(w.f);if(jalurMap){jalurMap.setView(c,15);}var b=document.getElementById('sheetBody');if(b){b.innerHTML='<span class="pill" style="background:#2b6fff22;color:#2b6fff">💧 Sumber Air</span><h2 style="margin-top:8px">'+w.n+'</h2><div class="info-row"><div class="info"><b>'+w.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body"><b>'+w.type+'</b><br>'+w.note+'</p><div style="margin-top:10px;font-size:12px;color:#59627a;line-height:1.5">Ketersediaan air bergantung musim. Selalu bawa cadangan & alat filter/rebus air.</div>';}if(typeof openSheet==='function')openSheet();}
 function renderWater(){var el=document.getElementById('waterList');if(!el||typeof waterPos==='undefined')return;el.innerHTML=waterPos.map(function(w,i){return '<button class="wrow" onclick="openWater(waterPos['+i+'])"><span class="wro-ic">💧</span><span class="wro-tx"><b>'+w.n+'</b><small>'+w.type+' · '+w.el+' m</small></span><span class="wro-go">›</span></button>';}).join('')+'<div class="jhint" style="margin-top:6px">⚠️ Setelah Pos 5 tidak ada sumber air sampai puncak. Rencanakan kebutuhan air dengan cermat.</div>';}
+var _SIG_Q={kuat:{c:'#2ecc71',t:'Kuat'},lemah:{c:'#e5951c',t:'Lemah'}};
+function renderSignal(){var el=document.getElementById('signalList');if(!el||typeof signalPos==='undefined')return;el.innerHTML=signalPos.map(function(s,i){var q=_SIG_Q[s.q]||_SIG_Q.lemah;return '<button class="wrow" onclick="openSignal('+i+')"><span class="wro-ic">📶</span><span class="wro-tx"><b>'+escapeHtml(s.n)+'</b><small>Sinyal '+q.t+' · '+escapeHtml(s.op)+' · '+s.el+' m</small></span><span class="sig-dot" style="background:'+q.c+'"></span></button>';}).join('');}
+function openSignal(i){var s=signalPos[i];if(!s)return;var c=_jc(s.f);var q=_SIG_Q[s.q]||_SIG_Q.lemah;if(jalurMap){jalurMap.setView(c,15);}var b=document.getElementById('sheetBody');if(b){b.innerHTML='<span class="pill" style="background:'+q.c+'22;color:'+q.c+'">📶 Sinyal '+q.t+'</span><h2 style="margin-top:8px">'+escapeHtml(s.n)+'</h2><div class="info-row"><div class="info"><b>'+s.el+' m</b><small>Ketinggian</small></div><div class="info"><b>'+c[0].toFixed(4)+'</b><small>Lintang</small></div><div class="info"><b>'+c[1].toFixed(4)+'</b><small>Bujur</small></div></div><p class="body"><b>Operator: '+escapeHtml(s.op)+'</b><br>'+escapeHtml(s.d)+'</p><div style="margin-top:10px;font-size:12px;color:#59627a;line-height:1.5">Perkiraan berdasarkan pengalaman umum pendaki. Ketersediaan sinyal nyata bergantung operator, cuaca, dan perangkat.</div>';}if(typeof openSheet==='function')openSheet();}
+function _haversine(a1,o1,a2,o2){var R=6371000,dLat=(a2-a1)*Math.PI/180,dLon=(o2-o1)*Math.PI/180,la1=a1*Math.PI/180,la2=a2*Math.PI/180;var x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)*Math.sin(dLon/2);return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function _bearing(a1,o1,a2,o2){var la1=a1*Math.PI/180,la2=a2*Math.PI/180,dLon=(o2-o1)*Math.PI/180;var y=Math.sin(dLon)*Math.cos(la2),x=Math.cos(la1)*Math.sin(la2)-Math.sin(la1)*Math.cos(la2)*Math.cos(dLon);return (Math.atan2(y,x)*180/Math.PI+360)%360;}
+function _sigWalkTime(dist,ascent){var sec=dist/1.0;if(ascent>0)sec+=ascent*8;return Math.max(1,Math.round(sec/60));}
+function _sigRender(pos){
+  if(typeof signalPos==='undefined'||!signalPos.length)return;
+  var lat=pos.coords.latitude,lng=pos.coords.longitude,acc=Math.round(pos.coords.accuracy||0);
+  var best=null,bd=Infinity;
+  signalPos.forEach(function(s){var c=_jc(s.f);var d=_haversine(lat,lng,c[0],c[1]);if(d<bd){bd=d;best=s;}});
+  if(!best)return;
+  var c=_jc(best.f);var brg=_bearing(lat,lng,c[0],c[1]);var card=(typeof _compassText==='function')?_compassText(brg):'';
+  var myAlt=(typeof pos.coords.altitude==='number'&&pos.coords.altitude>-500)?pos.coords.altitude:null;
+  var dEl=(myAlt!==null)?Math.round(best.el-myAlt):null;
+  var eta=_sigWalkTime(bd,(dEl!==null&&dEl>0)?dEl:0);
+  var q=_SIG_Q[best.q]||_SIG_Q.lemah;
+  window._sigTarget={lat:c[0],lng:c[1],brg:brg,name:best.n};
+  var heading=(typeof window._sigHeading==='number')?window._sigHeading:null;
+  var rot=(heading!==null)?(((brg-heading)+360)%360):brg;
+  var distTxt=(bd>=1000)?((bd/1000).toFixed(2)+' km'):(Math.round(bd)+' m');
+  var el=document.getElementById('signalNav');if(!el)return;el.style.display='block';
+  var html='<div class="signav-hd"><b>📡 Menuju Sinyal Terdekat</b><button class="signav-x" onclick="signalStopNav()">✕ Selesai</button></div>';
+  html+='<div class="signav-target">🎯 <b>'+escapeHtml(best.n)+'</b> · sinyal <span style="color:'+q.c+'">'+q.t+'</span> · '+escapeHtml(best.op)+'</div>';
+  html+='<div class="signav-arrowbox"><div class="signav-arrow" id="sigArrow" style="transform:rotate('+rot.toFixed(0)+'deg)">⬆</div></div>';
+  html+='<div class="signav-stats"><div><b>'+distTxt+'</b><small>Jarak</small></div><div><b>'+Math.round(brg)+'° '+card+'</b><small>Arah</small></div><div><b>'+(dEl!==null?((dEl>=0?'+':'')+dEl+' m'):'—')+'</b><small>Beda tinggi</small></div><div><b>±'+eta+' mnt</b><small>Estimasi</small></div></div>';
+  html+='<div class="signav-note">'+(heading!==null?'Ikuti arah panah — sudah disesuaikan dengan arah hadap ponsel.':'Panah relatif ke <b>Utara</b>. Ketuk tombol di bawah agar panah mengikuti arah hadap ponsel.')+'</div>';
+  if(heading===null)html+='<button class="btn alt" style="margin-top:8px;width:100%" onclick="signalEnableCompass()">🧭 Aktifkan Kompas</button>';
+  html+='<div class="signav-gps">📍 Akurasi GPS ±'+acc+' m · '+lat.toFixed(5)+', '+lng.toFixed(5)+'</div>';
+  if(bd<=40)html+='<div class="signav-arrived">✅ Anda sudah sangat dekat. Coba cek sinyal &amp; kirim kabar/lokasi sekarang.</div>';
+  html+='<div class="signav-tips">💡 Angkat HP tinggi menghadap lembah/langit terbuka. Saat sinyal muncul: kirim lokasi lewat tombol SOS, lalu hemat baterai.</div>';
+  el.innerHTML=html;
+}
+function signalFindNearest(){
+  if(!navigator.geolocation){toast('GPS tidak tersedia di perangkat ini','err');return;}
+  var el=document.getElementById('signalNav');if(el){el.style.display='block';el.innerHTML='<div class="signav-loading">📡 Mencari lokasi Anda &amp; titik sinyal terdekat…</div>';}
+  toast('Melacak posisi (GPS tetap jalan tanpa sinyal seluler)…','ok');
+  if(window._sigWatch!=null){try{navigator.geolocation.clearWatch(window._sigWatch);}catch(e){}}
+  window._sigWatch=navigator.geolocation.watchPosition(_sigRender,function(e){var el=document.getElementById('signalNav');if(el)el.innerHTML='<div class="signav-loading">⚠️ '+escapeHtml((e&&e.message)||'Gagal mengambil lokasi. Aktifkan izin & GPS.')+'</div><button class="btn alt" style="margin-top:8px;width:100%" onclick="signalStopNav()">Tutup</button>';},{enableHighAccuracy:true,timeout:15000,maximumAge:2000});
+}
+function signalStopNav(){if(window._sigWatch!=null){try{navigator.geolocation.clearWatch(window._sigWatch);}catch(e){}window._sigWatch=null;}if(window._sigOri){window.removeEventListener('deviceorientation',window._sigOri,true);window._sigOri=null;}window._sigHeading=null;var el=document.getElementById('signalNav');if(el){el.style.display='none';el.innerHTML='';}}
+async function signalEnableCompass(){
+  if(!window.DeviceOrientationEvent){toast('Sensor kompas tidak tersedia pada perangkat ini','err');return;}
+  try{
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){var p=await DeviceOrientationEvent.requestPermission();if(p!=='granted'){toast('Izin sensor kompas ditolak','err');return;}}
+    if(!window._sigOri){window._sigOri=function(ev){var h=(typeof ev.webkitCompassHeading==='number')?ev.webkitCompassHeading:((typeof ev.alpha==='number')?(360-ev.alpha)%360:null);if(h===null||isNaN(h))return;window._sigHeading=Math.round((h+360)%360);var t=window._sigTarget,ar=document.getElementById('sigArrow');if(t&&ar){ar.style.transform='rotate('+((((t.brg-window._sigHeading))+360)%360).toFixed(0)+'deg)';}};window.addEventListener('deviceorientation',window._sigOri,true);}
+    toast('Kompas aktif · panah mengikuti arah hadap ponsel','ok');
+  }catch(e){toast((e&&e.message)||'Izin sensor belum tersedia','err');}
+}
+window.renderSignal=renderSignal;window.openSignal=openSignal;window.signalFindNearest=signalFindNearest;window.signalStopNav=signalStopNav;window.signalEnableCompass=signalEnableCompass;
 var _jzc={ok:'#08a35f',warn:'#d5803b',danger:'#ff2d55'};
 var _jzt={ok:'Aman',warn:'Waspada',danger:'Bahaya'};
 function initJalur(){if(typeof ensureLeaflet==='function'){ensureLeaflet(_initJalur);}else{_initJalur();}}
@@ -1964,6 +2048,7 @@ function _initJalur(){
       L.circleMarker(c,{radius:8,color:'#fff',weight:2,fillColor:_jzc[p.st],fillOpacity:1}).addTo(jalurMap).on('click',function(){openPos(i);}).bindTooltip(p.n+' · '+p.el+' m',{direction:'top'});
     });
     if(window.waterPos){waterPos.forEach(function(w){var wc=_jc(w.f);var wi=L.divIcon({html:'<div class="wdrop">💧</div>',className:'wdrop-wrap',iconSize:[28,28],iconAnchor:[14,14]});L.marker(wc,{icon:wi,zIndexOffset:500}).addTo(jalurMap).bindTooltip('💧 '+w.n,{direction:'top'}).on('click',function(){openWater(w);});});}
+    if(window.signalPos){signalPos.forEach(function(s,si){var sc=_jc(s.f);var scol=s.q==='kuat'?'#2ecc71':'#e5951c';var sic=L.divIcon({html:'<div class="sigmark" style="border-color:'+scol+'">📶</div>',className:'sigmark-wrap',iconSize:[30,30],iconAnchor:[15,15]});L.marker(sc,{icon:sic,zIndexOffset:600}).addTo(jalurMap).bindTooltip('📶 '+s.n+' · sinyal '+s.q,{direction:'top'}).on('click',function(){openSignal(si);});});}
     jalurMap.fitBounds(pts,{padding:[30,30]});
   }
   setTimeout(function(){jalurMap.invalidateSize();},130);
