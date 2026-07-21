@@ -79,8 +79,10 @@ async function askTextCompatible(cfg, system, userText) {
   if (!key || !base) return null;
   const model = (cfg && cfg.model) || (/groq\.com/i.test(base) ? 'meta-llama/llama-4-scout-17b-16e-instruct' : (/openrouter\.ai/i.test(base) ? 'openrouter/free' : 'gpt-4o-mini'));
   try {
-    const payload = { model: model, temperature: 0.25, max_tokens: 900, messages: [{ role: 'system', content: system }, { role: 'user', content: userText }] };
-    if (/openrouter\.ai/i.test(base)) payload.reasoning = { exclude: true };
+    const isOR = /openrouter\.ai/i.test(base);
+    const sys = isOR ? (system + ' /no_think') : system;
+    const payload = { model: model, temperature: 0.25, max_tokens: 900, messages: [{ role: 'system', content: sys }, { role: 'user', content: userText }] };
+    if (isOR) { payload.reasoning = { enabled: false }; payload.chat_template_kwargs = { enable_thinking: false }; }
     const r = await fetch(base + '/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
@@ -95,11 +97,17 @@ async function askTextCompatible(cfg, system, userText) {
   } catch (e) { return null; }
 }
 
-// Buang blok penalaran <think>...</think> dari model reasoning; sisakan jawaban akhir yang bersih.
+// Buang penalaran model reasoning; sisakan jawaban akhir yang bersih.
 function cleanAiAnswer(s) {
   let t = String(s || '').trim();
+  // Kasus bertag <think>...</think>: ambil teks setelah penutup terakhir.
   const ci = t.toLowerCase().lastIndexOf('</think>');
   if (ci >= 0) t = t.slice(ci + 8);
-  t = t.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '');
+  t = t.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '').trim();
+  // Jaring pengaman: penalaran tanpa tag (mis. Qwen menulis "thinking process" lalu jawaban akhir).
+  if (/thinking process|analyze user input|check constraints|draft response|evaluate weather|let'?s adjust/i.test(t)) {
+    const li = t.lastIndexOf('(1)');
+    if (li > 0 && (t.length - li) > 40) t = t.slice(li).trim();
+  }
   return t.trim().slice(0, 5000);
 }
