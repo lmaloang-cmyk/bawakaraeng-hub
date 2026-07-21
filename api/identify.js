@@ -154,7 +154,7 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
   const payload = {
     model: model,
     temperature: 0.2,
-    max_tokens: 800,
+    max_tokens: 1000,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } } ] }
@@ -184,6 +184,19 @@ async function askCompatible(cfg, system, prompt, mime, b64) {
     }
   } catch (e) {
     return { error: (e && e.name === 'TimeoutError') ? 'AI terlalu lama merespons' : 'AI gagal dihubungi' };
+  }
+  // If JSON-mode was rejected (e.g. Groq "failed to validate JSON"), retry once as plain text; the robust parser can salvage it.
+  if ((!rsp || !rsp.ok) && payload.response_format && /json|validate|response_format|failed_generation/i.test(firstErr)) {
+    try {
+      delete payload.response_format;
+      rsp = await fetch(aiBase + '/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'HTTP-Referer': 'https://bawakaraeng-hub.vercel.app', 'X-Title': 'Bawakaraeng Hub' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15_000)
+      });
+      d = await rsp.json().catch(() => ({}));
+    } catch (e2) {}
   }
   if (rsp && rsp.ok) {
     const text = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
