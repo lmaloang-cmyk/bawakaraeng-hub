@@ -22,12 +22,17 @@
   .wrow .wro-tx b{font-size:13px}
   .wrow .wro-tx small{color:#8b98ad;font-size:11px}
   .wrow .wro-go{color:#2b6fff;font-size:18px}
+  .sosal-card{max-height:88vh;display:flex;flex-direction:column}
+  .sosal-list{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sosal-item{border-top:1px solid #f1e3e6;margin-top:12px;padding-top:12px}
+  .sosal-item:first-child{border-top:none;margin-top:4px;padding-top:0}
+  .sosal-b.done{background:#eef1f6;color:#42506b}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
   var SOS_RADIUS=20000;    // meter (20 KM)
   var POLL_MS=25000;       // interval pantau
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
-  var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;
+  var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;var _queue=[];
 
   function _devId(){try{var d=localStorage.getItem('bwkDev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',d);}return d;}catch(e){return 'd0';}}
   function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
@@ -46,21 +51,35 @@
       for(var i=0;i<sigs.length;i++){var s=sigs[i];
         if(s&&s.name&&a.name===s.name&&_dist(+a.lat,+a.lng,s.lat,s.lng)<=60&&Math.abs(t-s.t)<=35*60000)return true;}}
   }catch(e){}return false;}
+  // --- Status SOS yang sudah dimatikan/ditangani (persisten, agar tidak bunyi lagi setelah refresh) ---
+  function _doneMap(){try{return JSON.parse(localStorage.getItem('bwkSosDone')||'{}');}catch(e){return {};}}
+  function _isDone(id){if(id==null)return false;return !!_doneMap()[String(id)];}
+  function _markDone(id){try{if(id==null)return;var o=_doneMap();o[String(id)]=Date.now();var cut=Date.now()-3*60*60000;Object.keys(o).forEach(function(k){if(o[k]<cut)delete o[k];});localStorage.setItem('bwkSosDone',JSON.stringify(o));}catch(e){}}
+  function _esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
 
-  window._sosStop=function(){try{if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);}catch(e){}};
+  window._sosStop=function(){try{_queue.forEach(function(q){_markDone(q.id);_seen[String(q.id)]=1;});_queue=[];if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);}catch(e){}};
 
-  function _alarm(a,dist){
+  function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);}}catch(e){}}
+
+  function _renderAlarm(play){
     try{
-      var name=(a.name||'Seorang pendaki');
-      var maps=(a.lat!=null&&a.lng!=null)?('https://maps.google.com/?q='+a.lat+','+a.lng):'#';
-      var wa='https://wa.me/'+((window._rcWA&&_rcWA())||'6282320124040')+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+name+' sekitar '+_fmtDist(dist)+' dari saya di jalur Bawakaraeng. Lokasi: '+maps);
-      var old=document.getElementById('sosAlarm');if(old)old.remove();
-      var d=document.createElement('div');d.className='sosal';d.id='sosAlarm';
-      d.innerHTML=`<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>DARURAT DI DEKATMU</div><div class='sosal-nm'>${name} butuh bantuan</div><div class='sosal-ds'>± ${_fmtDist(dist)} dari lokasimu</div><div class='sosal-bs'><a class='sosal-b map' href='${maps}' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='${wa}' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b off' onclick='_sosStop()'>🔇 Matikan Alarm</button></div></div>`;
-      document.body.appendChild(d);
-      _beep();_vibe();
-      if(_alarmTimer)clearInterval(_alarmTimer);
-      _alarmTimer=setInterval(function(){if(!document.getElementById('sosAlarm')){clearInterval(_alarmTimer);_alarmTimer=null;return;}_beep();_vibe();},3200);
+      if(!_queue.length){window._sosStop();return;}
+      var multi=_queue.length>1;var wnum=(window._rcWA&&_rcWA())||'6282320124040';
+      var items=_queue.map(function(a){
+        var nm=(a.name||'Seorang pendaki');
+        var maps=(a.lat!=null&&a.lng!=null)?('https://maps.google.com/?q='+a.lat+','+a.lng):'#';
+        var wa='https://wa.me/'+wnum+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+nm+' sekitar '+_fmtDist(a.dist)+' dari saya di jalur Bawakaraeng. Lokasi: '+maps);
+        return "<div class='sosal-item'><div class='sosal-nm'>"+_esc(nm)+" butuh bantuan</div><div class='sosal-ds'>± "+_fmtDist(a.dist)+" dari lokasimu</div><div class='sosal-bs'><a class='sosal-b map' href='"+maps+"' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='"+wa+"' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b done' data-sos-done='"+_esc(String(a.id))+"'>✅ Sudah ditangani</button></div></div>";
+      }).join('');
+      var title=multi?(_queue.length+' SINYAL DARURAT DI DEKATMU'):'DARURAT DI DEKATMU';
+      var foot="<button class='sosal-b off' data-sos-stop='1'>🔇 "+(multi?'Matikan Semua Alarm':'Matikan Alarm')+"</button>";
+      var el=document.getElementById('sosAlarm');
+      if(!el){el=document.createElement('div');el.className='sosal';el.id='sosAlarm';document.body.appendChild(el);
+        el.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.getAttribute)return;var did=t.getAttribute('data-sos-done');if(did!=null&&did!==''){_dismiss(did);return;}if(t.getAttribute('data-sos-stop')){window._sosStop();}});
+      }
+      el.innerHTML="<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>"+title+"</div><div class='sosal-list'>"+items+"</div>"+foot+"</div>";
+      if(play){_beep();_vibe();}
+      if(!_alarmTimer)_alarmTimer=setInterval(function(){if(!document.getElementById('sosAlarm')||!_queue.length){window._sosStop();return;}_beep();_vibe();},3200);
     }catch(e){}
   }
 
@@ -82,14 +101,17 @@
       var since=new Date(Date.now()-MAX_AGE_MIN*60000).toISOString();
       c.from('sos_alerts').select('*').gte('created_at',since).order('created_at',{ascending:false}).limit(60).then(function(res){
         if(res.error||!res.data)return;
+        var added=false;
         res.data.forEach(function(a){
           if(!a||a.lat==null||a.lng==null)return;
-          if(a.active===false)return;
+          if(a.active===false){_queue=_queue.filter(function(q){return String(q.id)!==String(a.id);});return;}
           if(_isMine(a))return;
-          if(_myAlerts[a.id]||_seen[a.id])return;
+          if(_myAlerts[a.id]||_seen[a.id]||_isDone(a.id))return;
+          if(_queue.some(function(q){return String(q.id)===String(a.id);}))return;
           var dd=_dist(_myPos.la,_myPos.ln,+a.lat,+a.lng);
-          if(dd<=SOS_RADIUS){_seen[a.id]=1;_alarm(a,dd);}
+          if(dd<=SOS_RADIUS){_seen[a.id]=1;_queue.push({id:a.id,name:a.name,lat:+a.lat,lng:+a.lng,dist:dd});added=true;}
         });
+        if(added){_renderAlarm(true);}else if(!_queue.length){window._sosStop();}
       }).catch(function(){});
     },function(){},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
