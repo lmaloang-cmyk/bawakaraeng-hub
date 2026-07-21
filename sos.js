@@ -1,4 +1,4 @@
-/* SOS proximity alarm + gaya sumber air. Alarm berbunyi di perangkat lain yang <=100m dari pengirim SOS (saat aplikasi terbuka). */
+/* SOS proximity alarm + gaya sumber air. Alarm berbunyi di perangkat lain yang <=20km dari pengirim SOS (saat aplikasi terbuka). */
 (function(){
   try{var css=`
   .sosal{position:fixed;inset:0;z-index:99999;background:rgba(120,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:sosalflash 1s infinite}
@@ -24,7 +24,7 @@
   .wrow .wro-go{color:#2b6fff;font-size:18px}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
-  var SOS_RADIUS=100;      // meter
+  var SOS_RADIUS=20000;    // meter (20 KM)
   var POLL_MS=25000;       // interval pantau
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;
@@ -33,6 +33,7 @@
   function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
   function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
   function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
+  function _fmtDist(m){m=Math.round(m);return m>=1000?((m/1000).toFixed(m>=10000?0:1)+' km'):(m+' m');}
 
   window._sosStop=function(){try{if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);}catch(e){}};
 
@@ -40,10 +41,10 @@
     try{
       var name=(a.name||'Seorang pendaki');
       var maps=(a.lat!=null&&a.lng!=null)?('https://maps.google.com/?q='+a.lat+','+a.lng):'#';
-      var wa='https://wa.me/'+((window._rcWA&&_rcWA())||'6282320124040')+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+name+' sekitar '+Math.round(dist)+' m dari saya di jalur Bawakaraeng. Lokasi: '+maps);
+      var wa='https://wa.me/'+((window._rcWA&&_rcWA())||'6282320124040')+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+name+' sekitar '+_fmtDist(dist)+' dari saya di jalur Bawakaraeng. Lokasi: '+maps);
       var old=document.getElementById('sosAlarm');if(old)old.remove();
       var d=document.createElement('div');d.className='sosal';d.id='sosAlarm';
-      d.innerHTML=`<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>DARURAT DI DEKATMU</div><div class='sosal-nm'>${name} butuh bantuan</div><div class='sosal-ds'>± ${Math.round(dist)} m dari lokasimu</div><div class='sosal-bs'><a class='sosal-b map' href='${maps}' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='${wa}' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b off' onclick='_sosStop()'>🔇 Matikan Alarm</button></div></div>`;
+      d.innerHTML=`<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>DARURAT DI DEKATMU</div><div class='sosal-nm'>${name} butuh bantuan</div><div class='sosal-ds'>± ${_fmtDist(dist)} dari lokasimu</div><div class='sosal-bs'><a class='sosal-b map' href='${maps}' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='${wa}' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b off' onclick='_sosStop()'>🔇 Matikan Alarm</button></div></div>`;
       document.body.appendChild(d);
       _beep();_vibe();
       if(_alarmTimer)clearInterval(_alarmTimer);
