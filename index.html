@@ -1136,6 +1136,8 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <div class="alt-read"><div><span>ELEVASI TERBACA</span><b id="altimeterValue">— <small>mdpl</small></b><small class="alt-source" id="altSource">Sumber: belum diperbarui</small></div><div class="alt-scale" aria-label="Skala elevasi"><i>2000</i><i>1500</i><i>1000</i><i>500</i><i>0</i></div><div class="alt-icon">△</div></div>
       <button class="btn g-brand compass-btn tactical-btn" onclick="startBaro()">↻ PERBARUI PEMBACAAN</button>
       <p class="compass-status" id="baroStatus" role="status">Aktifkan GPS untuk pembacaan lokasi yang lebih presisi.</p>
+      <button class="btn compass-btn tactical-btn" id="baroAiBtn" onclick="baroAnalyzeAI()" style="display:none;background:linear-gradient(135deg,#7a3fb0,#b3579e);color:#fff">🔮 Analisa Cuaca (AI)</button>
+      <div id="baroAiResult" style="display:none;margin:12px 14px 0;padding:12px 13px;border-radius:10px;background:rgba(10,14,30,.5);border:1px solid rgba(255,255,255,.14);color:#eaf2ff;font-size:13px;line-height:1.5;white-space:pre-wrap"></div>
     </div>
     <div class="baro-guide tactical-guide"><b>INTERPRETASI LAPANGAN</b><p>Tekanan yang turun cepat dapat menandakan perubahan cuaca. Konfirmasi dengan prakiraan resmi dan kondisi lapangan sebelum mengambil keputusan.</p></div>
     <p class="note">Tekanan bersumber dari model cuaca lokasi; elevasi memakai GPS jika tersedia atau elevasi medan sebagai cadangan. Ini bukan pengganti instrumen outdoor profesional.</p>
@@ -2778,17 +2780,69 @@ async function startBaro(){
   try{
     var pos=await _geoPosition(),lat=pos.coords.latitude,lng=pos.coords.longitude;
     if(status)status.textContent='Membaca tekanan udara sekitar…';
-    var url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lng)+'&current=surface_pressure&timezone=auto';
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lng)+'&current=surface_pressure,temperature_2m,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m,weather_code&hourly=surface_pressure,precipitation_probability&past_days=1&forecast_days=1&timezone=auto';
     var controller=window.AbortController?new AbortController():null;var timer=controller?setTimeout(function(){controller.abort();},10000):null;var res;try{res=await fetch(url,controller?{signal:controller.signal}:{});}finally{if(timer)clearTimeout(timer);}if(!res.ok)throw new Error('Data tekanan belum tersedia.');
     var data=await res.json(),pressure=data&&data.current&&data.current.surface_pressure;
     if(typeof pressure!=='number')throw new Error('Data tekanan belum tersedia.');
     var altitude=(typeof pos.coords.altitude==='number'&&pos.coords.altitude>-500)?pos.coords.altitude:data.elevation;
     if(typeof altitude!=='number')altitude=0;
     _baroPut(pressure,altitude);
-    if(status)status.textContent='Diperbarui untuk lokasi Anda. Akurasi ketinggian bergantung GPS/medan.';
+    try{window._baroData=_baroCompute(data,pressure,altitude);if(trend)trend.textContent=window._baroData.trendText;var _ab=document.getElementById('baroAiBtn');if(_ab)_ab.style.display='block';}catch(_e){}
+    if(status)status.textContent='Diperbarui. Ketuk "🔮 Analisa Cuaca (AI)" untuk perkiraan hujan/kabut.';
   }catch(e){if(status)status.textContent=(e&&e.message)||'Tidak dapat memperbarui data.';if(trend)trend.textContent='Coba lagi saat GPS & internet aktif.';}
 }
 window.startBaro=startBaro;
+function _baroCompute(data,pressure,altitude){
+  var cur=(data&&data.current)||{};var h=(data&&data.hourly)||{};
+  var hp=h.surface_pressure||[],ht=h.time||[],hpop=h.precipitation_probability||[];
+  var nowT=cur.time||'';var idx=ht.indexOf(nowT);
+  if(idx<0){idx=ht.length-1;for(var k=0;k<ht.length;k++){if(ht[k]<=nowT)idx=k;}}
+  var p3=(idx>=3&&typeof hp[idx-3]==='number')?hp[idx-3]:null;
+  var trend3=(p3!=null)?Math.round((pressure-p3)*10)/10:null;
+  var popMax=null;for(var j=idx+1;j<=idx+6&&j<hpop.length;j++){var v=hpop[j];if(typeof v==='number')popMax=(popMax==null)?v:Math.max(popMax,v);}
+  var temp=cur.temperature_2m,rh=cur.relative_humidity_2m,dew=cur.dew_point_2m,cloud=cur.cloud_cover,wind=cur.wind_speed_10m;
+  var spread=(typeof temp==='number'&&typeof dew==='number')?Math.round((temp-dew)*10)/10:null;
+  var trendText;
+  if(trend3==null)trendText='Tekanan '+Math.round(pressure)+' hPa · tren belum tersedia';
+  else if(trend3<=-2)trendText='⚠️ Tekanan turun cepat ('+trend3+' hPa/3j) — waspada hujan/badai';
+  else if(trend3<-0.5)trendText='Tekanan turun ('+trend3+' hPa/3j) — berpotensi memburuk';
+  else if(trend3>1)trendText='Tekanan naik (+'+trend3+' hPa/3j) — cenderung membaik';
+  else trendText='Tekanan stabil ('+(trend3>=0?'+':'')+trend3+' hPa/3j)';
+  return {pressure:Math.round(pressure),altitude:Math.round(altitude),trend3:trend3,trendText:trendText,temp:temp,rh:rh,dew:dew,spread:spread,cloud:cloud,wind:wind,code:cur.weather_code,popMax:popMax};
+}
+async function baroAnalyzeAI(){
+  var box=document.getElementById('baroAiResult'),btn=document.getElementById('baroAiBtn');
+  var d=window._baroData;
+  if(!d){if(box){box.style.display='block';box.textContent='Ketuk "↻ Perbarui Pembacaan" dulu untuk mengambil data.';}return;}
+  if(box){box.style.display='block';box.innerHTML='<span class="chat-thinking">🔮 Menganalisa data cuaca…</span>';}
+  if(btn)btn.disabled=true;
+  try{
+    var cli=(typeof _sbClient==='function')?_sbClient():null;
+    var sr=cli?await cli.auth.getSession():{data:{session:null}};
+    var token=sr&&sr.data&&sr.data.session&&sr.data.session.access_token;
+    if(!token)throw new Error('LOGIN');
+    var parts=['Tekanan '+d.pressure+' hPa'];
+    if(d.trend3!=null)parts.push('tren 3 jam '+(d.trend3>=0?'+':'')+d.trend3+' hPa');
+    if(typeof d.temp==='number')parts.push('suhu '+Math.round(d.temp)+'°C');
+    if(typeof d.rh==='number')parts.push('kelembapan '+Math.round(d.rh)+'%');
+    if(typeof d.dew==='number')parts.push('titik embun '+Math.round(d.dew)+'°C'+(d.spread!=null?(' (selisih '+d.spread+'°C)'):''));
+    if(typeof d.cloud==='number')parts.push('tutupan awan '+Math.round(d.cloud)+'%');
+    if(typeof d.wind==='number')parts.push('angin '+Math.round(d.wind)+' km/j');
+    if(d.popMax!=null)parts.push('peluang hujan ~'+Math.round(d.popMax)+'%');
+    parts.push('elevasi '+d.altitude+' mdpl');
+    var message='Analisa singkat potensi cuaca (hujan, kabut, badai) beberapa jam ke depan di gunung dari data barometer ini: '+parts.join(', ')+'. Beri: (1) kemungkinan cuaca, (2) tanda bahaya yang perlu diwaspadai, (3) saran keselamatan singkat. Sebutkan ini perkiraan, konfirmasi BMKG/petugas.';
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;var tm=ctrl?setTimeout(function(){ctrl.abort();},30000):null;
+    var r;try{r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({message:message,context:{area:'Baro/Altimeter Gunung Bawakaraeng'}}),signal:ctrl?ctrl.signal:undefined});}finally{if(tm)clearTimeout(tm);}
+    var j=await r.json().catch(function(){return {};});
+    if(!r.ok||!j.answer)throw new Error((j&&j.code==='LOCAL_FALLBACK')?'AI sedang sibuk — coba lagi sebentar.':((j&&j.error)||'Analisa gagal.'));
+    var src=j.source?('<div class="chat-ai-source" style="margin-top:8px">'+escapeHtml(j.source)+'</div>'):'';
+    if(box)box.innerHTML='<b>🔮 Analisa Cuaca AI</b><div style="margin-top:6px">'+escapeHtml(j.answer).replace(/\n/g,'<br>')+'</div>'+src+'<div style="margin-top:8px;font-size:11px;opacity:.75">Perkiraan berbasis data barometer — bukan pengganti BMKG.</div>';
+  }catch(e){
+    var msg=(e&&e.message==='LOGIN')?'Masuk dulu untuk memakai Analisa AI.':((e&&e.name==='AbortError')?'Analisa terlalu lama — coba lagi.':((e&&e.message)||'Analisa gagal.'));
+    if(box)box.innerHTML='⚠️ '+escapeHtml(msg);
+  }finally{if(btn)btn.disabled=false;}
+}
+window.baroAnalyzeAI=baroAnalyzeAI;
 </script>
 <script>
 /* Pintasan manifest: buka langsung ke area yang dipilih dari ikon aplikasi. */
