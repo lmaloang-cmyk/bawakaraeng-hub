@@ -83,6 +83,8 @@
     }catch(e){}
   }
 
+  // Kirim Web Push ke perangkat lain di dekat pengirim (agar masuk walau aplikasi tertutup / layar mati).
+  function _notifyPush(id,lat,lng,name,device){try{fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,lat:lat,lng:lng,name:name,device:device})}).catch(function(){});}catch(e){}}
   // Dipanggil dari sosShareUI ketika lokasi pengirim SOS didapat
   window._sosPublish=function(lat,lng,name){
     if(lat==null||lng==null)return;
@@ -90,7 +92,7 @@
     _addMySig({t:Date.now(),name:(name||'Pendaki'),lat:+lat,lng:+lng});
     var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){_sosStart();return;}
     var row={lat:lat,lng:lng,name:name||'Pendaki',device:_devId(),active:true};
-    try{c.from('sos_alerts').insert(row).select().then(function(res){if(res&&res.data&&res.data[0]){var id=res.data[0].id;_myAlerts[id]=1;_seen[id]=1;_addMyId(id);}}).catch(function(){});}catch(e){}
+    try{c.from('sos_alerts').insert(row).select().then(function(res){var id=(res&&res.data&&res.data[0])?res.data[0].id:null;if(id!=null){_myAlerts[id]=1;_seen[id]=1;_addMyId(id);}_notifyPush(id,lat,lng,row.name,row.device);}).catch(function(){_notifyPush(null,lat,lng,row.name,row.device);});}catch(e){}
     _sosStart();
   };
 
