@@ -1,4 +1,4 @@
-const CACHE='bwk-v58-signal';
+const CACHE='bwk-v60-signal';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/chat.js','/hike.js','/lens-extras.js'];
