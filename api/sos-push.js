@@ -1,88 +1,90 @@
 import webpush from 'web-push';
 import { rateLimit, secureApi } from '../lib/security.js';
 
-// Kirim Web Push ke perangkat pendaki lain di dekat lokasi SOS (radius 20 km),
-// supaya peringatan tetap masuk walau aplikasi tertutup / layar HP mati.
 function dist(la1, lo1, la2, lo2) {
   const R = 6371000, tr = Math.PI / 180;
   const dLa = (la2 - la1) * tr, dLo = (lo2 - lo1) * tr;
-  const a = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(la1 * tr) * Math.cos(la2 * tr) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+  const a = Math.sin(dLa / 2) ** 2 + Math.cos(la1 * tr) * Math.cos(la2 * tr) * Math.sin(dLo / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
 }
+function headers(key, extra = {}) { return { apikey: key, Authorization: 'Bearer ' + key, ...extra }; }
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
   if (!secureApi(req, res, ['POST'])) return;
-  if (!rateLimit(req, res, { prefix: 'sos-push', limit: 30, windowMs: 10 * 60_000 })) return;
+  if (!rateLimit(req, res, { prefix: 'sos-push', limit: 20, windowMs: 10 * 60_000 })) return;
 
-  const pub = process.env.VAPID_PUBLIC;
-  const priv = process.env.VAPID_PRIVATE;
+  const vapidPublic = process.env.VAPID_PUBLIC, vapidPrivate = process.env.VAPID_PRIVATE;
   const subject = process.env.VAPID_SUBJECT || 'mailto:sos@bawakaraeng-hub.vercel.app';
   const SB_URL = process.env.SUPABASE_URL || 'https://ncoueeeskzslldppsbvx.supabase.co';
-  const SB_SERVICE = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_KEY;
-  if (!pub || !priv) return res.status(503).json({ error: 'Push belum dikonfigurasi (VAPID)', code: 'NO_VAPID' });
-  if (!SB_SERVICE) return res.status(503).json({ error: 'Push belum dikonfigurasi (Supabase service role)', code: 'NO_SB' });
+  const key = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_KEY;
+  const sosId = String((req.body || {}).id || '').slice(0, 80);
+  if (!sosId) return res.status(400).json({ error: 'ID SOS diperlukan' });
+  if (!vapidPublic || !vapidPrivate || !key) return res.status(503).json({ error: 'Push belum dikonfigurasi', code: 'NO_CONFIG' });
 
-  const body = req.body || {};
-  const lat = Number(body.lat);
-  const lng = Number(body.lng);
-  const name = String(body.name || 'Pendaki').slice(0, 80);
-  const senderDevice = String(body.device || '').slice(0, 80);
-  const sosId = body.id != null ? String(body.id).slice(0, 60) : '';
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return res.status(400).json({ error: 'Lokasi tidak valid' });
+  // Data SOS selalu dibaca dari database; klien tidak dapat memalsukan nama/lokasi untuk push.
+  let sos;
+  try {
+    const u = new URL(SB_URL + '/rest/v1/sos_alerts');
+    u.searchParams.set('select', 'id,lat,lng,name,device,active,created_at');
+    u.searchParams.set('id', 'eq.' + sosId);
+    u.searchParams.set('limit', '1');
+    const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
+    const rows = r.ok ? await r.json() : [];
+    sos = Array.isArray(rows) ? rows[0] : null;
+  } catch (e) {}
+  if (!sos || sos.active === false || !Number.isFinite(Number(sos.lat)) || !Number.isFinite(Number(sos.lng))) {
+    return res.status(404).json({ error: 'SOS aktif tidak ditemukan' });
+  }
 
-  try { webpush.setVapidDetails(subject, pub, priv); }
+  // Satu SOS hanya boleh menghasilkan satu gelombang push, meski browser retry/refresh.
+  try {
+    const claim = await fetch(SB_URL + '/rest/v1/sos_push_deliveries', {
+      method: 'POST', headers: headers(key, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+      body: JSON.stringify({ sos_id: String(sos.id) }), signal: AbortSignal.timeout(8000)
+    });
+    if (claim.status === 409) return res.status(200).json({ sent: 0, duplicate: true });
+    if (!claim.ok) return res.status(503).json({ error: 'Antidobel push belum siap', code: 'NO_CLAIM' });
+  } catch (e) { return res.status(502).json({ error: 'Server push tidak dapat dihubungi' }); }
+
+  try { webpush.setVapidDetails(subject, vapidPublic, vapidPrivate); }
   catch (e) { return res.status(503).json({ error: 'Kunci VAPID tidak valid', code: 'BAD_VAPID' }); }
 
-  const RADIUS = 20000;
-
-  // Ambil semua langganan push aktif (service role melewati RLS).
+  const RADIUS = 20000, lat = Number(sos.lat), lng = Number(sos.lng);
+  // Filter awal memakai bounding box di database agar tidak memuat semua perangkat saat pengguna bertambah.
+  const dLat = RADIUS / 111320;
+  const dLng = RADIUS / (111320 * Math.max(0.1, Math.cos(lat * Math.PI / 180)));
   let subs = [];
   try {
-    const r = await fetch(SB_URL + '/rest/v1/push_subscriptions?select=endpoint,p256dh,auth,lat,lng,device&active=eq.true', {
-      headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE },
-      signal: AbortSignal.timeout(8000)
-    });
+    const u = new URL(SB_URL + '/rest/v1/push_subscriptions');
+    u.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device');
+    u.searchParams.set('active', 'eq.true');
+    u.searchParams.set('and', '(lat.gte.' + (lat - dLat) + ',lat.lte.' + (lat + dLat) + ',lng.gte.' + (lng - dLng) + ',lng.lte.' + (lng + dLng) + ')');
+    const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
     if (r.ok) subs = await r.json();
   } catch (e) {}
   if (!Array.isArray(subs) || !subs.length) return res.status(200).json({ sent: 0, total: 0 });
 
   const payload = JSON.stringify({
-    title: '\uD83C\uDD98 ' + name + ' butuh bantuan',
+    title: '\uD83C\uDD98 ' + String(sos.name || 'Pendaki').slice(0, 80) + ' butuh bantuan',
     body: 'Ada sinyal SOS darurat di dekatmu. Ketuk untuk membuka peta & koordinasi bantuan.',
-    id: sosId,
-    tag: 'sos-' + (sosId || Date.now()),
-    url: '/'
+    id: String(sos.id), tag: 'sos-' + String(sos.id), url: '/'
   });
-
-  const dead = [];
-  let sent = 0;
-  await Promise.all(subs.map(async function (s) {
-    try {
-      if (!s || !s.endpoint || !s.p256dh || !s.auth) return;
-      if (senderDevice && s.device === senderDevice) return; // jangan kirim ke pengirim SOS
-      if (Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng))) {
-        if (dist(lat, lng, Number(s.lat), Number(s.lng)) > RADIUS) return;
-      }
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 1800, urgency: 'high' });
-      sent++;
-    } catch (err) {
-      const code = err && err.statusCode;
-      if (code === 404 || code === 410) dead.push(s.endpoint);
-    }
-  }));
-
-  // Bersihkan langganan mati (endpoint kedaluwarsa).
-  if (dead.length) {
-    await Promise.all(dead.map(function (ep) {
-      return fetch(SB_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(ep), {
-        method: 'DELETE',
-        headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE },
-        signal: AbortSignal.timeout(6000)
-      }).catch(function () {});
+  const targets = subs.filter(s => s && s.endpoint && s.p256dh && s.auth && s.device !== sos.device && dist(lat, lng, Number(s.lat), Number(s.lng)) <= RADIUS);
+  const dead = []; let sent = 0;
+  // Batas 12 koneksi bersamaan: cepat tanpa membebani server/push gateway.
+  for (let i = 0; i < targets.length; i += 12) {
+    await Promise.all(targets.slice(i, i + 12).map(async s => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 1800, urgency: 'high' });
+        sent++;
+      } catch (err) { if (err && (err.statusCode === 404 || err.statusCode === 410)) dead.push(s.endpoint); }
     }));
   }
-
-  return res.status(200).json({ sent, total: subs.length });
+  if (dead.length) await Promise.all(dead.map(ep => {
+    const u = new URL(SB_URL + '/rest/v1/push_subscriptions'); u.searchParams.set('endpoint', 'eq.' + ep);
+    return fetch(u, { method: 'DELETE', headers: headers(key), signal: AbortSignal.timeout(6000) }).catch(() => {});
+  }));
+  return res.status(200).json({ sent, total: targets.length });
 }

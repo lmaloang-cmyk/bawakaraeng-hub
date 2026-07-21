@@ -30,7 +30,7 @@
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
   var SOS_RADIUS=20000;    // meter (20 KM)
-  var POLL_MS=25000;       // interval pantau
+  var POLL_MS=30000;       // interval pantau ketika aplikasi terlihat
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;var _queue=[];
 
@@ -83,8 +83,8 @@
     }catch(e){}
   }
 
-  // Kirim Web Push ke perangkat lain di dekat pengirim (agar masuk walau aplikasi tertutup / layar mati).
-  function _notifyPush(id,lat,lng,name,device){try{fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,lat:lat,lng:lng,name:name,device:device})}).catch(function(){});}catch(e){}}
+  // Kirim Web Push setelah SOS tersimpan; server membaca lokasi/nama dari database agar tidak dapat dipalsukan klien.
+  function _notifyPush(id){try{if(id==null)return;fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).catch(function(){});}catch(e){}}
   // Dipanggil dari sosShareUI ketika lokasi pengirim SOS didapat
   window._sosPublish=function(lat,lng,name){
     if(lat==null||lng==null)return;
@@ -92,16 +92,18 @@
     _addMySig({t:Date.now(),name:(name||'Pendaki'),lat:+lat,lng:+lng});
     var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){_sosStart();return;}
     var row={lat:lat,lng:lng,name:name||'Pendaki',device:_devId(),active:true};
-    try{c.from('sos_alerts').insert(row).select().then(function(res){var id=(res&&res.data&&res.data[0])?res.data[0].id:null;if(id!=null){_myAlerts[id]=1;_seen[id]=1;_addMyId(id);}_notifyPush(id,lat,lng,row.name,row.device);}).catch(function(){_notifyPush(null,lat,lng,row.name,row.device);});}catch(e){}
+    try{c.from('sos_alerts').insert(row).select().then(function(res){var id=(res&&res.data&&res.data[0])?res.data[0].id:null;if(id!=null){_myAlerts[id]=1;_seen[id]=1;_addMyId(id);_notifyPush(id);}}).catch(function(){});}catch(e){}
     _sosStart();
   };
 
   function _tick(){
+    // Saat aplikasi tersembunyi, Web Push menangani alarm; jangan membangunkan GPS/baterai.
+    if(document.hidden)return;
     var c=(typeof _sbClient==='function')?_sbClient():null;if(!c||!navigator.geolocation)return;
     navigator.geolocation.getCurrentPosition(function(p){
       _myPos={la:p.coords.latitude,ln:p.coords.longitude};
       var since=new Date(Date.now()-MAX_AGE_MIN*60000).toISOString();
-      c.from('sos_alerts').select('*').gte('created_at',since).order('created_at',{ascending:false}).limit(60).then(function(res){
+      c.from('sos_alerts').select('id,lat,lng,name,device,active,created_at').gte('created_at',since).order('created_at',{ascending:false}).limit(60).then(function(res){
         if(res.error||!res.data)return;
         var added=false;
         res.data.forEach(function(a){

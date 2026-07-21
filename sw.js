@@ -1,4 +1,4 @@
-const CACHE='bwk-v67-push';
+const CACHE='bwk-v68-pushopt';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];

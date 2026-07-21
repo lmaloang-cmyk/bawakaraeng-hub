@@ -12,12 +12,11 @@
 
   function _store(sub){
     try{
-      var c=(typeof _sbClient==='function')?_sbClient():null;if(!c)return;
       var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return;
       _pos().then(function(pos){
         var row={endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:_dev(),name:_name(),active:true,updated_at:new Date().toISOString()};
         if(pos){row.lat=pos.lat;row.lng=pos.lng;}
-        try{c.from('push_subscriptions').upsert(row,{onConflict:'endpoint'}).then(function(){}).catch(function(){});}catch(e){}
+        try{fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)}).catch(function(){});}catch(e){}
       });
     }catch(e){}
   }
