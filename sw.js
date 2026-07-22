@@ -1,7 +1,7 @@
-const CACHE='bwk-v69-accountswitch';
+const CACHE='bwk-v70-operations';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
-  '/logo-blessing.js','/sk.js','/sos.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
+  '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));

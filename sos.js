@@ -102,11 +102,11 @@
     var c=(typeof _sbClient==='function')?_sbClient():null;if(!c||!navigator.geolocation)return;
     navigator.geolocation.getCurrentPosition(function(p){
       _myPos={la:p.coords.latitude,ln:p.coords.longitude};
-      var since=new Date(Date.now()-MAX_AGE_MIN*60000).toISOString();
-      c.from('sos_alerts').select('id,lat,lng,name,device,active,created_at').gte('created_at',since).order('created_at',{ascending:false}).limit(60).then(function(res){
-        if(res.error||!res.data)return;
+      // Daftar SOS diambil dari endpoint terproteksi; lokasi hanya dibuka untuk pendaki yang berada di radius 20 km.
+      if(typeof window._opsNearby!=='function')return;
+      window._opsNearby(_myPos.la,_myPos.ln).then(function(rows){
         var added=false;
-        res.data.forEach(function(a){
+        (rows||[]).forEach(function(a){
           if(!a||a.lat==null||a.lng==null)return;
           if(a.active===false){_queue=_queue.filter(function(q){return String(q.id)!==String(a.id);});return;}
           if(_isMine(a))return;
