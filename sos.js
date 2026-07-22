@@ -105,8 +105,13 @@
       // Daftar SOS diambil dari endpoint terproteksi; lokasi hanya dibuka untuk pendaki yang berada di radius 20 km.
       if(typeof window._opsNearby!=='function')return;
       window._opsNearby(_myPos.la,_myPos.ln).then(function(rows){
+        rows=rows||[];
+        // Hapus alarm yang sebelumnya tampil tetapi sudah diselesaikan / tidak lagi aktif di server.
+        var activeIds={};rows.forEach(function(a){if(a&&a.id!=null)activeIds[String(a.id)]=1;});
+        var before=_queue.length;_queue=_queue.filter(function(q){return !!activeIds[String(q.id)];});
+        var removed=before!==_queue.length;
         var added=false;
-        (rows||[]).forEach(function(a){
+        rows.forEach(function(a){
           if(!a||a.lat==null||a.lng==null)return;
           if(a.active===false){_queue=_queue.filter(function(q){return String(q.id)!==String(a.id);});return;}
           if(_isMine(a))return;
@@ -115,7 +120,7 @@
           var dd=_dist(_myPos.la,_myPos.ln,+a.lat,+a.lng);
           if(dd<=SOS_RADIUS){_seen[a.id]=1;_queue.push({id:a.id,name:a.name,lat:+a.lat,lng:+a.lng,dist:dd});added=true;}
         });
-        if(added){_renderAlarm(true);}else if(!_queue.length){window._sosStop();}
+        if(added){_renderAlarm(true);}else if(removed&&_queue.length){_renderAlarm(false);}else if(!_queue.length){window._sosStop();}
       }).catch(function(){});
     },function(){},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
