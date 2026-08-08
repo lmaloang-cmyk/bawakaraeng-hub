@@ -77,7 +77,11 @@
         var st=document.getElementById('sosStatus');if(st)st.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">✅ SOS kamu masih aktif — sinyal dikirim ulang ke perangkat sekitar.</div>');
         return e.data;
       }
-      var why=(e&&e.status===401)?'Kamu belum login Google.':(e&&e.status===429)?'Terlalu banyak percobaan, tunggu beberapa menit.':'Periksa koneksi lalu coba lagi.';
+      // Pesan lama selalu berbunyi "periksa koneksi" untuk SEMUA kode selain 401/429,
+      // termasuk 502 database. Sekarang kode + sebab dari server selalu ditampilkan.
+      var st=(e&&e.status)||0, det=(e&&e.data&&e.data.detail)?String(e.data.detail):'';
+      var why=st===401?'Kamu belum login Google.':st===429?'Terlalu banyak percobaan, tunggu beberapa menit.':st===403?'Domain ini belum diizinkan server. Isi ALLOWED_ORIGINS di Vercel.':st===400?'Koordinat atau nama perangkat tidak valid.':st===502?'Database menolak menyimpan SOS. Jalankan supabase-perbaikan-sos.sql.':st===503?'Kunci server belum lengkap di Vercel.':st===0?'Koneksi ke server terputus.':('Server menjawab kode '+st+'.');
+      why+=' [kode '+st+(det?': '+det.slice(0,120):'')+']';
       toastx(e.message||'SOS gagal dikirim','err');
       var status=document.getElementById('sosStatus');
       if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#ffd9d9;font-size:12px;font-weight:800">⚠️ SOS belum tersimpan. '+esc(why)+' Gunakan tombol WhatsApp/SMS di bawah sekarang.</div>');

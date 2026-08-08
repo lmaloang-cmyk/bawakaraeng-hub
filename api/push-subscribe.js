@@ -125,21 +125,45 @@ async function handleGet(req, res) {
         { headers: h, signal: AbortSignal.timeout(7000) });
       if (r.ok) {
         const rows = await r.json();
-        const batas = Date.now() - 24 * 3600_000;
+        const batas = Date.now() - 24 * 3600_000, basi = Date.now() - 3 * 24 * 3600_000;
         for (const s of (Array.isArray(rows) ? rows : [])) {
           perangkat.total++;
           const ok = Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng));
           if (ok) perangkat.ada_lokasi++; else perangkat.tanpa_lokasi++;
           if (s.loc_updated_at && Date.parse(s.loc_updated_at) > batas) perangkat.lokasi_segar_24j++;
-          else if (ok) perangkat.lokasi_basi++;
+          if (ok && !(s.loc_updated_at && Date.parse(s.loc_updated_at) > basi)) perangkat.lokasi_basi++;
         }
       }
     } catch (e) { /* biarkan nol */ }
   }
 
-  // 4. Kesimpulan yang bisa langsung dibaca manusia.
-  // WAJIB = alarm mustahil bekerja tanpa ini. OPSIONAL = saran, tidak memblokir.
-  // Dulu keduanya dicampur sehingga "siap" ikut false hanya karena saran kosmetik.
+  // 4. Apakah tabel sos_alerts punya semua kolom yang dipakai saat menyimpan SOS?
+  // INSERT yang menyebut kolom tidak ada ditolak PostgREST, dan pengguna cuma melihat
+  // "SOS belum tersimpan" tanpa pernah tahu sebabnya. Ini biang keladi balasan 502.
+  const KOLOM_SOS = ['id', 'lat', 'lng', 'name', 'device', 'user_id', 'user_email', 'active', 'status', 'created_at'];
+  let tabelSos = 'tidak diperiksa';
+  const kolomHilang = [];
+  if (h) {
+    try {
+      const r = await fetch(SB_URL + '/rest/v1/sos_alerts?select=' + KOLOM_SOS.join(',') + '&limit=1',
+        { headers: h, signal: AbortSignal.timeout(7000) });
+      if (r.ok) tabelSos = 'lengkap';
+      else {
+        // Uji kolom satu per satu supaya laporannya menyebut nama kolom yang benar-benar hilang.
+        for (const c of KOLOM_SOS) {
+          try {
+            const one = await fetch(SB_URL + '/rest/v1/sos_alerts?select=' + c + '&limit=1',
+              { headers: h, signal: AbortSignal.timeout(5000) });
+            if (!one.ok) kolomHilang.push(c);
+          } catch (e) { /* lanjut ke kolom berikutnya */ }
+        }
+        tabelSos = kolomHilang.length ? ('kekurangan ' + kolomHilang.length + ' kolom') : 'ditolak tanpa kolom hilang';
+      }
+    } catch (e) { tabelSos = 'Supabase tidak dapat dihubungi'; }
+  }
+
+  // 5. Kesimpulan. Penghalang nyata (wajib) dipisah dari saran (opsional) supaya
+  // "siap" tidak pernah false gara-gara hal yang sebetulnya tidak memblokir apa pun.
   const wajib = [], opsional = [];
   if (pair === 'TIDAK COCOK') wajib.push('VAPID_PUBLIC dan VAPID_PRIVATE bukan sepasang. Buat pasangan baru: npx web-push generate-vapid-keys, lalu simpan KEDUANYA di Vercel dan redeploy.');
   if (pair === 'VAPID_PRIVATE tidak dapat dibaca') wajib.push('Nilai VAPID_PRIVATE rusak atau salah format. Simpan ulang kunci privat base64url apa adanya, tanpa tanda kutip atau spasi.');
@@ -148,17 +172,17 @@ async function handleGet(req, res) {
   if (!env.SUPABASE_ANON_KEY) wajib.push('Isi SUPABASE_ANON_KEY, kalau tidak verifikasi login gagal dan semua SOS dibalas 401.');
   if (!env.SUPABASE_SERVICE_ROLE) wajib.push('Isi SUPABASE_SERVICE_ROLE, kalau tidak SOS tidak tersimpan sama sekali.');
   if (migrasi.startsWith('BELUM')) wajib.push('Jalankan supabase-sos-optimasi.sql di Supabase SQL Editor, kalau tidak gelombang push ulang selalu ditolak.');
+  if (kolomHilang.length) wajib.push('Tabel sos_alerts kekurangan kolom: ' + kolomHilang.join(', ') + '. Jalankan supabase-perbaikan-sos.sql, kalau tidak setiap SOS dibalas 502 "SOS gagal disimpan".');
+  else if (tabelSos === 'ditolak tanpa kolom hilang') wajib.push('Tabel sos_alerts menolak pembacaan gabungan padahal tiap kolom ada. Periksa hak akses service role di Supabase.');
+  else if (tabelSos === 'Supabase tidak dapat dihubungi') wajib.push('Supabase tidak dapat dihubungi dari server. Periksa SUPABASE_URL dan status proyek Supabase.');
   if (perangkat.total === 0) wajib.push('Belum ada perangkat yang mengizinkan notifikasi. Buka aplikasi di HP lain, tekan Izinkan pada banner notifikasi.');
   else if (perangkat.total === 1) wajib.push('Baru 1 perangkat terdaftar. Alarm butuh minimal 2 agar bisa diuji silang.');
-
   if (!env.ALLOWED_ORIGINS) opsional.push('ALLOWED_ORIGINS kosong. Tidak masalah: host sendiri sudah otomatis diizinkan. Isi hanya bila memakai domain kustom tambahan.');
-  if (!env.SUPABASE_URL) opsional.push('SUPABASE_URL kosong. Kode memakai nilai bawaan, tetapi sebaiknya diisi eksplisit.');
-  if (perangkat.lokasi_basi > 0) opsional.push(perangkat.lokasi_basi + ' perangkat punya koordinat yang belum disegarkan. Mereka tetap dikirimi alarm (tidak disaring radius), dan koordinatnya otomatis diperbarui saat pemiliknya membuka aplikasi versi baru.');
-
+  if (perangkat.lokasi_basi) opsional.push(perangkat.lokasi_basi + ' perangkat punya koordinat yang belum disegarkan. Mereka tetap dikirimi alarm (tidak disaring radius), dan koordinatnya otomatis diperbarui saat pemiliknya membuka aplikasi versi baru.');
   const siap = wajib.length === 0;
   const ringkasan = siap
     ? 'Semua syarat wajib terpenuhi. Uji kirim SOS dari satu HP dan pastikan HP lain berbunyi.'
-    : 'Ada ' + wajib.length + ' hal wajib yang belum beres.';
+    : (wajib.length + ' hal wajib diperbaiki sebelum alarm bisa diandalkan.');
 
-  return res.status(200).json({ siap, ringkasan, env, vapidPair: pair, migrasi, perangkat, wajib, opsional });
+  return res.status(200).json({ siap, ringkasan, env, vapidPair: pair, migrasi, tabelSos, kolomHilang, perangkat, wajib, opsional });
 }

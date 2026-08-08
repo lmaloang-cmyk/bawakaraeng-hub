@@ -35,13 +35,21 @@ async function sosCreate(req,res,user) {
   const b=req.body||{}, lat=Number(b.lat), lng=Number(b.lng), device=clean(b.device,80);
   if (!validPoint(lat,lng) || !device) return res.status(400).json({error:'Lokasi atau perangkat tidak valid'});
   const q=new URLSearchParams({select:'id',active:'eq.true',created_at:'gte.'+new Date(Date.now()-30*60_000).toISOString(),limit:'1'});
-  q.set('or','(user_id.eq.'+user.id+',device.eq.'+device+')');
+  // Tanda kutip melindungi nilai device yang memuat koma atau tanda kurung; tanpa itu
+  // filter "or" jadi tidak valid dan penjaga duplikat gagal diam-diam.
+  q.set('or','(user_id.eq.'+user.id+',device.eq."'+device.replace(/"/g,'')+'")');
   const existing=await rest('sos_alerts?'+q); const rows=existing.ok?await existing.json():[];
   if (Array.isArray(rows)&&rows[0]) return res.status(409).json({error:'SOS aktif sudah ada',id:rows[0].id});
   const meta=user.user_metadata||{}, name=clean(meta.full_name||meta.name||String(user.email||'Pendaki').split('@')[0],80)||'Pendaki';
   const r=await rest('sos_alerts',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({lat,lng,name,device,user_id:user.id,user_email:clean(user.email,254),active:true,status:'active'})});
+  // Dulu kegagalan INSERT dibalas 502 tanpa keterangan sehingga penyebab sebenarnya
+  // (mis. kolom status/user_email belum ada di tabel) tidak pernah terlihat.
   const data=r.ok?await r.json():null;
-  if (!r.ok||!data||!data[0]) return res.status(502).json({error:'SOS gagal disimpan'});
+  if (!r.ok||!data||!data[0]) {
+    let detail='';
+    try { detail=r.ok?'database membalas kosong':String(await r.text()).slice(0,300); } catch { detail='balasan tidak terbaca'; }
+    return res.status(502).json({error:'SOS gagal disimpan',kode:r.status,detail});
+  }
   return res.status(201).json({id:data[0].id,name:data[0].name});
 }
 
