@@ -43,14 +43,43 @@
     }catch(e){return Promise.resolve(false);}
   }
 
+  // Kunci VAPID diambil dari server. Dulu ditanam keras di berkas ini; kalau env
+  // VAPID_PUBLIC di server berbeda, SETIAP push ditolak 403 dan alarm tidak pernah
+  // sampai ke perangkat lain — tanpa jejak apa pun. Nilai di bawah kini hanya cadangan.
+  var _srvKey=null;
+  function _serverKey(){
+    if(_srvKey)return Promise.resolve(_srvKey);
+    return fetch('/api/push-subscribe',{headers:{Accept:'application/json'}})
+      .then(function(r){return r.json();})
+      .then(function(d){_srvKey=(d&&d.key)?String(d.key):VAPID_PUBLIC;return _srvKey;})
+      .catch(function(){_srvKey=VAPID_PUBLIC;return _srvKey;});
+  }
+  // Bandingkan kunci langganan lama dengan kunci server: kalau kunci sudah dirotasi,
+  // langganan lama permanen tidak bisa dikirimi dan harus didaftarkan ulang.
+  function _sameKey(sub,key){
+    try{
+      var a=sub&&sub.options&&sub.options.applicationServerKey;if(!a)return true;
+      var x=new Uint8Array(a),y=_b64(key);
+      if(x.length!==y.length)return false;
+      for(var i=0;i<x.length;i++){if(x[i]!==y[i])return false;}
+      return true;
+    }catch(e){return true;}
+  }
+
   function _subscribe(force){
     if(!SUPPORTED)return Promise.resolve(null);
-    return navigator.serviceWorker.ready.then(function(reg){
+    return Promise.all([navigator.serviceWorker.ready,_serverKey()]).then(function(a){
+      var reg=a[0],key=a[1];
       return reg.pushManager.getSubscription().then(function(existing){
-        if(existing)return existing;
-        return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)});
+        if(existing&&_sameKey(existing,key))return existing;
+        var next=function(){return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(key)});};
+        if(!existing)return next();
+        return existing.unsubscribe().then(next,next);
       });
-    }).then(function(sub){if(sub)_store(sub,force);return sub;}).catch(function(){return null;});
+    }).then(function(sub){if(sub)_store(sub,force);return sub;}).catch(function(){
+      window._pushStatus={ok:false,at:Date.now(),error:'langganan push gagal dibuat'};
+      return null;
+    });
   }
 
   // Dipanggil ops.js sebelum mengirim SOS, dan setiap aplikasi kembali ke depan.
