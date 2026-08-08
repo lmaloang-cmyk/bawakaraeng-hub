@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
   if (!secureApi(req, res, ['POST'])) return;
-  if (!rateLimit(req, res, { prefix: 'sos-push', limit: 20, windowMs: 10 * 60_000 })) return;
+  if (!rateLimit(req, res, { prefix: 'sos-push', limit: 60, windowMs: 10 * 60_000 })) return;
 
   const vapidPublic = process.env.VAPID_PUBLIC, vapidPrivate = process.env.VAPID_PRIVATE;
   const subject = process.env.VAPID_SUBJECT || 'mailto:sos@bawakaraeng-hub.vercel.app';
@@ -38,13 +38,20 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'SOS aktif tidak ditemukan' });
   }
 
-  // Satu SOS hanya boleh menghasilkan satu gelombang push, meski browser retry/refresh.
+  // Gelombang push berulang. Satu tembakan saja hanya menjangkau perangkat yang online
+  // pada detik SOS dibuat; HP yang layarnya mati atau kehilangan sinyal tidak akan pernah
+  // diberi tahu. Selama SOS aktif, setiap jendela WAVE_MINUTES boleh mengirim satu gelombang
+  // baru, dan penanda (sos_id, wave) tetap menjaga agar tidak dobel dalam jendela yang sama.
+  const WAVE_MINUTES = 2.5, WAVE_MAX = 10;
+  const createdAt = Date.parse(sos.created_at || '') || Date.now();
+  const ageMin = Math.max(0, (Date.now() - createdAt) / 60_000);
+  const wave = Math.min(WAVE_MAX, Math.floor(ageMin / WAVE_MINUTES) + 1);
   try {
     const claim = await fetch(SB_URL + '/rest/v1/sos_push_deliveries', {
       method: 'POST', headers: headers(key, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-      body: JSON.stringify({ sos_id: String(sos.id) }), signal: AbortSignal.timeout(8000)
+      body: JSON.stringify({ sos_id: String(sos.id), wave }), signal: AbortSignal.timeout(8000)
     });
-    if (claim.status === 409) return res.status(200).json({ sent: 0, duplicate: true });
+    if (claim.status === 409) return res.status(200).json({ sent: 0, wave, duplicate: true });
     if (!claim.ok) return res.status(503).json({ error: 'Antidobel push belum siap', code: 'NO_CLAIM' });
   } catch (e) { return res.status(502).json({ error: 'Server push tidak dapat dihubungi' }); }
 
@@ -60,7 +67,10 @@ export default async function handler(req, res) {
     const u = new URL(SB_URL + '/rest/v1/push_subscriptions');
     u.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device');
     u.searchParams.set('active', 'eq.true');
-    u.searchParams.set('and', '(lat.gte.' + (lat - dLat) + ',lat.lte.' + (lat + dLat) + ',lng.gte.' + (lng - dLng) + ',lng.lte.' + (lng + dLng) + ')');
+    // "or": perangkat di bounding box 20 km, ATAU perangkat yang belum punya koordinat.
+    // Lebih baik satu notifikasi berlebih daripada pendaki di radius bahaya tidak diberi tahu.
+    const box = '(lat.gte.' + (lat - dLat) + ',lat.lte.' + (lat + dLat) + ',lng.gte.' + (lng - dLng) + ',lng.lte.' + (lng + dLng) + ')';
+    u.searchParams.set('or', '(and' + box + ',lat.is.null,lng.is.null)');
     const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
     if (r.ok) subs = await r.json();
   } catch (e) {}
@@ -71,20 +81,32 @@ export default async function handler(req, res) {
     body: 'Ada sinyal SOS darurat di dekatmu. Ketuk untuk membuka peta & koordinasi bantuan.',
     id: String(sos.id), tag: 'sos-' + String(sos.id), url: '/'
   });
-  const targets = subs.filter(s => s && s.endpoint && s.p256dh && s.auth && s.device !== sos.device && dist(lat, lng, Number(s.lat), Number(s.lng)) <= RADIUS);
-  const dead = []; let sent = 0;
+  const targets = subs.filter(s => {
+    if (!s || !s.endpoint || !s.p256dh || !s.auth) return false;
+    if (s.device && sos.device && s.device === sos.device) return false;
+    const sLat = Number(s.lat), sLng = Number(s.lng);
+    if (!Number.isFinite(sLat) || !Number.isFinite(sLng)) return true; // lokasi belum diketahui
+    return dist(lat, lng, sLat, sLng) <= RADIUS;
+  });
+  const dead = []; let sent = 0, failed = 0, lastError = '';
   // Batas 12 koneksi bersamaan: cepat tanpa membebani server/push gateway.
   for (let i = 0; i < targets.length; i += 12) {
     await Promise.all(targets.slice(i, i + 12).map(async s => {
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 1800, urgency: 'high' });
         sent++;
-      } catch (err) { if (err && (err.statusCode === 404 || err.statusCode === 410)) dead.push(s.endpoint); }
+      } catch (err) {
+        const sc = err && err.statusCode;
+        if (sc === 404 || sc === 410) dead.push(s.endpoint);
+        else { failed++; lastError = sc ? ('HTTP ' + sc) : String((err && err.message) || 'gagal'); }
+      }
     }));
   }
   if (dead.length) await Promise.all(dead.map(ep => {
     const u = new URL(SB_URL + '/rest/v1/push_subscriptions'); u.searchParams.set('endpoint', 'eq.' + ep);
     return fetch(u, { method: 'DELETE', headers: headers(key), signal: AbortSignal.timeout(6000) }).catch(() => {});
   }));
-  return res.status(200).json({ sent, total: targets.length });
+  // Balasan menyertakan jumlah gagal + penyebab terakhir supaya masalah VAPID / gateway
+  // tidak lagi tak terlihat (dulu semua error selain 404/410 dibuang diam-diam).
+  return res.status(200).json({ sent, failed, total: targets.length, wave, error: lastError || undefined });
 }

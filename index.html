@@ -349,6 +349,8 @@
   .sos h2{font-size:31px;font-weight:900} .sos p{font-size:14px;opacity:.92;margin-top:8px;max-width:280px}
   .holdbtn{margin-top:36px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.16);border:3px solid rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;position:relative;overflow:hidden}
   .holdbtn .big{font-size:42px} .holdbtn .fill{position:absolute;bottom:0;left:0;width:100%;height:0;background:rgba(255,255,255,.3);transition:height .05s linear}
+  .holdbtn{transition:transform .12s ease,box-shadow .12s ease;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  .holdbtn.holding{transform:scale(1.05);box-shadow:0 0 0 8px rgba(255,255,255,.22),0 0 34px rgba(255,255,255,.4)}
   .sos .cancel{margin-top:30px;font-size:14px;font-weight:800;background:rgba(0,0,0,.22);padding:12px 30px;border-radius:30px}
   .sos .status{margin-top:24px;font-size:15px;font-weight:800;min-height:22px}
 
@@ -1014,7 +1016,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
           <button class="home-action permit" onclick="go('simaksi')"><span>🎫</span><b>SIMAKSI</b><small>AJUKAN IZIN</small></button>
           <button class="home-action route" onclick="go('peta')"><span>🗺️</span><b>PETA JALUR</b><small>POS & SUMBER AIR</small></button>
           <button class="home-action report" onclick="go('lapor')"><span>📷</span><b>BUAT LAPORAN</b><small>KONDISI LAPANGAN</small></button>
-          <button class="home-action emergency neon-breathe" onclick="sosGuard()"><span>🆘</span><b>DARURAT</b><small>TAHAN 3 DTK · DARURAT</small></button>
+          <button class="home-action emergency neon-breathe" onclick="sosGuard()"><span>🆘</span><b>DARURAT</b><small>TAHAN 2 DTK · DARURAT</small></button>
         </div>
       </aside>
     </div>
@@ -1436,7 +1438,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
 </div>
 <div class="sos" id="sos">
   <h2>MODE DARURAT</h2>
-  <p>Tahan tombol 3 detik untuk mengirim sinyal SOS + lokasi GPS ke tim RCS.CBS.</p>
+  <p>Tahan tombol 2 detik untuk mengirim sinyal SOS + lokasi GPS ke tim RCS.CBS.</p>
   <button class="holdbtn" id="holdbtn"><div class="fill" id="fill"></div><div class="big"><svg class="svgi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg></div><div>TAHAN</div></button>
   <div class="status" id="sosStatus"></div>
   <button class="cancel" onclick="closeSOS()">Batalkan</button>
@@ -1814,15 +1816,48 @@ function _escHtml(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/
 var RC_EMAIL='songkrangveo@gmail.com';
 function _lsGet(k,d){try{var v=JSON.parse(localStorage.getItem(k));return (v==null)?d:v;}catch(e){return d;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-var holdTimer,holdStart;
-function sosGuard(){document.getElementById('sheetBody').innerHTML='<h2 style="margin:0 0 8px;color:#b83232">🆘 Konfirmasi keadaan darurat</h2><p style="color:#59627a;line-height:1.55">SOS hanya untuk ancaman keselamatan nyata: cedera serius, tersesat, hipotermia, atau kondisi yang membutuhkan bantuan segera.</p><div class="sknotice warn" style="margin:12px 0"><b>Setelah dibuka, tahan tombol SOS selama 3 detik</b><br>Lokasi GPS akan diminta sebelum pesan bantuan disiapkan.</div><button class="btn" style="background:#c9443a;color:#fff" onclick="closeSheet();openSOS()">Saya dalam keadaan darurat</button><button class="btn" style="margin-top:8px" onclick="closeSheet()">Batal</button>';openSheet();}
-function openSOS(){document.getElementById('sos').classList.add('show');document.getElementById('sosStatus').textContent='';document.getElementById('fill').style.height='0';}
+var holdTimer=null,holdStart=0,holdFired=false,holdPointer=null,holdOrigin=null;
+var HOLD_MS=2000,HOLD_SLOP=48;
+function sosGuard(){document.getElementById('sheetBody').innerHTML='<h2 style="margin:0 0 8px;color:#b83232">🆘 Konfirmasi keadaan darurat</h2><p style="color:#59627a;line-height:1.55">SOS hanya untuk ancaman keselamatan nyata: cedera serius, tersesat, hipotermia, atau kondisi yang membutuhkan bantuan segera.</p><div class="sknotice warn" style="margin:12px 0"><b>Setelah dibuka, tahan tombol SOS selama 2 detik</b><br>Lokasi GPS akan diminta sebelum pesan bantuan disiapkan.</div><button class="btn" style="background:#c9443a;color:#fff" onclick="closeSheet();openSOS()">Saya dalam keadaan darurat</button><button class="btn" style="margin-top:8px" onclick="closeSheet()">Batal</button>';openSheet();}
+function openSOS(){document.getElementById('sos').classList.add('show');var s=document.getElementById('sosStatus');if(s){s.removeAttribute('data-locked');s.textContent='';}holdFired=false;holdStart=0;_holdFill(0);try{if(window._sosRefreshPush)window._sosRefreshPush(true);}catch(e){}}
 function openDontPanic(){try{sessionStorage.setItem('pintuReturn','sos');}catch(e){}window.location.href='dont-panic.html';}
 function closeDontPanic(){var box=document.getElementById('dontPanic');if(box)box.classList.remove('show');}
 function closeSOS(){document.getElementById('sos').classList.remove('show');cancelHold();}
-function startHold(){holdStart=Date.now();holdTimer=setInterval(function(){var p=Math.min((Date.now()-holdStart)/3000,1);document.getElementById('fill').style.height=(p*100)+'%';if(p>=1){cancelHold();sosSent();}},40);}
-function cancelHold(){clearInterval(holdTimer);if(document.getElementById('sosStatus').textContent===''){document.getElementById('fill').style.height='0';}}
-function sosSent(){document.getElementById('fill').style.height='100%';document.getElementById('sosStatus').textContent='✅ Sinyal SOS terkirim! Tim menuju lokasi Anda.';setTimeout(function(){closeSOS();toast('Tim penyelamat telah dihubungi','ok');},1800);}
+/* Tombol tahan SOS.
+   Dulu: satu setInterval tanpa pembersihan + tanpa touchcancel, sehingga timer bisa
+   yatim dan mengirim SOS sendiri, atau batal diam-diam tanpa pemberitahuan.
+   Sekarang: satu timer terjaga, toleransi geser jari, getar penanda, dan pesan status. */
+function _holdFill(p){var f=document.getElementById('fill');if(f)f.style.height=(Math.max(0,Math.min(1,p))*100)+'%';}
+function _holdBuzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
+function _holdLocked(){var s=document.getElementById('sosStatus');return !!(s&&(s.getAttribute('data-locked')==='1'||s.querySelector('.sos-loc')));}
+function _holdMsg(t){var s=document.getElementById('sosStatus');if(s&&!_holdLocked())s.textContent=t||'';}
+function startHold(){
+  if(holdFired)return;
+  if(holdTimer){clearInterval(holdTimer);holdTimer=null;}
+  holdStart=Date.now();
+  var b=document.getElementById('holdbtn');if(b)b.classList.add('holding');
+  _holdBuzz(15);_holdMsg('Terus tahan… jangan lepas');
+  holdTimer=setInterval(function(){
+    var p=Math.min((Date.now()-holdStart)/HOLD_MS,1);
+    _holdFill(p);
+    if(p>=1&&!holdFired){
+      holdFired=true;
+      if(holdTimer){clearInterval(holdTimer);holdTimer=null;}
+      _holdFill(1);_holdBuzz([80,50,80]);
+      var b2=document.getElementById('holdbtn');if(b2)b2.classList.remove('holding');
+      try{sosSent();}catch(err){_holdMsg('⚠️ Gagal memulai SOS. Gunakan tombol WhatsApp darurat.');}
+    }
+  },40);
+}
+function cancelHold(silent){
+  if(holdTimer){clearInterval(holdTimer);holdTimer=null;}
+  holdPointer=null;holdOrigin=null;
+  var b=document.getElementById('holdbtn');if(b)b.classList.remove('holding');
+  if(holdFired||_holdLocked())return;
+  var started=holdStart>0;
+  holdStart=0;_holdFill(0);
+  if(!silent&&started)_holdMsg('Tahan penuh 2 detik tanpa dilepas untuk mengirim SOS.');
+}
 
 /* Pantau Pohon */
 function ensureLeaflet(cb){if(window.L){cb&&cb();return;}window._lcbs=window._lcbs||[];if(cb)window._lcbs.push(cb);if(window._lloading)return;window._lloading=true;var css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=function(){window._lloading=false;var cbs=window._lcbs||[];window._lcbs=[];cbs.forEach(function(f){try{f();}catch(e){}});};s.onerror=function(){window._lloading=false;var cbs=window._lcbs||[];window._lcbs=[];cbs.forEach(function(f){try{f();}catch(e){}});};document.head.appendChild(s);}
@@ -1860,9 +1895,41 @@ function adopt(i){if(typeof isGuest==='function'&&isGuest()){openGuestGate('meng
 renderPantauStats();renderZones();
 tick();setInterval(tick,10000);[renderFeed,renderFcar,renderChips,renderSpecies,renderRules,updateTotal].forEach(function(f){try{f();}catch(e){console.warn('render skip',e);}});var _deferHome=function(){[renderMap,renderKom,renderDates].forEach(function(f){try{f();}catch(e){}});};if(window.requestIdleCallback){window.requestIdleCallback(_deferHome,{timeout:1600});}else{setTimeout(_deferHome,650);}
 var hb=document.getElementById('holdbtn');
-hb.addEventListener('mousedown',startHold);hb.addEventListener('mouseup',cancelHold);hb.addEventListener('mouseleave',cancelHold);
-hb.addEventListener('touchstart',function(e){e.preventDefault();startHold();},{passive:false});
-hb.addEventListener('touchend',function(e){e.preventDefault();cancelHold();});
+if(hb){
+  /* Pointer Events + pointer capture: gerakan kecil jari tidak lagi membatalkan diam-diam,
+     dan pointercancel/touchcancel SELALU membersihkan timer (dulu tidak, sehingga SOS bisa
+     terkirim sendiri setelah jari diangkat). */
+  try{hb.style.touchAction='none';}catch(e){}
+  function _hdDist(x,y){if(!holdOrigin)return 0;var dx=x-holdOrigin.x,dy=y-holdOrigin.y;return Math.sqrt(dx*dx+dy*dy);}
+  if('PointerEvent' in window){
+    hb.addEventListener('pointerdown',function(e){
+      if(e.button&&e.button!==0)return;
+      if(holdPointer!==null)return;
+      holdPointer=e.pointerId;holdOrigin={x:e.clientX,y:e.clientY};
+      try{hb.setPointerCapture(e.pointerId);}catch(err){}
+      if(e.cancelable)e.preventDefault();
+      startHold();
+    },{passive:false});
+    hb.addEventListener('pointermove',function(e){
+      if(holdPointer===null||e.pointerId!==holdPointer||!holdOrigin)return;
+      if(_hdDist(e.clientX,e.clientY)>HOLD_SLOP)cancelHold();
+    },{passive:true});
+    ['pointerup','pointercancel'].forEach(function(t){
+      hb.addEventListener(t,function(e){if(holdPointer!==null&&e.pointerId!==holdPointer)return;cancelHold();});
+    });
+  }else{
+    hb.addEventListener('mousedown',function(e){if(e.cancelable)e.preventDefault();holdOrigin={x:e.clientX,y:e.clientY};startHold();});
+    ['mouseup','mouseleave'].forEach(function(t){hb.addEventListener(t,function(){cancelHold();});});
+    hb.addEventListener('touchstart',function(e){if(e.cancelable)e.preventDefault();var t=e.touches[0];holdOrigin=t?{x:t.clientX,y:t.clientY}:null;startHold();},{passive:false});
+    hb.addEventListener('touchmove',function(e){var t=e.touches[0];if(t&&_hdDist(t.clientX,t.clientY)>HOLD_SLOP)cancelHold();},{passive:true});
+    ['touchend','touchcancel'].forEach(function(t){hb.addEventListener(t,function(e){if(e.cancelable)e.preventDefault();cancelHold();});});
+  }
+  hb.addEventListener('contextmenu',function(e){e.preventDefault();});
+  /* Jaring pengaman terakhir: apa pun yang merebut fokus atau menyembunyikan halaman
+     (notifikasi masuk, panggilan, ganti aplikasi) wajib membatalkan hitungan tahan. */
+  window.addEventListener('blur',function(){cancelHold(true);});
+  document.addEventListener('visibilitychange',function(){if(document.hidden)cancelHold(true);});
+}
 </script>
 <script>
 /* === Integrasi API Pemerintah (BMKG cuaca+gempa, titik panas) === */
@@ -2312,7 +2379,7 @@ function _rcWA(){try{return (SOS_CONTACTS&&SOS_CONTACTS[0]&&SOS_CONTACTS[0].p)||
 function openNotif(){var items=[{ic:'🌱',t:'Ajakan tanam bibit',d:'Agenda penghijauan terdekat ada di menu Agenda.',tm:'Hari ini'},{ic:'⛅',t:'Prakiraan cuaca diperbarui',d:'Cek tab Cuaca untuk kondisi puncak terbaru.',tm:'Baru'}];try{if(typeof reports!=='undefined'&&reports){reports.slice(0,5).forEach(function(r){items.push({ic:'📍',t:r.title||'Laporan',d:(r.desc||'').slice(0,70),tm:r.time||''});});}}catch(e){}var html='<h2 style="margin:0 0 12px">🔔 Notifikasi</h2>'+items.map(function(n){return '<div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eef1f5"><div style="font-size:20px">'+escapeHtml(n.ic)+'</div><div style="flex:1"><div style="font-weight:700;font-size:14px">'+escapeHtml(n.t)+'</div><div style="color:#667;font-size:12px">'+escapeHtml(n.d)+'</div></div><div style="color:#99a;font-size:12px;white-space:nowrap">'+escapeHtml(n.tm)+'</div></div>';}).join('');document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openAllReports(){var html='<h2 style="margin:0 0 12px">📋 Semua Laporan</h2>';try{if(_feedRows&&_feedRows.length){html+=_feedRows.map(function(r,i){var who=escapeHtml(r.user_name||r.name||'Warga');var when=escapeHtml(r.created_at?(''+r.created_at).slice(0,10):(r.time||''));var title=escapeHtml(r.title||'Laporan');var description=escapeHtml(r.description||r.desc||'');var photo=safeReportPhoto(r.photo)?' · 📷 lihat foto':'';return '<div onclick="closeSheet();openFeedReport('+i+')" style="padding:11px 0;border-bottom:1px solid #eef1f5;cursor:pointer"><div style="font-weight:700;font-size:14px">'+title+'</div><div style="color:#667;font-size:12px">'+description+'</div><div style="color:#99a;font-size:12px;margin-top:3px">'+who+' · '+when+photo+'</div></div>';}).join('');}else{html+='<p style="color:#889">Belum ada laporan.</p>';}}catch(e){html+='<p style="color:#889">Belum ada laporan.</p>';}document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function openSettings(){var dark=document.documentElement.classList.contains('dark');var html='<h2 style="margin:0 0 12px">\u2699\ufe0f Pengaturan</h2>';html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef1f5"><div><div style="font-weight:700">Mode Gelap</div><div style="color:#667;font-size:12px">Tampilan nyaman malam hari</div></div><button class="btn" style="width:auto;padding:8px 14px" onclick="if(window.toggleTheme)toggleTheme();closeSheet();setTimeout(openSettings,140)">${dark?'Nonaktifkan':'Aktifkan'}</button></div>`;html+=`<div style="padding:12px 0;border-bottom:1px solid #eef1f5"><div style="font-weight:700">Hapus data tersimpan</div><div style="color:#667;font-size:12px;margin-bottom:8px">Laporan, jurnal & progres yang tersimpan di perangkat ini</div><button class="btn" style="width:auto;padding:8px 14px;background:#e53935;color:#fff" onclick="if(confirm('Hapus semua data lokal?')){['bwkReports','bwkJurnal','bwkZones','bwkEvts'].forEach(function(k){localStorage.removeItem(k);});location.reload();}">Hapus Data</button></div>`;html+='<div style="padding:12px 0"><div style="font-weight:700">Tentang</div><div style="color:#667;font-size:12px">Pintu Angin \u00b7 RCS.CBS<br>PWA v14 \u00b7 Konservasi Gunung Bawakaraeng</div></div>';document.getElementById('sheetBody').innerHTML=html;openSheet();}
-function openHelp(){var wa='https://wa.me/'+_rcWA();var faq=[['Cara lapor temuan/insiden?','Buka menu Lapor, unggah foto, isi deskripsi & lokasi, lalu kirim.'],['Apa itu SIMAKSI?','Surat Izin Masuk Kawasan Konservasi \u2014 ajukan lewat menu SIMAKSI sebelum mendaki.'],['Cara kerja tombol SOS?','Tahan tombol 3 detik; aplikasi menyiapkan lokasi GPS untuk dibagikan ke tim & panggilan darurat.'],['Apakah data saya tersimpan?','Laporan & jurnal tersimpan di perangkat Anda.']];var html='<h2 style="margin:0 0 12px">\u2753 Bantuan</h2>'+faq.map(function(f){return `<details style="border-bottom:1px solid #eef1f5;padding:10px 0"><summary style="font-weight:700;font-size:14px;cursor:pointer">${f[0]}</summary><div style="color:#667;font-size:13px;margin-top:6px">${f[1]}</div></details>`;}).join('');html+=`<a class="btn" style="background:#10243d;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:14px" href="PANDUAN.html" target="_blank" rel="noopener">📘 Buka Panduan Visual</a><a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:8px" href="${wa}" target="_blank" rel="noopener">📲 Hubungi Tim RCS.CBS</a><a class="btn" style="display:block;text-decoration:none;text-align:center;margin-top:8px" href="mailto:${RC_EMAIL}">\u2709\ufe0f ${RC_EMAIL}</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
+function openHelp(){var wa='https://wa.me/'+_rcWA();var faq=[['Cara lapor temuan/insiden?','Buka menu Lapor, unggah foto, isi deskripsi & lokasi, lalu kirim.'],['Apa itu SIMAKSI?','Surat Izin Masuk Kawasan Konservasi \u2014 ajukan lewat menu SIMAKSI sebelum mendaki.'],['Cara kerja tombol SOS?','Tahan tombol 2 detik tanpa dilepas; aplikasi menyiapkan lokasi GPS, menyimpan SOS ke server, lalu membunyikan alarm di perangkat lain dalam radius 20 km.'],['Apakah data saya tersimpan?','Laporan & jurnal tersimpan di perangkat Anda.']];var html='<h2 style="margin:0 0 12px">\u2753 Bantuan</h2>'+faq.map(function(f){return `<details style="border-bottom:1px solid #eef1f5;padding:10px 0"><summary style="font-weight:700;font-size:14px;cursor:pointer">${f[0]}</summary><div style="color:#667;font-size:13px;margin-top:6px">${f[1]}</div></details>`;}).join('');html+=`<a class="btn" style="background:#10243d;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:14px" href="PANDUAN.html" target="_blank" rel="noopener">📘 Buka Panduan Visual</a><a class="btn" style="background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:8px" href="${wa}" target="_blank" rel="noopener">📲 Hubungi Tim RCS.CBS</a><a class="btn" style="display:block;text-decoration:none;text-align:center;margin-top:8px" href="mailto:${RC_EMAIL}">\u2709\ufe0f ${RC_EMAIL}</a>`;document.getElementById('sheetBody').innerHTML=html;openSheet();}
 function kirimRiset(){var body=document.getElementById('sheetBody');var vals=[];if(body){var fs=body.querySelectorAll('input,textarea,select');for(var i=0;i<fs.length;i++){var f=fs[i];var v=(f.value||'').trim();if(v){var lab=f.getAttribute('placeholder')||f.name||('Isian '+(i+1));vals.push(lab+': '+v);}}}var txt=vals.length?vals.join('\n'):'(form belum diisi)';var subj=encodeURIComponent('Pengajuan Riset \u2014 Pintu Angin');var mb=encodeURIComponent('Halo Tim RCS.CBS,\n\nSaya mengajukan riset/kolaborasi:\n\n'+txt+'\n\nTerima kasih.');closeSheet();window.location.href='mailto:'+RC_EMAIL+'?subject='+subj+'&body='+mb;if(window.toast)toast('Membuka email pengajuan\u2026','ok');}
 function openRisetForm(){
   document.getElementById('sheetBody').innerHTML='<h2>Ajukan Riset / Kolaborasi</h2><p class="body" style="margin-bottom:10px">Tim RCS.CBS akan meninjau pengajuan izin penelitian &amp; akses data.</p>'+
@@ -2601,7 +2668,7 @@ function refreshMyAlt(){var v=document.getElementById('myAltVal'),ch=document.ge
 window.addEventListener('load',function(){setTimeout(refreshMyAlt,1500);});
 var SOS_CONTACTS=[{n:'Basecamp RC',p:'6282320124040'},{n:'Tim SAR',p:'6282320124040'}];
 function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)u=o.name;}}catch(e){}return u;}
-function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}var _sosOk=function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);};navigator.geolocation.getCurrentPosition(_sosOk,function(e){navigator.geolocation.getCurrentPosition(_sosOk,function(){sosShareUI(null,null,null);},{enableHighAccuracy:false,timeout:20000,maximumAge:60000});},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
+function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.setAttribute('data-locked','1');s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}var _sosOk=function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);};navigator.geolocation.getCurrentPosition(_sosOk,function(e){navigator.geolocation.getCurrentPosition(_sosOk,function(){sosShareUI(null,null,null);},{enableHighAccuracy:false,timeout:20000,maximumAge:60000});},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
 function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);if(hasLoc&&window._sosPublish){try{_sosPublish(lat,lng,u);}catch(e){}}var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);var head=hasLoc?('<div class="sos-loc ok">\ud83d\udccd Lokasi terkunci<br><b>'+coordTxt+'</b><small>akurasi \u00b1'+Math.round(acc||0)+' m</small></div>'):'<div class="sos-loc warn">\u26a0\ufe0f GPS gagal \u2014 aktifkan izin lokasi. Kamu tetap bisa kirim pesan manual di bawah.</div>';var btns='';SOS_CONTACTS.forEach(function(c){btns+='<a class="sos-share wa" href="https://wa.me/'+c.p+'?text='+emsg+'" target="_blank" rel="noopener">\ud83d\udfe2 WhatsApp '+c.n+'</a>';});btns+='<a class="sos-share sms" href="sms:?&body='+emsg+'">\u2709\ufe0f Kirim via SMS</a>';if(hasLoc){btns+='<a class="sos-share map" href="'+maps+'" target="_blank" rel="noopener">\ud83d\uddfa\ufe0f Buka di Google Maps</a>';}btns+='<button class="sos-share copy" onclick="sosCopy(&#39;'+coordTxt+'&#39;)">\ud83d\udccb Salin koordinat</button>';if(!hasLoc){btns+='<button class="sos-share retry" onclick="sosSent()">\ud83d\udd04 Coba aktifkan GPS lagi</button>';}s.innerHTML=head+'<div class="sos-actions">'+btns+'</div>';}
 function sosQuickWA(){
   var open=function(lat,lng){var hasLoc=(lat!=null&&lng!=null);var coord=hasLoc?(Number(lat).toFixed(5)+', '+Number(lng).toFixed(5)):'belum tersedia';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='🆘 SOS! Saya butuh bantuan darurat di jalur pendakian Gunung Bawakaraeng. Lokasi saya: '+coord+(maps?' '+maps:'')+'. Mohon segera kirim bantuan.';var wa='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent(msg);try{window.open(wa,'_blank','noopener');}catch(e){location.href=wa;}};

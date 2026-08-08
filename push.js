@@ -10,25 +10,54 @@
   function _b64(base64){var pad='='.repeat((4-base64.length%4)%4);var b=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');var raw=atob(b);var arr=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;}
   function _pos(){return new Promise(function(res){if(!navigator.geolocation){res(null);return;}navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lng:p.coords.longitude});},function(){res(null);},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});});}
 
-  function _store(sub){
+  // Server memilih penerima push memakai kolom lat/lng di push_subscriptions.
+  // Dulu kolom itu hanya diisi sekali saat mendaftar, jadi HP yang mendaftar di kota
+  // lalu naik gunung punya koordinat basi dan selalu tersaring keluar dari radius 20 km.
+  // Sekarang koordinat disegarkan setiap aplikasi dibuka, dengan throttle agar hemat kuota.
+  var LOC_TTL=600000, LOC_MOVE=250, _lastPush=0;
+  function _lastLoc(){try{return JSON.parse(localStorage.getItem('bwkPushLoc')||'null');}catch(e){return null;}}
+  function _saveLoc(o){try{localStorage.setItem('bwkPushLoc',JSON.stringify(o));}catch(e){}}
+  function _far(a,b){var R=6371000,tr=Math.PI/180,dLa=(b.lat-a.lat)*tr,dLo=(b.lng-a.lng)*tr;
+    var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a.lat*tr)*Math.cos(b.lat*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+
+  function _store(sub,force){
     try{
-      var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return;
-      _pos().then(function(pos){
+      var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return Promise.resolve(false);
+      var prev=_lastLoc();
+      // Jangan membanjiri endpoint: cukup kirim kalau data lama, pindah >250 m, atau dipaksa.
+      if(!force&&prev&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&(Date.now()-_lastPush<LOC_TTL))return Promise.resolve(false);
+      return _pos().then(function(pos){
+        if(!force&&pos&&prev&&prev.lat!=null&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&_far(prev,pos)<LOC_MOVE)return false;
         var row={endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:_dev(),name:_name(),active:true,updated_at:new Date().toISOString()};
         if(pos){row.lat=pos.lat;row.lng=pos.lng;}
-        try{fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)}).catch(function(){});}catch(e){}
+        _lastPush=Date.now();
+        return fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)})
+          .then(function(r){return r.json().catch(function(){return {};}).then(function(d){
+            window._pushStatus={ok:r.ok,at:Date.now(),code:(d&&d.code)||'',error:r.ok?'':((d&&d.error)||('HTTP '+r.status)),located:!!pos};
+            if(r.ok&&pos)_saveLoc({lat:pos.lat,lng:pos.lng,t:Date.now()});
+            return r.ok;
+          });})
+          .catch(function(){window._pushStatus={ok:false,at:Date.now(),error:'jaringan'};return false;});
       });
-    }catch(e){}
+    }catch(e){return Promise.resolve(false);}
   }
 
-  function _subscribe(){
+  function _subscribe(force){
+    if(!SUPPORTED)return Promise.resolve(null);
     return navigator.serviceWorker.ready.then(function(reg){
       return reg.pushManager.getSubscription().then(function(existing){
         if(existing)return existing;
         return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)});
       });
-    }).then(function(sub){if(sub)_store(sub);return sub;});
+    }).then(function(sub){if(sub)_store(sub,force);return sub;}).catch(function(){return null;});
   }
+
+  // Dipanggil ops.js sebelum mengirim SOS, dan setiap aplikasi kembali ke depan.
+  window._sosRefreshPush=function(force){
+    try{if(!SUPPORTED||Notification.permission!=='granted')return Promise.resolve(null);}catch(e){return Promise.resolve(null);}
+    return _subscribe(!!force);
+  };
 
   // Dipanggil dari tombol "Aktifkan" (butuh gesture pengguna untuk minta izin notifikasi).
   window._sosEnablePush=function(){
@@ -58,4 +87,7 @@
     }catch(e){}
   }
   window.addEventListener('load',function(){setTimeout(_showBanner,4500);});
+  // Setiap aplikasi dibuka kembali, perbarui koordinat langganan supaya radius push akurat.
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)window._sosRefreshPush(false);});
+  window.addEventListener('online',function(){window._sosRefreshPush(false);});
 })();

@@ -1,4 +1,4 @@
-const CACHE='bwk-v72-rcscbs-rebrand';
+const CACHE='bwk-v73-sos-reliability';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
@@ -37,7 +37,11 @@ self.addEventListener('push',function(e){
   var title=data.title||'\uD83C\uDD98 Sinyal Darurat SOS';
   var body=data.body||'Ada pendaki yang butuh bantuan di dekatmu.';
   var opts={body:body,icon:'/rc-logo.webp',badge:'/rc-logo.webp',tag:data.tag||('sos-'+(data.id||Date.now())),renotify:true,requireInteraction:true,vibrate:[400,150,400,150,700],data:{url:data.url||'/'}};
-  e.waitUntil(self.registration.showNotification(title,opts));
+  // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
+  // langsung diperiksa tanpa menunggu siklus polling berikutnya.
+  e.waitUntil(self.registration.showNotification(title,opts).then(function(){
+    return self.clients.matchAll({type:'window',includeUncontrolled:true});
+  }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null});}catch(err2){}});}).catch(function(){}));
 });
 self.addEventListener('notificationclick',function(e){
   e.notification.close();

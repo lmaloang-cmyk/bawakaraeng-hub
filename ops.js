@@ -6,22 +6,85 @@
   function toastx(m,t){try{if(window.toast)window.toast(m,t||'ok');}catch(e){}}
   function user(){try{return typeof bwkUser==='function'?bwkUser():null;}catch(e){return null;}}
   function token(){try{var c=(typeof _sbClient==='function')?_sbClient():null;if(!c)return Promise.resolve('');return c.auth.getSession().then(function(r){return (r&&r.data&&r.data.session&&r.data.session.access_token)||'';}).catch(function(){return '';});}catch(e){return Promise.resolve('');}}
-  function api(path,opt){opt=opt||{};return token().then(function(t){if(!t)throw new Error('Login Google diperlukan');var h=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+t},opt.headers||{});return fetch(path,Object.assign({},opt,{headers:h})).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||'Permintaan gagal');return d;});});});}
+  // Error kini membawa kode status + Retry-After supaya pemanggil bisa membedakan
+  // "belum login" (401), "kuota penuh" (429), dan gangguan jaringan biasa.
+  function apiErr(msg,status,extra){var e=new Error(msg);e.status=status||0;if(extra)Object.keys(extra).forEach(function(k){e[k]=extra[k];});return e;}
+  function api(path,opt){opt=opt||{};return token().then(function(t){
+    if(!t)throw apiErr('Login Google diperlukan',401);
+    var h=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+t},opt.headers||{});
+    return fetch(path,Object.assign({},opt,{headers:h})).then(function(r){
+      var ra=Number(r.headers&&r.headers.get?r.headers.get('Retry-After'):0)||0;
+      return r.json().catch(function(){return {};}).then(function(d){
+        if(!r.ok)throw apiErr(d.error||'Permintaan gagal',r.status,{retryAfter:ra,data:d});
+        return d;
+      });
+    },function(){throw apiErr('Jaringan tidak tersedia',0);});
+  });}
   function getJson(k,df){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(df));}catch(e){return df;}}
   function setJson(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
+  // ===== Gelombang push berulang =====
+  // Satu tembakan push hanya menjangkau perangkat yang online pada detik itu.
+  // Selama SOS masih aktif, pengirim memicu gelombang ulang berkala sehingga HP yang
+  // tadinya mati sinyal / layar mati tetap kebagian notifikasi saat kembali online.
+  var WAVE_EVERY=150000, WAVE_MAX=10, _waveTimer=null, _waveCount=0;
+  function _pushWave(id,tag){
+    if(id==null)return Promise.resolve(null);
+    return fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(d){
+        if(!r.ok&&d&&d.code==='NO_CONFIG')pushNote('⚠️ Notifikasi latar belum dikonfigurasi di server — alarm hanya berbunyi di aplikasi yang terbuka.');
+        else if(r.ok&&tag==='first'&&d&&d.sent===0)pushNote('ℹ️ Belum ada perangkat terdaftar di radius 20 km. Alarm tetap dicoba ulang otomatis.');
+        return d;
+      });}).catch(function(){return null;});
+  }
+  function pushNote(msg){var status=document.getElementById('sosStatus');if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:8px;font-size:11.5px;font-weight:700;opacity:.95">'+esc(msg)+'</div>');}
+  function _stopWaves(){if(_waveTimer){clearInterval(_waveTimer);_waveTimer=null;}_waveCount=0;}
+  function _startWaves(id){
+    _stopWaves();_waveCount=0;
+    _waveTimer=setInterval(function(){
+      var act=getJson(ACTIVE_KEY,null);
+      if(!act||!act.id||String(act.id)!==String(id)||_waveCount>=WAVE_MAX){_stopWaves();return;}
+      _waveCount++;_pushWave(id,'ulang');
+    },WAVE_EVERY);
+  }
+  window._sosStopWaves=_stopWaves;
+
   // SOS sekarang melewati server: identitas login, batas frekuensi, dan pencegahan SOS ganda.
-  window._sosPublish=function(lat,lng){
+  window._sosPublish=function(lat,lng,name){
     var u=user();if(!u||!u.google){toastx('Masuk dengan Google diperlukan untuk mengirim SOS','err');return;}
     var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
-    return api('/api/operations?action=sos-create',{method:'POST',body:JSON.stringify({lat:lat,lng:lng,device:device})}).then(function(d){
-      if(!d.id)throw new Error('SOS gagal disimpan');setJson(ACTIVE_KEY,{id:d.id,created_at:Date.now()});showActiveSos();
+    function adopt(id){
+      setJson(ACTIVE_KEY,{id:id,created_at:Date.now()});showActiveSos();
+      // Tandai SOS ini milik sendiri supaya HP pengirim tidak ikut berbunyi.
+      try{if(window._sosMarkMine)window._sosMarkMine(id,lat,lng,name);}catch(e){}
       try{if(window._sosStart)window._sosStart();}catch(e){}
+      // Segarkan koordinat langganan push pengirim: server memfilter penerima
+      // memakai lokasi tersimpan, jadi data basi membuat alarm tidak terkirim.
+      try{if(window._sosRefreshPush)window._sosRefreshPush(true);}catch(e){}
+      _pushWave(id,'first');_startWaves(id);
+      return id;
+    }
+    return api('/api/operations?action=sos-create',{method:'POST',body:JSON.stringify({lat:lat,lng:lng,device:device})}).then(function(d){
+      if(!d.id)throw new Error('SOS gagal disimpan');
+      adopt(d.id);
       var status=document.getElementById('sosStatus');if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">✅ SOS terverifikasi dan diteruskan ke petugas terdekat.</div>');
-      fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.id})}).catch(function(){});return d;
-    }).catch(function(e){toastx(e.message||'SOS gagal dikirim','err');var status=document.getElementById('sosStatus');if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#ffd9d9;font-size:12px;font-weight:800">⚠️ SOS belum tersimpan. Pastikan kamu login dan koneksi tersedia.</div>');return null;});
+      return d;
+    }).catch(function(e){
+      // 409 = SOS aktif milik sendiri sudah ada. Itu bukan kegagalan: pakai ID yang ada
+      // dan lanjutkan gelombang push, jangan biarkan pengguna mengira SOS tidak terkirim.
+      if(e&&e.status===409&&e.data&&e.data.id){
+        adopt(e.data.id);
+        var st=document.getElementById('sosStatus');if(st)st.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">✅ SOS kamu masih aktif — sinyal dikirim ulang ke perangkat sekitar.</div>');
+        return e.data;
+      }
+      var why=(e&&e.status===401)?'Kamu belum login Google.':(e&&e.status===429)?'Terlalu banyak percobaan, tunggu beberapa menit.':'Periksa koneksi lalu coba lagi.';
+      toastx(e.message||'SOS gagal dikirim','err');
+      var status=document.getElementById('sosStatus');
+      if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#ffd9d9;font-size:12px;font-weight:800">⚠️ SOS belum tersimpan. '+esc(why)+' Gunakan tombol WhatsApp/SMS di bawah sekarang.</div>');
+      return null;
+    });
   };
-  window._sosResolveMy=function(){var a=getJson(ACTIVE_KEY,null);if(!a||!a.id){toastx('Tidak ada SOS aktif pada perangkat ini','err');return;}api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){localStorage.removeItem(ACTIVE_KEY);showActiveSos();toastx('SOS ditandai selesai. Tim diberi status aman.','ok');}).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');});};
+  window._sosResolveMy=function(){var a=getJson(ACTIVE_KEY,null);if(!a||!a.id){toastx('Tidak ada SOS aktif pada perangkat ini','err');return;}api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){localStorage.removeItem(ACTIVE_KEY);_stopWaves();showActiveSos();toastx('SOS ditandai selesai. Tim diberi status aman.','ok');}).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');});};
   function showActiveSos(){var old=document.getElementById('mySosActive');if(old)old.remove();var a=getJson(ACTIVE_KEY,null);if(!a||!a.id)return;var x=document.createElement('div');x.id='mySosActive';x.style.cssText='position:fixed;left:12px;right:12px;bottom:86px;z-index:99997;max-width:500px;margin:auto;background:#fff2f3;border:1px solid #f4b4ba;color:#8e1d2c;border-radius:14px;padding:11px 13px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13px;font-weight:700;display:flex;gap:10px;align-items:center';x.innerHTML='<span style="font-size:21px">🆘</span><span style="flex:1">SOS kamu sedang aktif. Bila sudah aman, segera tutup sinyal.</span><button onclick="_sosResolveMy()" style="border:0;border-radius:9px;background:#c93647;color:#fff;padding:9px 10px;font-weight:800">Saya Aman</button>';document.body.appendChild(x);}
 
   // Gantikan polling SOS langsung Supabase dengan endpoint radius yang terproteksi.

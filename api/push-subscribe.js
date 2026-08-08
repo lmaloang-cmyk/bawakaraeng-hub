@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
   if (!secureApi(req, res, ['POST'])) return;
-  if (!rateLimit(req, res, { prefix: 'push-sub', limit: 12, windowMs: 10 * 60_000 })) return;
+  if (!rateLimit(req, res, { prefix: 'push-sub', limit: 60, windowMs: 10 * 60_000 })) return;
 
   const SB_URL = process.env.SUPABASE_URL || 'https://ncoueeeskzslldppsbvx.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_KEY;
@@ -27,6 +27,8 @@ export default async function handler(req, res) {
     name: String(b.name || 'Pendaki').slice(0, 80),
     active: true, updated_at: new Date().toISOString()
   };
+  // Jejak kapan koordinat terakhir diperbarui, untuk audit radius push.
+  if (Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))) row.loc_updated_at = new Date().toISOString();
   // Tanpa lokasi, perangkat tidak masuk radius push; aplikasi tetap meminta GPS saat SOS.
   if (Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180) {
     row.lat = lat; row.lng = lng;
