@@ -57,7 +57,7 @@
   function _blockedIds(){try{return JSON.parse(localStorage.getItem('bwkBlockedChatIds')||'[]')||[];}catch(e){return [];}}
   function _isBlocked(m){return _blockedIds().indexOf(String((m&&m.user_id)||(m&&m.device)||''))>=0;}
   function _messageIssue(text){var t=String(text||'').trim();if(!t)return 'Pesan tidak boleh kosong.';if(/(?:javascript|vbscript)\s*:/i.test(t)||/data:text\/html/i.test(t))return 'Tautan berbahaya tidak diizinkan.';if(/(?:bit\.ly|tinyurl\.com|t\.co|cutt\.ly)\//i.test(t))return 'Tautan pendek tidak diizinkan demi keamanan.';if(/(.)\1{11,}/.test(t))return 'Pesan terindikasi spam.';return '';}
-  function _marketNotice(){return curCh==='jualbeli'?'<div class="chat-ai-note">⚠️ <b>Jual-beli antar pengguna.</b> Transaksi, pembayaran, dan pengiriman dilakukan atas risiko masing-masing; bukan layanan resmi Reichas Chelebes.</div>':'';}
+  function _marketNotice(){return curCh==='jualbeli'?'<div class="chat-ai-note">⚠️ <b>Jual-beli antar pengguna.</b> Transaksi, pembayaran, dan pengiriman dilakukan atas risiko masing-masing; bukan layanan resmi RCS.CBS.</div>':'';}
 
   function _tabsHtml(){return CHANNELS.map(function(ch){return `<button class='chtab${ch.id===curCh?' on':''}' onclick="chatGo('${ch.id}')">${ch.e} ${ch.n}</button>`;}).join('');}
   function _syncWho(){var e=document.getElementById('chatWhoName');if(e)e.textContent=_name();}
