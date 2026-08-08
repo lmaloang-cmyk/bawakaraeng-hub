@@ -59,18 +59,28 @@ export default async function handler(req, res) {
   catch (e) { return res.status(503).json({ error: 'Kunci VAPID tidak valid', code: 'BAD_VAPID' }); }
 
   const RADIUS = 20000, lat = Number(sos.lat), lng = Number(sos.lng);
+  // Koordinat langganan yang lebih tua dari ini dianggap tidak dapat dipercaya
+  // untuk menyaring radius. Data lapangan: 10 dari 11 perangkat berkoordinat basi,
+  // dan koordinat basi lebih berbahaya daripada koordinat kosong karena perangkat
+  // yang mendaftar di kota lalu naik gunung akan tersaring KELUAR dari radius 20 km.
+  const STALE_MS = 3 * 24 * 3600_000;
   // Filter awal memakai bounding box di database agar tidak memuat semua perangkat saat pengguna bertambah.
   const dLat = RADIUS / 111320;
   const dLng = RADIUS / (111320 * Math.max(0.1, Math.cos(lat * Math.PI / 180)));
   let subs = [];
   try {
     const u = new URL(SB_URL + '/rest/v1/push_subscriptions');
-    u.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device');
+    u.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device,loc_updated_at');
     u.searchParams.set('active', 'eq.true');
     // "or": perangkat di bounding box 20 km, ATAU perangkat yang belum punya koordinat.
     // Lebih baik satu notifikasi berlebih daripada pendaki di radius bahaya tidak diberi tahu.
     const box = '(lat.gte.' + (lat - dLat) + ',lat.lte.' + (lat + dLat) + ',lng.gte.' + (lng - dLng) + ',lng.lte.' + (lng + dLng) + ')';
-    u.searchParams.set('or', '(and' + box + ',lat.is.null,lng.is.null)');
+    // Sertakan perangkat tanpa koordinat DAN yang koordinatnya belum pernah / sudah
+    // lama tidak disegarkan. Data lapangan: 10 dari 11 perangkat berkoordinat basi,
+    // dan koordinat basi lebih berbahaya daripada koordinat kosong — perangkat yang
+    // mendaftar di kota lalu naik gunung akan tersaring KELUAR dari radius 20 km.
+    const staleISO = new Date(Date.now() - STALE_MS).toISOString();
+    u.searchParams.set('or', '(and' + box + ',lat.is.null,lng.is.null,loc_updated_at.is.null,loc_updated_at.lt.' + staleISO + ')');
     const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
     if (r.ok) subs = await r.json();
   } catch (e) {}
@@ -86,6 +96,10 @@ export default async function handler(req, res) {
     if (s.device && sos.device && s.device === sos.device) return false;
     const sLat = Number(s.lat), sLng = Number(s.lng);
     if (!Number.isFinite(sLat) || !Number.isFinite(sLng)) return true; // lokasi belum diketahui
+    // Koordinat basi tidak boleh dipakai untuk MENOLAK penerima. Lebih baik satu
+    // notifikasi berlebih daripada pendaki di radius bahaya tidak diberi tahu.
+    const seg = s.loc_updated_at ? Date.parse(s.loc_updated_at) : 0;
+    if (!seg || (Date.now() - seg) > STALE_MS) return true;
     return dist(lat, lng, sLat, sLng) <= RADIUS;
   });
   const dead = []; let sent = 0, failed = 0, lastError = '';

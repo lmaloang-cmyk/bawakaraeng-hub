@@ -118,7 +118,7 @@ async function handleGet(req, res) {
   }
 
   // 3. Berapa perangkat yang benar-benar siap menerima alarm?
-  let perangkat = { total: 0, ada_lokasi: 0, tanpa_lokasi: 0, lokasi_segar_24j: 0 };
+  let perangkat = { total: 0, ada_lokasi: 0, tanpa_lokasi: 0, lokasi_segar_24j: 0, lokasi_basi: 0 };
   if (h) {
     try {
       const r = await fetch(SB_URL + '/rest/v1/push_subscriptions?select=lat,lng,loc_updated_at&active=eq.true&limit=1000',
@@ -131,24 +131,34 @@ async function handleGet(req, res) {
           const ok = Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng));
           if (ok) perangkat.ada_lokasi++; else perangkat.tanpa_lokasi++;
           if (s.loc_updated_at && Date.parse(s.loc_updated_at) > batas) perangkat.lokasi_segar_24j++;
+          else if (ok) perangkat.lokasi_basi++;
         }
       }
     } catch (e) { /* biarkan nol */ }
   }
 
   // 4. Kesimpulan yang bisa langsung dibaca manusia.
-  const langkah = [];
-  if (pair === 'TIDAK COCOK') langkah.push('VAPID_PUBLIC dan VAPID_PRIVATE bukan sepasang. Buat pasangan baru: npx web-push generate-vapid-keys, lalu simpan KEDUANYA di Vercel dan redeploy.');
-  if (pair === 'VAPID_PRIVATE tidak dapat dibaca') langkah.push('Nilai VAPID_PRIVATE rusak atau salah format. Simpan ulang kunci privat base64url apa adanya, tanpa tanda kutip atau spasi.');
-  if (!env.VAPID_PUBLIC || !env.VAPID_PRIVATE) langkah.push('Isi VAPID_PUBLIC dan VAPID_PRIVATE di Vercel, lalu redeploy.');
-  if (!env.VAPID_SUBJECT) langkah.push('Isi VAPID_SUBJECT dengan mailto:emailmu@domain.com.');
-  if (!env.SUPABASE_ANON_KEY) langkah.push('Isi SUPABASE_ANON_KEY, kalau tidak verifikasi login gagal dan semua SOS dibalas 401.');
-  if (!env.SUPABASE_SERVICE_ROLE) langkah.push('Isi SUPABASE_SERVICE_ROLE, kalau tidak SOS tidak tersimpan sama sekali.');
-  if (!env.ALLOWED_ORIGINS) langkah.push('Isi ALLOWED_ORIGINS dengan domain aplikasi (opsional, host sendiri sudah otomatis diizinkan).');
-  if (migrasi.startsWith('BELUM')) langkah.push('Jalankan supabase-sos-optimasi.sql di Supabase SQL Editor, kalau tidak gelombang push ulang selalu ditolak.');
-  if (perangkat.total === 0) langkah.push('Belum ada perangkat yang mengizinkan notifikasi. Buka aplikasi di HP lain, tekan Izinkan pada banner notifikasi.');
-  else if (perangkat.total === 1) langkah.push('Baru 1 perangkat terdaftar. Alarm butuh minimal 2 agar bisa diuji silang.');
-  if (!langkah.length) langkah.push('Semua siap. Uji kirim SOS dari satu HP dan pastikan HP lain berbunyi.');
+  // WAJIB = alarm mustahil bekerja tanpa ini. OPSIONAL = saran, tidak memblokir.
+  // Dulu keduanya dicampur sehingga "siap" ikut false hanya karena saran kosmetik.
+  const wajib = [], opsional = [];
+  if (pair === 'TIDAK COCOK') wajib.push('VAPID_PUBLIC dan VAPID_PRIVATE bukan sepasang. Buat pasangan baru: npx web-push generate-vapid-keys, lalu simpan KEDUANYA di Vercel dan redeploy.');
+  if (pair === 'VAPID_PRIVATE tidak dapat dibaca') wajib.push('Nilai VAPID_PRIVATE rusak atau salah format. Simpan ulang kunci privat base64url apa adanya, tanpa tanda kutip atau spasi.');
+  if (!env.VAPID_PUBLIC || !env.VAPID_PRIVATE) wajib.push('Isi VAPID_PUBLIC dan VAPID_PRIVATE di Vercel, lalu redeploy.');
+  if (!env.VAPID_SUBJECT) wajib.push('Isi VAPID_SUBJECT dengan mailto:emailmu@domain.com.');
+  if (!env.SUPABASE_ANON_KEY) wajib.push('Isi SUPABASE_ANON_KEY, kalau tidak verifikasi login gagal dan semua SOS dibalas 401.');
+  if (!env.SUPABASE_SERVICE_ROLE) wajib.push('Isi SUPABASE_SERVICE_ROLE, kalau tidak SOS tidak tersimpan sama sekali.');
+  if (migrasi.startsWith('BELUM')) wajib.push('Jalankan supabase-sos-optimasi.sql di Supabase SQL Editor, kalau tidak gelombang push ulang selalu ditolak.');
+  if (perangkat.total === 0) wajib.push('Belum ada perangkat yang mengizinkan notifikasi. Buka aplikasi di HP lain, tekan Izinkan pada banner notifikasi.');
+  else if (perangkat.total === 1) wajib.push('Baru 1 perangkat terdaftar. Alarm butuh minimal 2 agar bisa diuji silang.');
 
-  return res.status(200).json({ siap: langkah.length === 1 && langkah[0].startsWith('Semua siap'), env, vapidPair: pair, migrasi, perangkat, langkah });
+  if (!env.ALLOWED_ORIGINS) opsional.push('ALLOWED_ORIGINS kosong. Tidak masalah: host sendiri sudah otomatis diizinkan. Isi hanya bila memakai domain kustom tambahan.');
+  if (!env.SUPABASE_URL) opsional.push('SUPABASE_URL kosong. Kode memakai nilai bawaan, tetapi sebaiknya diisi eksplisit.');
+  if (perangkat.lokasi_basi > 0) opsional.push(perangkat.lokasi_basi + ' perangkat punya koordinat yang belum disegarkan. Mereka tetap dikirimi alarm (tidak disaring radius), dan koordinatnya otomatis diperbarui saat pemiliknya membuka aplikasi versi baru.');
+
+  const siap = wajib.length === 0;
+  const ringkasan = siap
+    ? 'Semua syarat wajib terpenuhi. Uji kirim SOS dari satu HP dan pastikan HP lain berbunyi.'
+    : 'Ada ' + wajib.length + ' hal wajib yang belum beres.';
+
+  return res.status(200).json({ siap, ringkasan, env, vapidPair: pair, migrasi, perangkat, wajib, opsional });
 }
