@@ -70,11 +70,35 @@ export default async function handler(req, res) {
     const u = new URL(SB_URL + '/rest/v1/push_subscriptions');
     u.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device,loc_updated_at');
     u.searchParams.set('active', 'eq.true');
-    // "or": perangkat di bounding box 20 km, ATAU perangkat yang belum punya koordinat.
-    // Lebih baik satu notifikasi berlebih daripada pendaki di radius bahaya tidak diberi tahu.
-    const box = '(lat.gte.' + (lat - dLat) + ',lat.lte.' + (lat + dLat) + ',lng.gte.' + (lng - dLng) + ',lng.lte.' + (lng + dLng) + ')';
-    const staleISO = new Date(Date.now() - STALE_MS).toISOString();
-    u.searchParams.set('or', '(and' + box + ',lat.is.null,lng.is.null,loc_updated_at.is.null,loc_updated_at.lt.' + staleISO + ')');
+
+    // PERBAIKAN BUG: sintaks PostgREST `or` yang benar menggunakan dua kondisi terpisah:
+    //   or(and(box_filter), lat.is.null)
+    // Versi lama memakai "(and(...),lat.is.null,...)" yang tidak valid — semua kondisi
+    // diperlakukan setara di dalam `or`, bukan bersarang `and` + `or`. Akibatnya
+    // perangkat tanpa koordinat tidak pernah lolos filter dan tidak menerima push SOS.
+    //
+    // Strategi: ambil perangkat di bounding box ± radius (filter kasar di DB),
+    // lalu saring lagi per haversine di server (filter presisi). Perangkat tanpa lokasi
+    // atau dengan koordinat basi selalu dimasukkan agar tidak ada yang terlewat.
+    const staleISOStr = new Date(Date.now() - STALE_MS).toISOString();
+    const latMin = (lat - dLat).toFixed(6);
+    const latMax = (lat + dLat).toFixed(6);
+    const lngMin = (lng - dLng).toFixed(6);
+    const lngMax = (lng + dLng).toFixed(6);
+
+    // Dua kondisi yang di-OR-kan:
+    // 1. Perangkat dalam bounding box: and(lat.gte.X,lat.lte.X,lng.gte.X,lng.lte.X)
+    // 2. Perangkat tanpa lokasi valid: lat.is.null
+    // 3. Perangkat dengan koordinat basi: loc_updated_at.lt.TIMESTAMP
+    // Gabungkan dengan or() sesuai spesifikasi PostgREST:
+    //   or=(and(lat.gte.X,lat.lte.X,lng.gte.X,lng.lte.X),lat.is.null,loc_updated_at.lt.ISO)
+    const orFilter = [
+      'and(lat.gte.' + latMin + ',lat.lte.' + latMax + ',lng.gte.' + lngMin + ',lng.lte.' + lngMax + ')',
+      'lat.is.null',
+      'loc_updated_at.lt.' + staleISOStr
+    ].join(',');
+    u.searchParams.set('or', '(' + orFilter + ')');
+
     const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
     if (r.ok) subs = await r.json();
   } catch (e) {}

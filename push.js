@@ -2,6 +2,9 @@
    Butuh: kunci VAPID publik (di bawah) + env VAPID_PRIVATE di server, tabel push_subscriptions
    di Supabase (jalankan supabase-push.sql), dan endpoint /api/sos-push. */
 (function(){
+  // Nilai hardcoded ini HANYA dipakai bila server /api/push-subscribe tidak bisa dihubungi
+  // setelah dua percobaan. Nilai AKTIF diambil dari server (lihat _serverKey() di bawah).
+  // Pastikan nilai ini sama persis dengan env VAPID_PUBLIC di Vercel bila perlu rotasi kunci.
   var VAPID_PUBLIC='BNqs6g7alS1MYpCgK4wgLHadQXtcAF6hGfOKm6x3hVT2cUhI1P4GuZwDKI2KbFaS-tGuyP1u7305B3nY_yI8qoM';
   var SUPPORTED=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
 
@@ -43,16 +46,50 @@
     }catch(e){return Promise.resolve(false);}
   }
 
-  // Kunci VAPID diambil dari server. Dulu ditanam keras di berkas ini; kalau env
-  // VAPID_PUBLIC di server berbeda, SETIAP push ditolak 403 dan alarm tidak pernah
-  // sampai ke perangkat lain — tanpa jejak apa pun. Nilai di bawah kini hanya cadangan.
+  // BUG FIX #4: Nilai VAPID_PUBLIC dulu ditanam keras di sini sebagai satu-satunya sumber.
+  // Bila env VAPID_PUBLIC di Vercel dirotasi atau berbeda satu karakter pun, setiap push
+  // subscription ditolak 403 secara permanen dan semua alarm SOS gagal tanpa jejak.
+  //
+  // Solusi berlapis:
+  // 1. Selalu ambil kunci dari server (/api/push-subscribe GET) — sumber kebenaran tunggal.
+  // 2. Bila server gagal dihubungi (offline / cold-start), coba satu kali lagi setelah 5 detik.
+  // 3. Baru jatuh ke nilai hardcoded di bawah HANYA setelah dua percobaan server gagal.
+  // 4. Catat sumber kunci di window._pushKeySource untuk debugging (lihat di DevTools).
+  //
+  // Nilai di bawah hanya sebagai last-resort — harus sama persis dengan VAPID_PUBLIC di Vercel.
+  var VAPID_PUBLIC_FALLBACK='BNqs6g7alS1MYpCgK4wgLHadQXtcAF6hGfOKm6x3hVT2cUhI1P4GuZwDKI2KbFaS-tGuyP1u7305B3nY_yI8qoM';
   var _srvKey=null;
   function _serverKey(){
     if(_srvKey)return Promise.resolve(_srvKey);
-    return fetch('/api/push-subscribe',{headers:{Accept:'application/json'}})
-      .then(function(r){return r.json();})
-      .then(function(d){_srvKey=(d&&d.key)?String(d.key):VAPID_PUBLIC;return _srvKey;})
-      .catch(function(){_srvKey=VAPID_PUBLIC;return _srvKey;});
+    function attempt(retry){
+      return fetch('/api/push-subscribe',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var k=d&&d.key?String(d.key):null;
+          if(k&&k.length>20){
+            _srvKey=k;
+            window._pushKeySource='server';
+            return _srvKey;
+          }
+          // Server merespons tapi tidak punya key — berarti VAPID_PUBLIC env kosong.
+          // Jatuh ke fallback dan tandai sebagai peringatan.
+          _srvKey=VAPID_PUBLIC_FALLBACK;
+          window._pushKeySource='fallback-no-env';
+          console.warn('[push] VAPID_PUBLIC belum diset di server, memakai nilai hardcoded. Isi env lalu redeploy.');
+          return _srvKey;
+        })
+        .catch(function(e){
+          if(!retry){
+            // Satu retry setelah 5 detik untuk mengatasi cold-start Vercel.
+            return new Promise(function(res){setTimeout(res,5000);}).then(function(){return attempt(true);});
+          }
+          // Kedua percobaan gagal — offline atau server error. Pakai fallback.
+          _srvKey=VAPID_PUBLIC_FALLBACK;
+          window._pushKeySource='fallback-network-error';
+          return _srvKey;
+        });
+    }
+    return attempt(false);
   }
   // Bandingkan kunci langganan lama dengan kunci server: kalau kunci sudah dirotasi,
   // langganan lama permanen tidak bisa dikirimi dan harus didaftarkan ulang.

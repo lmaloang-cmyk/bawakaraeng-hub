@@ -251,9 +251,34 @@ function skAdminDelete(ref,cloud){
   if(!confirm('Hapus '+label+' SIMAKSI '+(r.code||'')+' secara permanen?'))return;
   var done=function(){try{renderAdmin('simaksi');}catch(e){}toast('Aktivitas SIMAKSI dihapus','ok');};
   if(cloud&&typeof _sbClient==='function'){
-    var c=_sbClient();if(c){c.from('simaksi').delete().eq('id',ref).then(function(res){if(res&&res.error){toast('Gagal menghapus aktivitas','err');return;}done();}).catch(function(){toast('Gagal menghapus aktivitas','err');});return;}
+    var c=_sbClient();if(c){
+      // BUG FIX #5: sebelumnya `ref` dipakai langsung sebagai Supabase row ID.
+      // Bila cloud=false, ref adalah index array numerik (mis. 0, 1, 2), bukan UUID.
+      // Bila jalur cloud diambil dengan ref numerik, query .eq('id', 0) tidak menemukan
+      // apa pun atau — lebih berbahaya — mencocokkan baris yang salah.
+      // Solusi: selalu pakai r.id (UUID dari database) untuk operasi cloud,
+      // dan r.code sebagai fallback identifikasi bila r.id tidak ada.
+      var rowId=r.id||r.code;
+      if(!rowId){toast('ID baris tidak ditemukan, tidak bisa menghapus','err');return;}
+      var col=r.id?'id':'code';
+      c.from('simaksi').delete().eq(col,rowId).then(function(res){
+        if(res&&res.error){toast('Gagal menghapus aktivitas','err');return;}
+        done();
+      }).catch(function(){toast('Gagal menghapus aktivitas','err');});
+      return;
+    }
   }
-  try{var arr=_lsGet('bwkSimaksi',[]);arr.splice(ref,1);_lsSet('bwkSimaksi',arr);}catch(e){}
+  // Mode lokal: ref adalah index numerik array localStorage.
+  try{
+    var arr=_lsGet('bwkSimaksi',[]);
+    var idx=typeof ref==='number'?ref:-1;
+    if(idx<0){
+      // ref bukan angka (mis. UUID string dari card lokal) — cari lewat code.
+      for(var i=0;i<arr.length;i++){if(arr[i]&&(arr[i].id===ref||arr[i].code===ref)){idx=i;break;}}
+    }
+    if(idx>=0)arr.splice(idx,1);
+    _lsSet('bwkSimaksi',arr);
+  }catch(e){}
   done();
 }
 

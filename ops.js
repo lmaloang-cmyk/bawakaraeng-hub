@@ -102,8 +102,49 @@
   // Dashboard petugas: SOS aktif, riwayat, dan check-in paling baru.
   function isAdminClient(){var u=user();return !!(u&&u.role==='Admin');}
   function addOpsTab(){if(!isAdminClient())return;var tabs=document.querySelector('.admin-tabs');if(tabs&&!document.getElementById('opsSosTab')){var b=document.createElement('button');b.id='opsSosTab';b.className='admin-tab';b.textContent='🆘 Operasi';b.onclick=function(){adminTab('operasi',b);};tabs.insertBefore(b,tabs.firstChild);}}
-  var oldAdminTab=window.adminTab;window.adminTab=function(k,el){if(k==='operasi'){var tabs=document.querySelectorAll('.admin-tab');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('on');if(el)el.classList.add('on');var f=document.getElementById('adminFilters');if(f)f.style.display='none';opsDashboard();return;}return oldAdminTab.apply(this,arguments);};
-  window.opsDashboard=function(){var b=document.getElementById('adminBody');if(!b)return;b.innerHTML='<div class="aempty">Memuat dashboard operasi…</div>';api('/api/operations?action=admin',{method:'GET'}).then(function(d){var sos=d.sos||[],active=sos.filter(function(x){return x.status==='active';}),checks=d.checkins||[];var cards=active.length?active.map(function(x){var map='https://maps.google.com/?q='+x.lat+','+x.lng;return '<div class="ops-card danger"><div><b>🆘 '+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>📍 '+Number(x.lat).toFixed(5)+', '+Number(x.lng).toFixed(5)+'</small></div><a href="'+map+'" target="_blank" rel="noopener">🗺️ Peta</a><button onclick="opsResolve(\''+esc(x.id)+'\')">✅ Tangani</button></div>';}).join(''):'<div class="aempty">✅ Tidak ada SOS aktif.</div>';var hist=sos.filter(function(x){return x.status!=='active';}).slice(0,8).map(function(x){return '<li>'+esc(x.name||'Pendaki')+' · '+esc(x.status||'resolved')+' · '+new Date(x.created_at).toLocaleString('id-ID')+'</li>';}).join('')||'<li>Belum ada riwayat.</li>';var check=checks.slice(0,12).map(function(x){var map='https://maps.google.com/?q='+x.lat+','+x.lng;return '<li><b>'+esc(x.user_name||x.user_email||'Pendaki')+'</b> · '+esc(x.position_name)+' <a href="'+map+'" target="_blank" rel="noopener">peta</a><br/><small>'+new Date(x.checked_at).toLocaleString('id-ID')+'</small></li>';}).join('')||'<li>Belum ada check-in.</li>';b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid #e4e8ef;border-radius:13px;padding:12px;margin:9px 0}.ops-card.danger{border-color:#eeadb4;background:#fff6f7}.ops-card div{flex:1}.ops-card b,.ops-card small{display:block}.ops-card small{color:#69758a;font-size:11px;margin-top:3px}.ops-card a,.ops-card button{border:0;border-radius:9px;padding:9px;text-decoration:none;font-size:12px;font-weight:800;background:#e9efff;color:#274fa8}.ops-card button{background:#198754;color:#fff}.ops-list{margin:6px 0;padding-left:18px;font-size:12px;line-height:1.55}.ops-head{background:linear-gradient(135deg,#17314d,#2a6173);color:#fff;border-radius:14px;padding:13px}.ops-head b{font-size:18px}</style><div class="ops-head"><b>🆘 Dashboard Operasi</b><br/><small>'+active.length+' SOS aktif · '+checks.length+' check-in terbaru</small></div><div class="sh"><span class="bar" style="background:#e5484d"></span><h3>SOS Aktif</h3></div>'+cards+'<div class="sh"><span class="bar" style="background:#2b6fff"></span><h3>Check-in Terbaru</h3></div><ul class="ops-list">'+check+'</ul><div class="sh"><span class="bar" style="background:#7b61ff"></span><h3>Riwayat SOS</h3></div><ul class="ops-list">'+hist+'</ul><div style="display:flex;gap:8px;margin-top:10px"><button class="btn g-indigo" style="flex:1" onclick="opsDashboard()">↻ Muat Ulang</button><button class="btn gh" style="flex:1" onclick="opsVerifyPermit()">🎫 Verifikasi QR SIMAKSI</button></div>';}).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
+
+  // BUG FIX #2: lat/lng dulu dimasukkan ke href tanpa sanitasi. Nilai seperti
+  // `" onclick="alert(1)` yang disimpan di DB menghasilkan XSS di panel admin.
+  // safeCoord() hanya mengizinkan karakter angka, titik, minus — cukup untuk koordinat.
+  function safeCoord(v){return String(v==null?'':v).replace(/[^0-9.\-]/g,'').slice(0,20);}
+  function safeMapUrl(lat,lng){return 'https://maps.google.com/?q='+safeCoord(lat)+','+safeCoord(lng);}
+  // BUG FIX #3: oldAdminTab bisa undefined bila ops.js load sebelum window.adminTab
+  // didefinisikan di inline script index.html. Simpan referensi saat dipanggil (lazy),
+  // bukan saat module di-parse, supaya selalu dapat versi yang sudah ada.
+  var _adminTabCache=null;
+  window.adminTab=function(k,el){
+    if(k==='operasi'){
+      var tabs=document.querySelectorAll('.admin-tab');
+      for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('on');
+      if(el)el.classList.add('on');
+      var f=document.getElementById('adminFilters');if(f)f.style.display='none';
+      opsDashboard();return;
+    }
+    // Ambil referensi asli sekali saja saat pertama kali dibutuhkan.
+    if(!_adminTabCache){_adminTabCache=window.__originalAdminTab||null;}
+    if(typeof _adminTabCache==='function')return _adminTabCache.apply(this,arguments);
+    // Fallback aman: tab target tidak ditemukan, tidak crash.
+    try{var ts=document.querySelectorAll('.admin-tab');for(var j=0;j<ts.length;j++)ts[j].classList.remove('on');if(el)el.classList.add('on');if(typeof renderAdmin==='function')renderAdmin(k);}catch(e){}
+  };
+  // Simpan handler asli sebelum ditimpa, sehingga lazy lookup di atas bisa menemukannya.
+  // Hanya disimpan bila belum ditimpa ops.js (cegah double-wrap).
+  if(typeof window.adminTab==='function'&&!window.__originalAdminTab){
+    window.__originalAdminTab=window.adminTab;
+  }
+  window.opsDashboard=function(){var b=document.getElementById('adminBody');if(!b)return;b.innerHTML='<div class="aempty">Memuat dashboard operasi…</div>';api('/api/operations?action=admin',{method:'GET'}).then(function(d){
+    var sos=d.sos||[],active=sos.filter(function(x){return x.status==='active';}),checks=d.checkins||[];
+    // BUG FIX #2 (lanjutan): pakai safeMapUrl() + esc() untuk SEMUA URL peta di dashboard.
+    var cards=active.length?active.map(function(x){
+      var map=safeMapUrl(x.lat,x.lng);
+      return '<div class="ops-card danger"><div><b>🆘 '+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>📍 '+esc(Number(x.lat).toFixed(5))+', '+esc(Number(x.lng).toFixed(5))+'</small></div><a href="'+esc(map)+'" target="_blank" rel="noopener">🗺️ Peta</a><button onclick="opsResolve(\''+esc(x.id)+'\')">✅ Tangani</button></div>';
+    }).join(''):'<div class="aempty">✅ Tidak ada SOS aktif.</div>';
+    var hist=sos.filter(function(x){return x.status!=='active';}).slice(0,8).map(function(x){return '<li>'+esc(x.name||'Pendaki')+' · '+esc(x.status||'resolved')+' · '+new Date(x.created_at).toLocaleString('id-ID')+'</li>';}).join('')||'<li>Belum ada riwayat.</li>';
+    var check=checks.slice(0,12).map(function(x){
+      var map=safeMapUrl(x.lat,x.lng);
+      return '<li><b>'+esc(x.user_name||x.user_email||'Pendaki')+'</b> · '+esc(x.position_name)+' <a href="'+esc(map)+'" target="_blank" rel="noopener">peta</a><br/><small>'+new Date(x.checked_at).toLocaleString('id-ID')+'</small></li>';
+    }).join('')||'<li>Belum ada check-in.</li>';
+    b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid #e4e8ef;border-radius:13px;padding:12px;margin:9px 0}.ops-card.danger{border-color:#eeadb4;background:#fff6f7}.ops-card div{flex:1}.ops-card b,.ops-card small{display:block}.ops-card small{color:#69758a;font-size:11px;margin-top:3px}.ops-card a,.ops-card button{border:0;border-radius:9px;padding:9px;text-decoration:none;font-size:12px;font-weight:800;background:#e9efff;color:#274fa8}.ops-card button{background:#198754;color:#fff}.ops-list{margin:6px 0;padding-left:18px;font-size:12px;line-height:1.55}.ops-head{background:linear-gradient(135deg,#17314d,#2a6173);color:#fff;border-radius:14px;padding:13px}.ops-head b{font-size:18px}</style><div class="ops-head"><b>🆘 Dashboard Operasi</b><br/><small>'+active.length+' SOS aktif · '+checks.length+' check-in terbaru</small></div><div class="sh"><span class="bar" style="background:#e5484d"></span><h3>SOS Aktif</h3></div>'+cards+'<div class="sh"><span class="bar" style="background:#2b6fff"></span><h3>Check-in Terbaru</h3></div><ul class="ops-list">'+check+'</ul><div class="sh"><span class="bar" style="background:#7b61ff"></span><h3>Riwayat SOS</h3></div><ul class="ops-list">'+hist+'</ul><div style="display:flex;gap:8px;margin-top:10px"><button class="btn g-indigo" style="flex:1" onclick="opsDashboard()">↻ Muat Ulang</button><button class="btn gh" style="flex:1" onclick="opsVerifyPermit()">🎫 Verifikasi QR SIMAKSI</button></div>';
+  }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
   window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
 
   // QR SIMAKSI memakai payload baku sehingga kode tetap dapat diverifikasi manual oleh petugas.

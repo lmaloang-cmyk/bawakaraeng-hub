@@ -16,7 +16,9 @@ export default async function handler(req, res) {
   if (!limits[action]) return res.status(404).json({ error: 'Operasi tidak ditemukan' });
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
-  const user = await requireUser(req, res, action === 'admin' || action === 'permit-verify');
+  // permit-verify: semua pengguna login boleh scan SIMAKSI (bukan admin-only).
+  // admin: hanya email admin yang terdaftar di ADMIN_EMAILS.
+  const user = await requireUser(req, res, action === 'admin');
   if (!user) return;
   // Kuota utama dipatok per akun, BUKAN per IP: satu rombongan yang berbagi hotspot atau
   // berada di NAT operator yang sama tidak lagi saling menghabiskan kuota alarm SOS.
@@ -34,12 +36,41 @@ export default async function handler(req, res) {
 async function sosCreate(req,res,user) {
   const b=req.body||{}, lat=Number(b.lat), lng=Number(b.lng), device=clean(b.device,80);
   if (!validPoint(lat,lng) || !device) return res.status(400).json({error:'Lokasi atau perangkat tidak valid'});
-  const q=new URLSearchParams({select:'id',active:'eq.true',created_at:'gte.'+new Date(Date.now()-30*60_000).toISOString(),limit:'1'});
-  // Tanda kutip melindungi nilai device yang memuat koma atau tanda kurung; tanpa itu
-  // filter "or" jadi tidak valid dan penjaga duplikat gagal diam-diam.
-  q.set('or','(user_id.eq.'+user.id+',device.eq."'+device.replace(/"/g,'')+'")');
-  const existing=await rest('sos_alerts?'+q); const rows=existing.ok?await existing.json():[];
-  if (Array.isArray(rows)&&rows[0]) return res.status(409).json({error:'SOS aktif sudah ada',id:rows[0].id});
+
+  // Validasi UUID agar tidak bisa dimanipulasi sebelum dimasukkan ke query PostgREST.
+  if (!/^[0-9a-f-]{36}$/.test(String(user.id||'')))
+    return res.status(400).json({error:'Identitas pengguna tidak valid'});
+
+  // Sanitasi device: buang semua karakter yang bisa merusak sintaks filter PostgREST.
+  const safeDevice = device.replace(/[^a-zA-Z0-9_\-:.]/g, '').slice(0, 80);
+  if (!safeDevice) return res.status(400).json({error:'ID perangkat tidak valid'});
+
+  const q=new URLSearchParams({
+    select: 'id',
+    active: 'eq.true',
+    created_at: 'gte.' + new Date(Date.now()-30*60_000).toISOString(),
+    limit: '1'
+  });
+  // Gunakan dua query terpisah untuk menghindari masalah sintaks filter "or" PostgREST
+  // saat user.id (UUID) atau device memuat karakter spesial.
+  // Cek SOS aktif berdasarkan user_id lebih andal dan tidak bisa dipalsukan.
+  q.set('user_id', 'eq.' + user.id);
+  const existingByUser = await rest('sos_alerts?' + q);
+  const rowsByUser = existingByUser.ok ? await existingByUser.json() : [];
+  if (Array.isArray(rowsByUser) && rowsByUser[0])
+    return res.status(409).json({error:'SOS aktif sudah ada',id:rowsByUser[0].id});
+
+  // Cek juga berdasarkan device sebagai jaring pengaman (mis. sesi beda tapi HP sama).
+  const q2 = new URLSearchParams({
+    select: 'id', active: 'eq.true',
+    created_at: 'gte.' + new Date(Date.now()-30*60_000).toISOString(),
+    device: 'eq.' + safeDevice, limit: '1'
+  });
+  const existingByDevice = await rest('sos_alerts?' + q2);
+  const rowsByDevice = existingByDevice.ok ? await existingByDevice.json() : [];
+  if (Array.isArray(rowsByDevice) && rowsByDevice[0])
+    return res.status(409).json({error:'SOS aktif sudah ada',id:rowsByDevice[0].id});
+
   const meta=user.user_metadata||{}, name=clean(meta.full_name||meta.name||String(user.email||'Pendaki').split('@')[0],80)||'Pendaki';
   const r=await rest('sos_alerts',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({lat,lng,name,device,user_id:user.id,user_email:clean(user.email,254),active:true,status:'active'})});
   // Dulu kegagalan INSERT dibalas 502 tanpa keterangan sehingga penyebab sebenarnya

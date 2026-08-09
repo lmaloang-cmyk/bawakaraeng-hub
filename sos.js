@@ -187,6 +187,12 @@
     if(typeof window._opsNearby!=='function'){_setStatus('net','modul operasi belum siap');_schedule(8000);return;}
     if(!navigator.geolocation){_setStatus('unsupported');return;}
     _busy=true;
+
+    // BUG FIX: versi lama memakai .catch().then() — bila handler .catch() sendiri melempar
+    // exception (misalnya _setStatus atau _penalize crash karena DOM tidak siap), blok .then()
+    // akhir tidak pernah jalan, _busy tetap true selamanya, dan polling SOS berhenti total.
+    // Solusi: gunakan .finally() — dijamin jalan meski .catch() throw — dan lindungi seluruh
+    // rantai dengan try/catch agar _busy PASTI di-reset dalam kondisi apa pun.
     _pos().then(function(p){
       return window._opsNearby(p.la,p.ln).then(function(rows){
         _recover();_lastOk=Date.now();
@@ -194,13 +200,20 @@
         if(!_queue.length)_setStatus('ok');
       });
     }).catch(function(err){
-      var msg=String((err&&err.message)||'');
-      var code=(err&&err.status)||0;
-      if(msg==='gps'||msg==='nogeo'){_fails++;_setStatus('gps');_penalize(BACKOFF_MIN);}
-      else if(code===429){_setStatus('limit');_penalize(Math.max(BACKOFF_MIN,(err.retryAfter||120)*1000));}
-      else if(code===401||code===403||/Login/i.test(msg)){_setStatus('auth');_penalize(120000);}
-      else {_fails++;_setStatus('net');_penalize();}
-    }).then(function(){_busy=false;_schedule();});
+      try{
+        var msg=String((err&&err.message)||'');
+        var code=(err&&err.status)||0;
+        if(msg==='gps'||msg==='nogeo'){_fails++;_setStatus('gps');_penalize(BACKOFF_MIN);}
+        else if(code===429){_setStatus('limit');_penalize(Math.max(BACKOFF_MIN,(err.retryAfter||120)*1000));}
+        else if(code===401||code===403||/Login/i.test(msg)){_setStatus('auth');_penalize(120000);}
+        else{_fails++;_setStatus('net');_penalize();}
+      }catch(e2){/* jangan biarkan error di handler ini menghentikan .finally() */}
+    }).finally(function(){
+      // Dijamin jalan bahkan bila .catch() melempar, sehingga _busy tidak pernah
+      // "terkunci" dan polling tidak berhenti tanpa jejak.
+      _busy=false;
+      _schedule();
+    });
   }
 
   function _consume(rows,p){
