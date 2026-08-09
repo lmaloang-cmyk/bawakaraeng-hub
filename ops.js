@@ -108,29 +108,7 @@
   // safeCoord() hanya mengizinkan karakter angka, titik, minus — cukup untuk koordinat.
   function safeCoord(v){return String(v==null?'':v).replace(/[^0-9.\-]/g,'').slice(0,20);}
   function safeMapUrl(lat,lng){return 'https://maps.google.com/?q='+safeCoord(lat)+','+safeCoord(lng);}
-  // BUG FIX #3: oldAdminTab bisa undefined bila ops.js load sebelum window.adminTab
-  // didefinisikan di inline script index.html. Simpan referensi saat dipanggil (lazy),
-  // bukan saat module di-parse, supaya selalu dapat versi yang sudah ada.
-  var _adminTabCache=null;
-  window.adminTab=function(k,el){
-    if(k==='operasi'){
-      var tabs=document.querySelectorAll('.admin-tab');
-      for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('on');
-      if(el)el.classList.add('on');
-      var f=document.getElementById('adminFilters');if(f)f.style.display='none';
-      opsDashboard();return;
-    }
-    // Ambil referensi asli sekali saja saat pertama kali dibutuhkan.
-    if(!_adminTabCache){_adminTabCache=window.__originalAdminTab||null;}
-    if(typeof _adminTabCache==='function')return _adminTabCache.apply(this,arguments);
-    // Fallback aman: tab target tidak ditemukan, tidak crash.
-    try{var ts=document.querySelectorAll('.admin-tab');for(var j=0;j<ts.length;j++)ts[j].classList.remove('on');if(el)el.classList.add('on');if(typeof renderAdmin==='function')renderAdmin(k);}catch(e){}
-  };
-  // Simpan handler asli sebelum ditimpa, sehingga lazy lookup di atas bisa menemukannya.
-  // Hanya disimpan bila belum ditimpa ops.js (cegah double-wrap).
-  if(typeof window.adminTab==='function'&&!window.__originalAdminTab){
-    window.__originalAdminTab=window.adminTab;
-  }
+
   window.opsDashboard=function(){var b=document.getElementById('adminBody');if(!b)return;b.innerHTML='<div class="aempty">Memuat dashboard operasi…</div>';api('/api/operations?action=admin',{method:'GET'}).then(function(d){
     var sos=d.sos||[],active=sos.filter(function(x){return x.status==='active';}),checks=d.checkins||[];
     // BUG FIX #2 (lanjutan): pakai safeMapUrl() + esc() untuk SEMUA URL peta di dashboard.
