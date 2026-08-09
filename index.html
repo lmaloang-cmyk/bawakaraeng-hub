@@ -775,25 +775,25 @@ html.dark .badge-panel{background:linear-gradient(135deg,#1e2d28,#172320);border
 .login-or span{white-space:nowrap}
 .login-or::before,.login-or::after{content:'';flex:1;height:1px;background:#e3e3e3}
 .login-hint{font-size:12px;color:#888;margin:10px 0 2px;text-align:center;line-height:1.4}
-.admin-fab{position:fixed;right:16px;bottom:88px;z-index:120;width:54px;height:54px;border-radius:50%;background:#1f2b44;color:#fff;border:none;box-shadow:0 8px 20px rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
-.admin-ov{position:fixed;inset:0;z-index:300;background:#0f1523;display:none;flex-direction:column}
-.admin-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 10px;font-size:17px;font-weight:800;color:#e8edf6;border-bottom:1px solid rgba(255,255,255,.08)}
-.admin-x{cursor:pointer;font-size:20px;opacity:.7;padding:4px 10px}
-.admin-tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px}
-.admin-tab{flex:none;padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#9fb0c9;font-weight:700;font-size:13px;cursor:pointer}
-.admin-tab.on{background:#2b6fff;color:#fff;border-color:#2b6fff}
-.admin-body{flex:1;overflow-y:auto;padding:10px 16px 40px}
-.bl-form{background:#182234;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin:0 0 12px}.bl-form b{color:#f2f5fb;font-size:14px}.bl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.bl-form input,.bl-form select,.bl-form textarea{box-sizing:border-box;width:100%;background:#101827;border:1px solid #33435f;color:#eef2f8;border-radius:9px;padding:10px;font:inherit;font-size:12px}.bl-form textarea{min-height:66px;resize:vertical;grid-column:1/-1}.bl-card{background:#182234;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin:0 0 10px}.bl-card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;color:#eef2f8}.bl-card-h b{font-size:14px}.bl-card small{display:block;color:#9dabc0;font-size:11px;margin-top:3px}.bl-reason{margin:10px 0;padding:9px 10px;background:#101827;border-radius:9px;color:#e6ebf3;font-size:12px;line-height:1.45}.bl-meta{display:flex;gap:7px;flex-wrap:wrap;color:#aab6c8;font-size:11px}.bl-chip{padding:3px 7px;border-radius:12px;background:#2b3548;color:#cbd5e5;font-weight:700}.bl-chip.danger{background:#542936;color:#ffb7c0}.bl-chip.ok{background:#173f35;color:#9ce0bf}.bl-actions{margin-top:10px}.bl-actions .btn{min-height:38px;font-size:12px}@media(max-width:360px){.bl-grid{grid-template-columns:1fr}}
-.acard{background:#182234;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;margin:0 0 10px}
-.acard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:700;color:#e8edf6}
-.acard-s{font-size:12.5px;color:#59627a;margin:6px 0 0;line-height:1.5}
+.admin-fab{position:fixed;right:16px;bottom:88px;z-index:120;width:54px;height:54px;border-radius:50%;background:var(--brand,#26705a);color:#fff;border:none;box-shadow:0 8px 20px rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.admin-ov{position:fixed;inset:0;z-index:300;background:var(--canvas);color:var(--ink);display:none;flex-direction:column}
+.admin-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 10px;font-size:17px;font-weight:800;color:var(--ink);background:var(--card);border-bottom:1px solid var(--line)}
+.admin-x{cursor:pointer;font-size:20px;opacity:.8;padding:4px 10px;color:var(--ink)}
+.admin-tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;background:var(--canvas)}
+.admin-tab{flex:none;padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--sub);font-weight:700;font-size:13px;cursor:pointer}
+.admin-tab.on{background:var(--brand,#2b6fff);color:#fff;border-color:var(--brand,#2b6fff)}
+.admin-body{flex:1;overflow-y:auto;padding:10px 16px 40px;color:var(--ink)}
+.bl-form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 12px;color:var(--ink);box-shadow:var(--shadow)}.bl-form b{color:var(--ink);font-size:14px}.bl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.bl-form input,.bl-form select,.bl-form textarea{box-sizing:border-box;width:100%;background:var(--canvas);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px;font:inherit;font-size:12px}.bl-form textarea{min-height:66px;resize:vertical;grid-column:1/-1}.bl-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 10px;color:var(--ink);box-shadow:var(--shadow)}.bl-card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;color:var(--ink)}.bl-card-h b{font-size:14px;color:var(--ink)}.bl-card small{display:block;color:var(--sub);font-size:11px;margin-top:3px}.bl-reason{margin:10px 0;padding:9px 10px;background:var(--canvas);border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:12px;line-height:1.45}.bl-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--sub);font-size:11px}.bl-chip{padding:3px 7px;border-radius:12px;background:var(--canvas);border:1px solid var(--line);color:var(--ink);font-weight:700}.bl-chip.danger{background:#fee2e2;color:#991b1b;border-color:#fca5a5}html.dark .bl-chip.danger{background:#542936;color:#ffb7c0;border-color:#7f1d1d}.bl-chip.ok{background:#dcfce7;color:#166534;border-color:#86efac}html.dark .bl-chip.ok{background:#173f35;color:#9ce0bf;border-color:#14532d}.bl-actions{margin-top:10px}.bl-actions .btn{min-height:38px;font-size:12px}@media(max-width:360px){.bl-grid{grid-template-columns:1fr}}
+.acard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px;color:var(--ink);box-shadow:var(--shadow)}
+.acard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:700;color:var(--ink)}
+.acard-s{font-size:12.5px;color:var(--sub);margin:6px 0 0;line-height:1.5}
 .ast{font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
 .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .abt{flex:1;min-width:82px;padding:9px;border-radius:10px;border:none;font-weight:700;font-size:12.5px;cursor:pointer}
 .abt.ok{background:rgba(8,185,111,.15);color:#08b96f}
 .abt.no{background:rgba(229,72,77,.15);color:#e5484d}
-.abt.del{flex:none;min-width:46px;background:rgba(255,255,255,.08);color:#59627a}
-.aempty{text-align:center;color:#59627a;padding:46px 10px;font-size:13px}
+.abt.del{flex:none;min-width:46px;background:var(--canvas);border:1px solid var(--line);color:var(--sub)}
+.aempty{text-align:center;color:var(--sub);padding:46px 10px;font-size:13px}
 .login-ver{font-size:11.5px;color:#7f8ba0;margin-top:18px;text-align:center;opacity:.85}
 .login-ov{isolation:isolate;overflow-x:hidden}
 .login-ov::before,.login-ov::after{content:'';position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(24px);opacity:.34;background:rgba(103,215,181,.4)}
@@ -823,7 +823,7 @@ html.dark .badge-panel{background:linear-gradient(135deg,#1e2d28,#172320);border
 @keyframes benefitIn{from{opacity:0;transform:translateX(-13px)}to{opacity:1;transform:translateX(0)}}
 @keyframes loginMist{to{transform:translateX(46px) translateY(-16px) scale(1.12);opacity:.5}}
 @media (prefers-reduced-motion:reduce){.login-ov::before,.login-ov::after,.login-card,.login-ic,.login-ic::before,.login-ic::after,.login-ic img,.login-h,.login-p,.login-benefit,.login-google,.login-divider,.login-guest,.login-hint,.login-ver{animation:none!important}}
-.appver{font-size:12px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:#59627a;margin:2px 0 12px;text-align:center}.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 6px}.afil{flex:none;padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#9fb0c9;font-weight:700;font-size:12px;cursor:pointer}.afil.on{background:#22304a;color:#fff;border-color:#3a4d72}#cnt-baru{margin-left:1px;font-weight:800}.rimg{width:100%;border-radius:12px;margin:8px 0 2px;max-height:280px;object-fit:cover;display:block}
+.appver{font-size:12px;color:var(--sub);text-align:center;margin:16px 0 4px;opacity:.75}.amode{font-size:11.5px;color:var(--sub);margin:2px 0 12px;text-align:center}.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 6px;background:var(--canvas)}.afil{flex:none;padding:6px 12px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--sub);font-weight:700;font-size:12px;cursor:pointer}.afil.on{background:var(--ink,#22304a);color:var(--canvas,#fff);border-color:var(--ink,#22304a)}html.dark .afil.on{background:#2b6fff;color:#fff;border-color:#2b6fff}#cnt-baru{margin-left:1px;font-weight:800}.rimg{width:100%;border-radius:12px;margin:8px 0 2px;max-height:280px;object-fit:cover;display:block}
 .svgi{width:1.1em;height:1.1em;display:inline-block;vertical-align:-.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .q .ic .svgi{width:26px;height:26px}
 .nav .ti .svgi{width:22px;height:22px}
@@ -3125,12 +3125,12 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
 
 <style id="adoption-v18-8-3-style">
 /* Kontras paksa: tidak bergantung pada style tema lain. */
-#adminBody .adoption-admin-card{background:#202b3b!important;border:1px solid #4a5b72!important;color:#fff!important}
-#adminBody .adoption-admin-card b{color:#fff!important;font-size:15px!important}
-#adminBody .adoption-admin-card small,#adminBody .adoption-admin-card em{color:#d7e0ec!important;opacity:1!important}
-#adminBody .adoption-admin-card .code{background:#10261c!important;color:#8af0b4!important;border:1px solid #2e8157!important}
-#adminBody .adoption-admin-card input{width:100%;margin-top:10px;padding:11px 12px;border-radius:9px;border:1px solid #63758d;background:#101824;color:#fff!important;font-size:14px}
-#adminBody .adoption-admin-card input::placeholder{color:#afbdd0!important;opacity:1}
+#adminBody .adoption-admin-card{background:var(--card)!important;border:1px solid var(--line)!important;color:var(--ink)!important}
+#adminBody .adoption-admin-card b{color:var(--ink)!important;font-size:15px!important}
+#adminBody .adoption-admin-card small,#adminBody .adoption-admin-card em{color:var(--sub)!important;opacity:1!important}
+#adminBody .adoption-admin-card .code{background:rgba(8,185,111,.15)!important;color:#08b96f!important;border:1px solid rgba(8,185,111,.3)!important}
+#adminBody .adoption-admin-card input{width:100%;margin-top:10px;padding:11px 12px;border-radius:9px;border:1px solid var(--line);background:var(--canvas);color:var(--ink)!important;font-size:14px}
+#adminBody .adoption-admin-card input::placeholder{color:var(--sub)!important;opacity:1}
 </style>
 <script id="adoption-v18-8-3-flow">
 /* Perbaikan untuk data pengajuan lama: nomor WA bisa ditambahkan dari panel admin. */
