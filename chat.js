@@ -65,9 +65,11 @@
   function _rowHtml(m){
     var mine=(m.mine===true)||(m.device&&m.device===_devId());
     if(!mine&&_isBlocked(m))return '<div class="cempty" style="padding:8px 12px;margin:0">Pesan dari pengguna yang diblokir disembunyikan.</div>';
-    var id=_esc(m.id||'');var actor=_esc((m.user_id||m.device||''));
-    var del=_isAdmin()&&id?`<button class='chd' onclick="chatDel('${id}')" title='Hapus pesan' aria-label='Hapus pesan'>✕</button>`:'';
-    var mod=!mine&&id?`<button class='chd' onclick="chatReport('${id}','${actor}')" title='Laporkan atau blokir' aria-label='Laporkan atau blokir pesan'>⚑</button>`:'';
+    var rawId=String(m.id||'').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,80);
+    var rawActor=String(m.user_id||m.device||'').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,80);
+    var id=_esc(rawId);
+    var del=_isAdmin()&&rawId?`<button class='chd' onclick="chatDel('${rawId}')" title='Hapus pesan' aria-label='Hapus pesan'>✕</button>`:'';
+    var mod=!mine&&rawId?`<button class='chd' onclick="chatReport('${rawId}','${rawActor}')" title='Laporkan atau blokir' aria-label='Laporkan atau blokir pesan'>⚑</button>`:'';
     return `<div class='cmsg ${mine?'me':''}'><div class='cmb'><div class='cmh'><b>${_esc(m.name||'Pendaki')}</b><time>${_fmtTime(m.created_at)}</time>${mod}${del}</div><div class='cmt'>${_esc(m.body||'')}</div>${m.source?`<span class='chat-ai-source'>${_esc(m.source)}</span>`:''}</div></div>`;
   }
 

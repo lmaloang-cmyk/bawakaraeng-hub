@@ -1,6 +1,6 @@
 const CACHE='bwk-v75-diagnosa-sos';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
-const ASSETS=['/','/index.html','/manifest.json','/rc-logo.webp',
+const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();

@@ -1,3 +1,4 @@
+import { verifySupabaseUser } from '../lib/security.js';
 import { bodyWithin, rateLimit, secureApi } from '../lib/security.js';
 import { clean, distance, isAdmin, requireUser, rest, validPoint } from '../lib/ops.js';
 
@@ -10,19 +11,23 @@ export default async function handler(req, res) {
   const methods = action === 'admin' ? ['GET'] : ['POST'];
   if (!secureApi(req, res, methods)) return;
   if (!bodyWithin(req, action === 'admin' ? 1024 : 2048)) return res.status(413).json({ error: 'Permintaan terlalu besar' });
-  // sos-nearby dipanggil berulang oleh pemantau alarm; kuota 26/10 menit dulu terlalu ketat
-  // sehingga polling normal saja sudah kena 429 dan alarm mati tanpa jejak.
+  // sos-nearby dipanggil berulang oleh pemantau alarm; kuota 200/10 menit
   const limits = { 'sos-create':6, 'sos-nearby':200, 'sos-resolve':20, admin:60, checkin:30, 'permit-verify':60 };
   if (!limits[action]) return res.status(404).json({ error: 'Operasi tidak ditemukan' });
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
-  // permit-verify: semua pengguna login boleh scan SIMAKSI (bukan admin-only).
-  // admin: hanya email admin yang terdaftar di ADMIN_EMAILS.
-  const user = await requireUser(req, res, action === 'admin');
-  if (!user) return;
-  // Kuota utama dipatok per akun, BUKAN per IP: satu rombongan yang berbagi hotspot atau
-  // berada di NAT operator yang sama tidak lagi saling menghabiskan kuota alarm SOS.
-  if (!rateLimit(req, res, { prefix:'ops-'+action, id: user.id, limit:limits[action], windowMs: action === 'checkin' ? 60*60_000 : 10*60_000 })) return;
+
+  const isPublicAction = action === 'sos-nearby' || action === 'permit-verify';
+  let user = null;
+  if (!isPublicAction) {
+    user = await requireUser(req, res, action === 'admin');
+    if (!user) return;
+  } else {
+    try { user = await verifySupabaseUser(req); } catch (e) { user = null; }
+  }
+
+  const rateId = user ? user.id : (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'guest');
+  if (!rateLimit(req, res, { prefix:'ops-'+action, id: rateId, limit:limits[action], windowMs: action === 'checkin' ? 60*60_000 : 10*60_000 })) return;
   try {
     if (action === 'sos-create') return sosCreate(req, res, user);
     if (action === 'sos-nearby') return sosNearby(req, res);

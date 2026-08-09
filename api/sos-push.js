@@ -99,7 +99,15 @@ export default async function handler(req, res) {
     ].join(',');
     u.searchParams.set('or', '(' + orFilter + ')');
 
-    const r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
+    let r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
+    if (!r.ok) {
+      // Fallback: jika query filter 'or' kompleks gagal/400, ambil semua langganan aktif
+      const fallbackUrl = new URL(SB_URL + '/rest/v1/push_subscriptions');
+      fallbackUrl.searchParams.set('select', 'endpoint,p256dh,auth,lat,lng,device,loc_updated_at');
+      fallbackUrl.searchParams.set('active', 'eq.true');
+      fallbackUrl.searchParams.set('limit', '500');
+      r = await fetch(fallbackUrl, { headers: headers(key), signal: AbortSignal.timeout(8000) });
+    }
     if (r.ok) subs = await r.json();
   } catch (e) {}
   if (!Array.isArray(subs) || !subs.length) return res.status(200).json({ sent: 0, total: 0 });
