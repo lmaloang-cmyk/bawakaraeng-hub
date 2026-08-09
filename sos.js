@@ -43,7 +43,7 @@
   html.dark #sosMon.bad{background:#3d1a20;border-color:#8c3340;color:#ffc9d0}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
-  var SOS_RADIUS=20000;    // meter (20 KM)
+  var SOS_RADIUS=Infinity; // Mode Percobaan: no limit / tanpa batas radius (sebelumnya 20000 meter / 20 KM)
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var POLL_ALARM=15000;    // alarm sedang tampil: cepat, supaya status "selesai" cepat terdeteksi
   var POLL_ACTIVE=25000;   // aplikasi terlihat & baru disentuh
@@ -73,9 +73,11 @@
   function _isMine(a){try{
     if(a.device&&a.device===_devId())return true;
     if(a.id!=null&&_myIds().map(String).indexOf(String(a.id))>=0)return true;
-    if(a.lat!=null&&a.lng!=null){var sigs=_mySigs();var t=a.created_at?Date.parse(a.created_at):Date.now();
+    // BUG FIX #6: tambahkan validasi device_id untuk mengurangi false positive.
+    // Dua orang dengan nama sama di lokasi berdekatan seharusnya punya device_id berbeda.
+    if(a.lat!=null&&a.lng!=null&&a.device){var sigs=_mySigs();var t=a.created_at?Date.parse(a.created_at):Date.now();
       for(var i=0;i<sigs.length;i++){var s=sigs[i];
-        if(s&&s.name&&a.name===s.name&&_dist(+a.lat,+a.lng,s.lat,s.lng)<=60&&Math.abs(t-s.t)<=35*60000)return true;}}
+        if(s&&s.name&&a.name===s.name&&_dist(+a.lat,+a.lng,s.lat,s.lng)<=60&&Math.abs(t-s.t)<=35*60000&&a.device===s.device)return true;}}
   }catch(e){}return false;}
 
   // --- SOS yang sudah ditangani (permanen 3 jam) vs sekadar dibisukan (10 menit) ---

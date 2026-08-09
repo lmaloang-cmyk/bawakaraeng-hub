@@ -52,10 +52,7 @@
   // SOS sekarang melewati server: identitas login, batas frekuensi, dan pencegahan SOS ganda.
   window._sosPublish=function(lat,lng,name){
     var u=user();if(!u||!u.google){toastx('Masuk dengan Google diperlukan untuk mengirim SOS','err');return;}
-    // Buat ID perangkat unik bila belum ada (chat.js membuat di _dev(), tapi ops.js
-    // bisa dipanggil sebelum modul chat dimuat. Pastikan device ID selalu tersedia).
     var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
-    if(!device){try{device='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',device);}catch(e){device='d0';}}
     function adopt(id){
       setJson(ACTIVE_KEY,{id:id,created_at:Date.now()});showActiveSos();
       // Tandai SOS ini milik sendiri supaya HP pengirim tidak ikut berbunyi.
@@ -126,7 +123,11 @@
     }).join('')||'<li>Belum ada check-in.</li>';
     b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line,#e4e8ef);border-radius:13px;padding:12px;margin:9px 0;background:var(--card,#ffffff);color:var(--ink,#141a2c);box-shadow:var(--shadow)}.ops-card.danger{border-color:#eeadb4;background:#fff6f7;color:#991b1b}html.dark .ops-card.danger{border-color:#7f1d1d;background:#2c1517;color:#fca5a5}.ops-card div{flex:1}.ops-card b{color:var(--ink,#141a2c);display:block}.ops-card small{color:var(--sub,#69758a);font-size:11px;margin-top:3px;display:block}.ops-card a,.ops-card button{border:0;border-radius:9px;padding:9px;text-decoration:none;font-size:12px;font-weight:800;background:var(--brand,#26705a);color:#fff}.ops-card button{background:#198754;color:#fff}.ops-list{margin:6px 0;padding-left:18px;font-size:12px;line-height:1.55;color:var(--ink,#141a2c)}.ops-list li{color:var(--ink,#141a2c);margin:4px 0}.ops-list li b{color:var(--ink,#141a2c)}.ops-list li small{color:var(--sub,#565f78);font-size:11px}.ops-list li a{color:#2563eb;font-weight:700;text-decoration:underline}html.dark .ops-list li a{color:#60a5fa}.ops-head{background:linear-gradient(135deg,#17314d,#2a6173);color:#fff;border-radius:14px;padding:13px}.ops-head b{font-size:18px}</style><div class="ops-head"><b>🆘 Dashboard Operasi</b><br/><small>'+active.length+' SOS aktif · '+checks.length+' check-in terbaru</small></div><div class="sh"><span class="bar" style="background:#e5484d"></span><h3>SOS Aktif</h3></div>'+cards+'<div class="sh"><span class="bar" style="background:#2b6fff"></span><h3>Check-in Terbaru</h3></div><ul class="ops-list">'+check+'</ul><div class="sh"><span class="bar" style="background:#7b61ff"></span><h3>Riwayat SOS</h3></div><ul class="ops-list">'+hist+'</ul><div style="display:flex;gap:8px;margin-top:10px"><button class="btn g-indigo" style="flex:1" onclick="opsDashboard()">↻ Muat Ulang</button><button class="btn gh" style="flex:1" onclick="opsVerifyPermit()">🎫 Verifikasi QR SIMAKSI</button></div>';
   }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
-  window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
+  window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;
+    // BUG FIX #4: validasi UUID sebelum mengirim ke server untuk mencegah ID injection.
+    var uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if(!id||!uuidRe.test(id)){toastx('ID SOS tidak valid','err');return;}
+    api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
 
   // QR SIMAKSI memakai payload baku sehingga kode tetap dapat diverifikasi manual oleh petugas.
   window.simaksiQrPayload=function(r){return JSON.stringify({type:'RC-SIMAKSI',version:1,code:r.code,valid_from:r.naik,valid_to:r.turun,route:r.jalur});};
