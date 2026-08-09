@@ -33,7 +33,7 @@
     return fetch('/api/sos-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
       .then(function(r){return r.json().catch(function(){return {};}).then(function(d){
         if(!r.ok&&d&&d.code==='NO_CONFIG')pushNote('⚠️ Notifikasi latar belum dikonfigurasi di server — alarm hanya berbunyi di aplikasi yang terbuka.');
-        else if(r.ok&&tag==='first'&&d&&d.sent===0)pushNote('ℹ️ Belum ada perangkat terdaftar di radius 20 km. Alarm tetap dicoba ulang otomatis.');
+        else if(r.ok&&tag==='first'&&d&&d.sent===0)pushNote('ℹ️ Belum ada perangkat lain terdaftar. Alarm tetap dicoba ulang otomatis.');
         return d;
       });}).catch(function(){return null;});
   }
@@ -52,7 +52,10 @@
   // SOS sekarang melewati server: identitas login, batas frekuensi, dan pencegahan SOS ganda.
   window._sosPublish=function(lat,lng,name){
     var u=user();if(!u||!u.google){toastx('Masuk dengan Google diperlukan untuk mengirim SOS','err');return;}
+    // Buat ID perangkat unik bila belum ada (chat.js membuat di _dev(), tapi ops.js
+    // bisa dipanggil sebelum modul chat dimuat. Pastikan device ID selalu tersedia).
     var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
+    if(!device){try{device='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',device);}catch(e){device='d0';}}
     function adopt(id){
       setJson(ACTIVE_KEY,{id:id,created_at:Date.now()});showActiveSos();
       // Tandai SOS ini milik sendiri supaya HP pengirim tidak ikut berbunyi.
