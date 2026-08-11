@@ -2631,7 +2631,10 @@ function switchGoogleAccount(){
   var go=function(){window.loginGoogle(true);};
   try{if(c&&c.auth){c.auth.signOut({scope:'local'}).then(go).catch(go);}else{go();}}catch(e){go();}
 }
-function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}localStorage.removeItem('bwkUser');localStorage.removeItem('bwkAiHistory');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
+function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient();if(_c){_c.auth.signOut();}}catch(e){}
+  // Bersihkan semua data SOS & device agar akun baru tidak mewarisi data lama
+  try{localStorage.removeItem('bwkDev');localStorage.removeItem('bwkSosQueue');localStorage.removeItem('bwkActiveSos');localStorage.removeItem('bwkLastSosLat');localStorage.removeItem('bwkLastSosLng');localStorage.removeItem('bwkMyAlertIds');localStorage.removeItem('bwkMySos');localStorage.removeItem('bwkSosDone');localStorage.removeItem('bwkSosSnooze');localStorage.removeItem('bwkSosCount');}catch(e){}
+  localStorage.removeItem('bwkUser');localStorage.removeItem('bwkAiHistory');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
 window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
 </script>
@@ -2688,16 +2691,42 @@ function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');
 // ===== Store & Forward SOS: cek antrian offline saat aplikasi dibuka =====
 (function(){try{
   var q=JSON.parse(localStorage.getItem('bwkSosQueue')||'[]');
-  if(q.length){var el=document.getElementById('sosStatus');if(el){el.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#f59e0b;font-size:12px;font-weight:700">📡 '+q.length+' SOS offline menunggu dikirim. Pastikan koneksi internet.</div>');}
+  if(q.length){
+    var u=bwkUser();
+    if(u&&u.google){
+      var el=document.getElementById('sosStatus');
+      if(el)el.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#f59e0b;font-size:12px;font-weight:700">📡 '+q.length+' SOS offline menunggu dikirim. Pastikan koneksi internet.</div>');
+      else toastx(q.length+' SOS offline menunggu pengiriman','ok');
+    }else{
+      // Belum login Google — hapus antrian lama, device ID tidak valid untuk akun baru
+      localStorage.removeItem('bwkSosQueue');
+      localStorage.removeItem('bwkActiveSos');
+      localStorage.removeItem('bwkLastSosLat');
+      localStorage.removeItem('bwkLastSosLng');
+    }
   }}catch(e){}
 })();
 function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.setAttribute('data-locked','1');s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}var _sosOk=function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);};navigator.geolocation.getCurrentPosition(_sosOk,function(e){navigator.geolocation.getCurrentPosition(_sosOk,function(){sosShareUI(null,null,null);},{enableHighAccuracy:false,timeout:20000,maximumAge:60000});},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
 // Store & Forward: coba kirim SOS offline saat internet tersedia
-window._sosTryOfflineSend=function(){if(!navigator.onLine)return;var u=_sosName();var a=JSON.parse(localStorage.getItem('bwkActiveSos')||'null');if(!a||!a.id)return;var lat=parseFloat(localStorage.getItem('bwkLastSosLat')||'0');var lng=parseFloat(localStorage.getItem('bwkLastSosLng')||'0');var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
-  var payload={lat:lat,lng:lng,device:device,name:u};
+window._sosTryOfflineSend=function(){
+  if(!navigator.onLine)return;
+  var u=bwkUser();
+  if(!u||!u.google){if(window.toast)window.toast('Login Google diperlukan untuk kirim SOS','err');return;}
+  var a=JSON.parse(localStorage.getItem('bwkActiveSos')||'null');
+  if(!a||!a.id)return;
+  var lat=parseFloat(localStorage.getItem('bwkLastSosLat')||'0');
+  var lng=parseFloat(localStorage.getItem('bwkLastSosLng')||'0');
+  if(!isFinite(lat)||!isFinite(lng)){if(window.toast)window.toast('Koordinat SOS belum tersedia','err');return;}
+  var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
+  if(!device){if(window.toast)window.toast('ID perangkat belum tersedia, coba lagi','err');return;}
+  var payload={lat:lat,lng:lng,device:device,name:_sosName()};
   fetch('/api/operations?action=sos-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Server error');return d;});}).then(function(d){if(d&&d.id){localStorage.removeItem('bwkActiveSos');localStorage.removeItem('bwkLastSosLat');localStorage.removeItem('bwkLastSosLng');if(window.toast)window.toast('SOS offline berhasil dikirim!','ok');}}).catch(function(e){if(window.toast)window.toast('Belum bisa kirim SOS: '+e.message,'err');});};
 window.addEventListener('online',window._sosTryOfflineSend);
-function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);if(hasLoc&&window._sosPublish){try{_sosPublish(lat,lng,u);}catch(e){}}var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);
+function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!s)return;var u=_sosName();var hasLoc=(lat!=null&&lng!=null);
+  // Validasi device ID — wajib ada sebelum kirim SOS
+  var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
+  if(!device){try{localStorage.setItem('bwkDev','d'+Math.random().toString(36).slice(2)+Date.now().toString(36));}catch(e){}}
+  if(hasLoc&&window._sosPublish){try{_sosPublish(lat,lng,u);}catch(e){}}var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);
 // Simpan koordinat terakhir untuk store & forward
 if(hasLoc){try{localStorage.setItem('bwkLastSosLat',lat.toString());localStorage.setItem('bwkLastSosLng',lng.toString());}catch(e){}}
 // Cek antrian offline

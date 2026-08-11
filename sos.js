@@ -121,6 +121,8 @@
   }
 
   window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];_lastResolved=null;if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);_schedule();_renderStatus();_refreshBellBadge();}catch(e){}};
+  // Simpan SOS yang baru muncul tapi belum dilihat user (untuk polling berikutnya)
+  var _pendingAlerts={};
 
   // --- Badge lonceng: aktif=merah+angka, selesai=tunjuk info terakhir ---
   window._refreshBellBadge=function(){try{var b=document.getElementById('bellDot');if(!b)return;var btn=document.getElementById('bellBtn');var n=_queue.length;var total=_sosCount();if(n>0){b.textContent=n>99?'99+':String(n);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','active');if(btn)btn.title='SOS Aktif: '+n+' · Total: '+total+' panggilan';}
@@ -130,6 +132,8 @@
   window._sosRefreshPush=function(force){_refreshBellBadge();};
 
   function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;var idx=_queue.findIndex(function(q){return String(q.id)===String(id);});if(idx>=0){var r=_queue[idx];_lastResolved={id:r.id,name:r.name,dist:r.dist};}_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);_refreshBellBadge();}}catch(e){}}
+  // Tandai semua alarm di queue sebagai sudah dilihat (untuk polling berikutnya)
+  function _markAllSeen(){try{_queue.forEach(function(q){_seen[String(q.id)]=1;});}catch(e){}}
 
   function _renderAlarm(play){
     try{
@@ -145,11 +149,10 @@
       var foot="<button class='sosal-b off' data-sos-stop='1'>🔇 "+(multi?'Matikan Semua Alarm':'Matikan Alarm')+"</button>";
       var el=document.getElementById('sosAlarm');
       if(!el){el=document.createElement('div');el.className='sosal';el.id='sosAlarm';document.body.appendChild(el);
-        el.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.getAttribute)return;var did=t.getAttribute('data-sos-done');if(did!=null&&did!==''){_dismiss(did);return;}if(t.getAttribute('data-sos-stop')){window._sosStop();}});
+        el.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.getAttribute)return;var did=t.getAttribute('data-sos-done');if(did!=null&&did!==''){_dismiss(did);_markAllSeen();return;}if(t.getAttribute('data-sos-stop')){window._sosStop();_markAllSeen();}});
       }
       el.innerHTML="<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>"+title+"</div><div class='sosal-list'>"+items+"</div>"+foot+"</div>";
-      // Baru sekarang SOS dianggap "sudah dilihat": kalau render gagal, alarm masih bisa berbunyi lagi.
-      _queue.forEach(function(a){_seen[String(a.id)]=1;});
+      // JANGAN set _seen di sini — tunggu user benar-benar melihat/merespons alarm
       var mon=document.getElementById('sosMon');if(mon)mon.remove();
       if(play){_beep();_vibe();}
       if(!_alarmTimer)_alarmTimer=setInterval(function(){if(!document.getElementById('sosAlarm')||!_queue.length){window._sosStop();return;}_beep();_vibe();},3200);
