@@ -53,6 +53,9 @@
   .hicons{display:flex;gap:9px}
   .hbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
   .hbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:#ffe14d;border-radius:50%;border:2px solid #ff5a4d}.hbtn .dot.num{width:auto;height:auto;min-width:15px;padding:0 4px;border-radius:9px;font-size:11.5px;font-weight:800;line-height:15px;color:#3a2a00;display:inline-flex;align-items:center;justify-content:center;top:2px;right:2px;background:#ffe14d}
+  .hbtn .dot.sos{background:#e0154a;border-color:#fff;color:#fff;animation:sosalpulse 1.4s infinite}
+  .hbtn .dot.num.sos{background:#e0154a;color:#fff}
+  @keyframes sosalpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
   .view{display:none;padding:16px 16px 120px;animation:fade .35s ease}
   .view.active{display:block}
   @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}

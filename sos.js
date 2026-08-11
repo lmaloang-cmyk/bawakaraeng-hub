@@ -55,6 +55,10 @@
   var SNOOZE_MS=600000;    // "Matikan Alarm" hanya membisukan 10 menit, bukan selamanya
 
   var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;var _queue=[];
+  var _lastResolved=null; // info SOS terakhir yang ditangani
+  window._sosLastResolved=function(){return _lastResolved;};
+  function _sosCount(){try{return parseInt(localStorage.getItem('bwkSosCount')||'0',10)||0;}catch(e){return 0;}}
+  function _incSosCount(){try{var c=_sosCount()+1;localStorage.setItem('bwkSosCount',String(c));return c;}catch(e){return _sosCount();}}
   var _timer=null,_busy=false,_backoffUntil=0,_backoff=0,_lastTouch=Date.now(),_lastOk=0,_fails=0;
   var _status={mode:'idle',detail:''};
 
@@ -116,9 +120,16 @@
     }catch(e){}
   }
 
-  window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);_schedule();_renderStatus();}catch(e){}};
+  window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];_lastResolved=null;if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);_schedule();_renderStatus();_refreshBellBadge();}catch(e){}};
 
-  function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);}}catch(e){}}
+  // --- Badge lonceng: aktif=merah+angka, selesai=tunjuk info terakhir ---
+  window._refreshBellBadge=function(){try{var b=document.getElementById('bellDot');if(!b)return;var btn=document.getElementById('bellBtn');var n=_queue.length;var total=_sosCount();if(n>0){b.textContent=n>99?'99+':String(n);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','active');if(btn)btn.title='SOS Aktif: '+n+' · Total: '+total+' panggilan';}
+    else if(_lastResolved){var nm=_esc(_lastResolved.name||'Pendaki');var ds=_fmtDist(_lastResolved.dist||0);b.textContent='✓';b.className='dot sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','done');if(btn)btn.title='SOS selesai: '+nm+' · '+ds+' · Total: '+total+' panggilan';}
+    else if(total>0){b.textContent=total>99?'99+':String(total);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','done');if(btn)btn.title='Total SOS hari ini: '+total+' panggilan';}
+    else{b.style.display='none';b.className='dot';b.removeAttribute('data-sos');b.removeAttribute('data-state');if(btn)btn.title='Notifikasi';}}catch(e){}};
+  window._sosRefreshPush=function(force){_refreshBellBadge();};
+
+  function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;var idx=_queue.findIndex(function(q){return String(q.id)===String(id);});if(idx>=0){var r=_queue[idx];_lastResolved={id:r.id,name:r.name,dist:r.dist};}_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);_refreshBellBadge();}}catch(e){}}
 
   function _renderAlarm(play){
     try{
@@ -233,15 +244,15 @@
       var dd=_dist(p.la,p.ln,+a.lat,+a.lng);
       if(dd<=SOS_RADIUS)fresh.push({id:a.id,name:a.name,lat:+a.lat,lng:+a.lng,dist:dd});
     });
-    if(fresh.length){fresh.forEach(function(f){_queue.push(f);});_renderAlarm(true);}
-    else if(removed&&_queue.length){_renderAlarm(false);}
+    if(fresh.length){fresh.forEach(function(f){_queue.push(f);_incSosCount();});_renderAlarm(true);_refreshBellBadge();}
+    else if(removed&&_queue.length){_renderAlarm(false);_refreshBellBadge();}
     else if(!_queue.length&&document.getElementById('sosAlarm')){window._sosStop();}
   }
 
   function _unlockAudio(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();}catch(e){}}
   ['pointerdown','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){_lastTouch=Date.now();_unlockAudio();},{passive:true});});
 
-  window._sosStart=function(){if(_started)return;_started=true;_tick(true);};
+  window._sosStart=function(){if(_started)return;_started=true;localStorage.setItem('bwkSosCount','0');_tick(true);};
   window._sosPing=function(){_backoffUntil=0;_backoff=0;_tick(true);};
   window.addEventListener('load',function(){setTimeout(window._sosStart,2500);});
   window.addEventListener('online',function(){_recover();if(_started)_tick(true);});
