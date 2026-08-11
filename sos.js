@@ -83,12 +83,19 @@
   function _speakSOS(){
     try{
       if(!('speechSynthesis' in window))return false;
-      // Pastikan voices sudah dimuat
+      // Android WebView perlu delay untuk load voices
       var voices=speechSynthesis.getVoices();
-      if(!voices||!voices.length){speechSynthesis.getVoices();return false;}
+      if(!voices||!voices.length){
+        // Coba load ulang dengan delay
+        setTimeout(function(){
+          var v=speechSynthesis.getVoices();
+          if(v&&v.length)_speakSOS();
+        },200);
+        return false;
+      }
       var voice=_getFemaleVoice();
       var utter=new SpeechSynthesisUtterance('SOS! SOS! Help! Help!');
-      utter.rate=0.9;utter.pitch=1.2;utter.volume=1;
+      utter.rate=0.85;utter.pitch=1.3;utter.volume=1;
       if(voice)utter.voice=voice;
       speechSynthesis.speak(utter);
       return true;
