@@ -65,27 +65,39 @@
   function _devId(){try{var d=localStorage.getItem('bwkDev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',d);}return d;}catch(e){return 'd0';}}
   function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
   // Alarm SOS: suara TTS wanita "SOS! SOS! Help! Help!" berulang + beep cadangan
-  var _ttsQueue=[];var _ttsPlaying=false;
-  function _speakSOS(){
+  var _ttsQueue=[];var _ttsPlaying=false;var _ttsVoicesReady=false;
+  function _getFemaleVoice(){
     try{
-      if(!('speechSynthesis' in window))return false;
-      // Cari suara wanita (en-US atau id-ID dengan female)
+      if(!('speechSynthesis' in window))return null;
       var voices=speechSynthesis.getVoices();
-      var femaleVoice=null;
+      if(!voices||!voices.length)return null;
       for(var i=0;i<voices.length;i++){
         var v=voices[i];
         if(v.lang.indexOf('en')===0||v.lang.indexOf('id')===0){
-          if(/female|woman|saman|huri|zira|slem|nayla|aidas/i.test(v.name)){femaleVoice=v;break;}
+          if(/female|woman|saman|huri|zira|slem|nayla|aidas|femela|gwen/i.test(v.name)){return v;}
         }
       }
-      // Fallback: suara default
-      if(!femaleVoice&&voices.length>0)femaleVoice=voices[0];
+      return voices[0];
+    }catch(e){return null;}
+  }
+  function _speakSOS(){
+    try{
+      if(!('speechSynthesis' in window))return false;
+      // Pastikan voices sudah dimuat
+      var voices=speechSynthesis.getVoices();
+      if(!voices||!voices.length){speechSynthesis.getVoices();return false;}
+      var voice=_getFemaleVoice();
       var utter=new SpeechSynthesisUtterance('SOS! SOS! Help! Help!');
-      utter.rate=0.95;utter.pitch=1.1;utter.volume=1;
-      if(femaleVoice)utter.voice=femaleVoice;
+      utter.rate=0.9;utter.pitch=1.2;utter.volume=1;
+      if(voice)utter.voice=voice;
       speechSynthesis.speak(utter);
       return true;
     }catch(e){return false;}
+  }
+  // Tunggu voices siap (Chrome memuatnya secara asinkron)
+  if(typeof speechSynthesis!=='undefined'){
+    speechSynthesis.addEventListener('voiceschanged',function(){try{_ttsVoicesReady=true;}catch(e){}});
+    setTimeout(function(){try{speechSynthesis.getVoices();_ttsVoicesReady=true;}catch(e){}},500);
   }
   function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
   function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
