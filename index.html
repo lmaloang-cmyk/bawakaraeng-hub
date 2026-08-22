@@ -1219,6 +1219,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <!-- Map Legend -->
       <div class="maps-legend" style="margin-top:14px">
         <div class="maps-legend-title">🗺️ Keterangan Peta</div>
+        <div class="maps-legend-grid">
           <div class="maps-legend-item">
             <div class="maps-legend-symbol dashed"></div>
             <span class="maps-legend-text">Trail default (7 jalur pendakian)</span>
@@ -4895,18 +4896,24 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   font-weight: 800;
   color: #2b6fff;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .maps-legend-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .maps-legend-item {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
 }
 
 .maps-legend-symbol {
@@ -4971,11 +4978,29 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
 }
 
 .maps-legend-symbol.accuracy {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid #2b6fff;
-  background: rgba(43,111,255,0.1);
+  background: rgba(43,111,255,0.15);
+}
+
+.maps-legend-text {
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* Tablet optimization */
+@media (min-width: 481px) and (max-width: 768px) {
+  .maps-controls {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .maps-legend-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .maps-legend-text {
