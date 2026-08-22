@@ -1113,6 +1113,12 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         <button class="btn" onclick="resetMap()">🔄 Reset</button>
       </div>
       
+      <!-- Search Box -->
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="mapSearch" type="text" placeholder="Cari lokasi... (cth: Bawakaraeng)" style="flex:1;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px" onkeydown="if(event.key==='Enter')_searchLocation()">
+        <button class="btn g-brand" onclick="_searchLocation()">🔍 Cari</button>
+      </div>
+      
       <!-- Map Container -->
       <div id="mapsMap" style="height:400px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);position:relative;background:#1a1a2e"></div>
       
@@ -1123,6 +1129,22 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       
       <!-- Waypoint List -->
       <div id="waypointList" style="margin-top:14px"></div>
+      
+      <!-- Trail Selector -->
+      <div style="margin-top:14px;padding:10px 14px;background:rgba(43,111,255,.1);border-radius:12px;font-size:13px">
+        <b style="color:#2b6fff">📍 Trek Tersedia:</b><br>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+          <button class="btn" style="background:#2b6fff;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('pintu_angin')">
+            🏔️ Pintu Angin - Summit (4.2 km, 850m)
+          </button>
+          <button class="btn" style="background:#08b96f;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('bonto_trail')">
+            🥾 Bonto - Pintu Angin (3.8 km, 920m)
+          </button>
+          <button class="btn" style="background:#ff9800;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('ridge_trail')">
+            ⛰️ Ridge Traverse (2.5 km, 750m)
+          </button>
+        </div>
+      </div>
       
       <!-- Track List -->
       <div id="trackList" style="margin-top:14px"></div>
@@ -1136,7 +1158,9 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         • <b>GPS:</b> Ketuk tombol untuk aktivasi, trek akan terekam otomatis<br>
         • <b>Waypoint:</b> Aktifkan mode, lalu ketuk peta untuk tambah marker<br>
         • <b>Ukur:</b> Ketuk 2 titik di peta untuk lihat jarak & bearing<br>
-        • <b>Offline:</b> Tile otomatis di-cache saat pertama kali dibuka<br>
+        • <b>Cari:</b> Ketik nama lokasi lalu tekan "Cari" atau Enter<br>
+        • <b>Layer:</b> Klik ikon layer (kanan atas) untuk ganti tampilan peta<br>
+        • <b>Offline:</b> Mode topo & OSM bisa offline, satelit butuh internet<br>
         • <b>Share:</b> Klik tombol 📤 di waypoint atau trek untuk kirim ke WA<br>
         • <b>Import:</b> Klik "Import dari WA" untuk menambah waypoint dari pesan WA<br>
         • <b>Export:</b> Klik "Export GPX" untuk unduh file trek
@@ -3263,10 +3287,11 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
 
 <!-- ===== MAPS PINTU ANGIN - Offline Navigation System ===== -->
 <script>
-// MAPS Pintu Angin - Offline Navigation
+  // MAPS Pintu Angin - Offline Navigation
 (function() {
   var mapsMap = null;
   var mapsGPS = null;
+  var mapsGPSCircle = null;
   var mapsGPSWatch = null;
   var mapsIsRecording = false;
   var mapsTrackPoints = [];
@@ -3274,11 +3299,111 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var mapsMeasureMode = false;
   var mapsMeasurePoints = [];
   var mapsWaypointMode = false;
+  var mapsLastGPSUpdate = 0;
+  var mapsLastTrackPoint = null;
+  var mapsTileCache = null;
+  var mapsCurrentLayer = 'topo';
   
+  // Bawakaraeng area bounds (approximate)
   var BWK_CENTER = [-5.295, 119.925];
   var BWK_ZOOM = 14;
-  var TILE_URL = 'https://tile.opentopomap.org/{z}/{x}/{y}.png';
-  var TILE_MAX_ZOOM = 17;
+  var BWK_PEAK = [-5.295, 119.925]; // Summit coordinate
+  var BWK_ELEVATION = 2123; // meters
+  
+  // Predefined trails & waypoints for Gunung Bawakaraeng
+  var BWK_TRAILS = {
+    // Pintu Angin Trail (main trail)
+    pintu_angin: {
+      name: '🏔️ Pintu Angin - Summit',
+      points: [
+        [-5.285, 119.920], // Start - base camp
+        [-5.287, 119.922],
+        [-5.290, 119.923],
+        [-5.292, 119.924],
+        [-5.295, 119.925]  // Summit
+      ],
+      distance: 4.2, // km
+      elevation_gain: 850, // meters
+      time: '3-4 jam',
+      difficulty: 'Sedang'
+    },
+    // Trail from Bonto
+    bonto_trail: {
+      name: '🥾 Bonto - Pintu Angin',
+      points: [
+        [-5.310, 119.940], // Start Bonto
+        [-5.305, 119.935],
+        [-5.300, 119.930],
+        [-5.295, 119.925]  // Summit
+      ],
+      distance: 3.8,
+      elevation_gain: 920,
+      time: '3-4 jam',
+      difficulty: 'Sedang'
+    },
+    // Ridge traverse
+    ridge_trail: {
+      name: '⛰️ Ridge Traverse',
+      points: [
+        [-5.280, 119.915],
+        [-5.285, 119.918],
+        [-5.290, 119.922],
+        [-5.295, 119.925]  // Summit
+      ],
+      distance: 2.5,
+      elevation_gain: 750,
+      time: '2-3 jam',
+      difficulty: 'Susah'
+    },
+    // Camp spots
+    camp_spots: [
+      { name: '🏕️ Base Camp Pintu Angin', lat: -5.285, lng: 119.920, elevation: 1273 },
+      { name: '🏕️ Pos 1 - Air Terjun', lat: -5.290, lng: 119.923, elevation: 1500 },
+      { name: '🏕️ Pos 2 - Puncak', lat: -5.295, lng: 119.925, elevation: 2123 }
+    ],
+    // Important locations
+    locations: [
+      { name: '📍 Pintu Masuk Hutan', lat: -5.283, lng: 119.918 },
+      { name: '💧 Sumber Air', lat: -5.288, lng: 119.922 },
+      { name: '🏔️ Puncak Bawakaraeng', lat: -5.295, lng: 119.925 },
+      { name: '🌅 Spot Sunset', lat: -5.293, lng: 119.928 },
+      { name: '⛺ Area Camping', lat: -5.285, lng: 119.920 }
+    ]
+  };
+  
+  // Tile sources (all FREE)
+  var TILE_SOURCES = {
+    topo: {
+      url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',
+      name: '🏔️ Topo',
+      maxZoom: 17,
+      attribution: '© OpenTopoMap'
+    },
+    osm: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      name: '🗺️ OSM',
+      maxZoom: 18,
+      attribution: '© OSM'
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      name: '🛰️ Satelit',
+      maxZoom: 18,
+      attribution: '© Esri'
+    },
+    hybrid: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      overlay: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      name: '🌐 Hybrid',
+      maxZoom: 18,
+      attribution: '© Esri'
+    }
+  };
+  
+  // IndexedDB for tile caching
+  var DB_NAME = 'bwk-maps-db';
+  var DB_VERSION = 1;
+  var STORE_NAME = 'tiles';
   
   window.initMaps = function() {
     if (!window.L) {
@@ -3289,21 +3414,53 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       mapsMap.invalidateSize();
       return;
     }
+    
+    // Initialize tile cache
+    _initTileCache();
+    
     mapsMap = L.map('mapsMap', {
       center: BWK_CENTER,
       zoom: BWK_ZOOM,
       zoomControl: true,
       scrollWheelZoom: true,
-      maxZoom: TILE_MAX_ZOOM
-    });
-    L.tileLayer(TILE_URL, {
-      attribution: '© OpenTopoMap',
-      maxZoom: TILE_MAX_ZOOM
-    }).addTo(mapsMap);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OSM',
       maxZoom: 18
-    }).addTo(mapsMap);
+    });
+    
+    // Add default layer (topo)
+    _addTileLayer('topo');
+    
+    // Add layer selector to map
+    var layerControl = L.control.layers(null, null, { collapsed: false, position: 'topright' });
+    var baseLayers = {};
+    Object.keys(TILE_SOURCES).forEach(function(key) {
+      baseLayers[TILE_SOURCES[key].name] = L.tileLayer(TILE_SOURCES[key].url, {
+        attribution: TILE_SOURCES[key].attribution,
+        maxZoom: TILE_SOURCES[key].maxZoom
+      });
+      layerControl.addBaseLayer(baseLayers[key], TILE_SOURCES[key].name);
+    });
+    layerControl.addTo(mapsMap);
+    
+    // Switch layer when changed
+    mapsMap.on('baselayerchange', function(e) {
+      Object.keys(TILE_SOURCES).forEach(function(key) {
+        if (e.layer === baseLayers[TILE_SOURCES[key].name]) {
+          mapsCurrentLayer = key;
+          localStorage.setItem('bwkMapLayer', key);
+          _updateOfflineStatus();
+        }
+      });
+    });
+    
+    // Load saved layer preference
+    var savedLayer = localStorage.getItem('bwkMapLayer') || 'topo';
+    if (baseLayers[savedLayer]) {
+      mapsMap.addLayer(baseLayers[savedLayer]);
+      mapsCurrentLayer = savedLayer;
+    }
+    
+    // Load Bawakaraeng data
+    _loadBWKData();
     _loadMapsData();
     mapsMap.on('click', function(e) {
       if (mapsWaypointMode) _addWaypoint(e.latlng.lat, e.latlng.lng);
@@ -3312,13 +3469,29 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   };
   
   window._addWaypoint = function(lat, lng) {
-    var name = prompt('Nama waypoint:', 'Titik ' + (mapsWaypoints.length + 1));
-    if (!name) return;
+    // Try reverse geocode for default name
+    var defaultName = 'Titik ' + (mapsWaypoints.length + 1);
+    _reverseGeocode(lat, lng).then(function(name) {
+      if (name) {
+        var addr = name.split(',').slice(0, 3).join(',');
+        defaultName = addr;
+      }
+      var promptName = prompt('Nama waypoint:', defaultName);
+      if (!promptName) return;
+      _createWaypoint(lat, lng, promptName);
+    }).catch(function() {
+      var promptName = prompt('Nama waypoint:', defaultName);
+      if (!promptName) return;
+      _createWaypoint(lat, lng, promptName);
+    });
+  };
+  
+  function _createWaypoint(lat, lng, name) {
     var wp = { id: Date.now(), name: name, lat: lat, lng: lng, created: new Date().toISOString() };
     mapsWaypoints.push(wp);
     _saveMapsData();
     _renderWaypoints();
-    L.marker([lat, lng], {
+    var marker = L.marker([lat, lng], {
       icon: L.divIcon({
         className: 'maps-waypoint-marker',
         html: '<div style="background:#ff2d55;width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:bold">' + (mapsWaypoints.length) + '</div>',
@@ -3326,12 +3499,13 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         iconAnchor: [12, 12]
       })
     }).addTo(mapsMap).bindPopup('<b>' + name + '</b><br>' + lat.toFixed(5) + ', ' + lng.toFixed(5));
+    wp.marker = marker;
     toast('Waypoint "' + name + '" ditambahkan', 'ok');
     _checkBadges();
     mapsWaypointMode = false;
-    document.getElementById('btnWaypoint').textContent = 'Tambah Waypoint';
+    document.getElementById('btnWaypoint').textContent = '📌 Tambah Waypoint';
     document.getElementById('btnWaypoint').style.background = '';
-  };
+  }
   
   window._renderWaypoints = function() {
     var el = document.getElementById('waypointList');
@@ -3428,23 +3602,48 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       navigator.geolocation.clearWatch(mapsGPSWatch);
       mapsGPSWatch = null;
       if (mapsGPS) { mapsMap.removeLayer(mapsGPS); mapsGPS = null; }
-      btn.textContent = 'Aktifkan GPS';
+      if (mapsGPSCircle) { mapsMap.removeLayer(mapsGPSCircle); mapsGPSCircle = null; }
+      btn.textContent = '📍 Aktifkan GPS';
       btn.classList.remove('g-danger');
       btn.classList.add('g-brand');
       toast('GPS dimatikan', 'ok');
       return;
     }
+    var lastPos = null;
+    var lastTime = Date.now();
     mapsGPSWatch = navigator.geolocation.watchPosition(function(pos) {
       var lat = pos.coords.latitude;
       var lng = pos.coords.longitude;
       var acc = pos.coords.accuracy;
+      var now = Date.now();
+      
+      // Debounce: only update every 3 seconds
+      if (now - lastTime < 3000) return;
+      lastTime = now;
+      
+      // Throttle: only record if moved > 10m
+      if (mapsIsRecording && lastPos) {
+        var dist = mapsMap.distance(L.latLng(lastPos[0], lastPos[1]), L.latLng(lat, lng));
+        if (dist < 10) return;
+      }
+      
       if (!mapsGPS) {
         mapsGPS = L.circleMarker([lat, lng], { radius: 10, color: '#2b6fff', weight: 3, fillColor: '#fff', fillOpacity: 1 }).addTo(mapsMap);
-        L.circle([lat, lng], { radius: acc, color: '#2b6fff', weight: 1, fillColor: '#2b6fff', fillOpacity: 0.1 }).addTo(mapsMap);
-      } else { mapsGPS.setLatLng([lat, lng]); }
+        mapsGPSCircle = L.circle([lat, lng], { radius: acc, color: '#2b6fff', weight: 1, fillColor: '#2b6fff', fillOpacity: 0.1 }).addTo(mapsMap);
+      } else {
+        mapsGPS.setLatLng([lat, lng]);
+        mapsGPSCircle.setLatLng([lat, lng]);
+        mapsGPSCircle.setRadius(acc);
+      }
       mapsMap.setView([lat, lng], 16);
-      if (mapsIsRecording) { mapsTrackPoints.push([lat, lng]); _updateTrack(); }
-      btn.textContent = 'GPS Aktif';
+      
+      if (mapsIsRecording) {
+        mapsTrackPoints.push([lat, lng]);
+        lastPos = [lat, lng];
+        _updateTrack();
+      }
+      
+      btn.textContent = '📍 GPS Aktif';
       btn.classList.remove('g-brand');
       btn.classList.add('g-danger');
       var recBtn = document.getElementById('btnRecord');
@@ -3478,15 +3677,25 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     mapsMeasureMode = !mapsMeasureMode;
     var btn = document.getElementById('btnMeasure');
     if (mapsMeasureMode) {
-      btn.textContent = 'Klik 2 Titik';
+      btn.textContent = '📏 Klik 2 Titik';
       btn.style.background = '#2b6fff';
       mapsMeasurePoints = [];
+      // Remove old measure layers
+      var oldLayers = mapsMap._layers;
+      for (var key in oldLayers) { if (oldLayers[key]._bwkMeasure) mapsMap.removeLayer(oldLayers[key]); }
+      // Store reference for cleanup
+      mapsMap._measureHandler = _addMeasurePoint;
       mapsMap.on('click', _addMeasurePoint);
-      toast('Mode pengukuran aktif', 'ok');
+      toast('Mode pengukuran aktif - ketuk 2 titik di peta', 'ok');
     } else {
-      btn.textContent = 'Ukur Jarak';
+      btn.textContent = '📏 Ukur Jarak';
       btn.style.background = '';
-      mapsMap.off('click', _addMeasurePoint);
+      // Clean up any remaining measure layers
+      var oldLayers2 = mapsMap._layers;
+      for (var key2 in oldLayers2) { if (oldLayers2[key2]._bwkMeasure) mapsMap.removeLayer(oldLayers2[key2]); }
+      mapsMap.off('click', mapsMap._measureHandler || _addMeasurePoint);
+      mapsMeasurePoints = [];
+      toast('Mode pengukuran dimatikan', 'ok');
     }
   };
   
@@ -3494,29 +3703,50 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     mapsWaypointMode = !mapsWaypointMode;
     var btn = document.getElementById('btnWaypoint');
     if (mapsWaypointMode) {
-      btn.textContent = 'Ketuk Peta';
+      btn.textContent = '📌 Ketuk Peta';
       btn.style.background = '#ff2d55';
-      toast('Mode waypoint aktif', 'ok');
+      toast('Mode waypoint aktif - ketuk peta untuk tambah marker', 'ok');
     } else {
-      btn.textContent = 'Tambah Waypoint';
+      btn.textContent = '📌 Tambah Waypoint';
       btn.style.background = '';
+      toast('Mode waypoint dimatikan', 'ok');
     }
   };
   
   window.resetMap = function() {
     if (!mapsMap) return;
+    
+    // Remove all custom layers
     var layers = mapsMap._layers;
-    for (var key in layers) { if (layers[key]._bwkCustom || layers[key]._bwkTrack) mapsMap.removeLayer(layers[key]); }
-    mapsWaypoints = [];
+    for (var key in layers) { 
+      if (layers[key]._bwkCustom || layers[key]._bwkTrack || layers[key]._bwkMeasure) {
+        mapsMap.removeLayer(layers[key]); 
+      }
+    }
+    
+    // Also remove accuracy circle
+    if (mapsGPSCircle) { mapsMap.removeLayer(mapsGPSCircle); mapsGPSCircle = null; }
+    if (mapsGPS) { mapsMap.removeLayer(mapsGPS); mapsGPS = null; }
+    if (mapsGPSWatch) { navigator.geolocation.clearWatch(mapsGPSWatch); mapsGPSWatch = null; }
+    
+    // Clear modes
+    mapsMeasureMode = false;
+    mapsWaypointMode = false;
     mapsMeasurePoints = [];
+    
+    mapsWaypoints = [];
     mapsTrackPoints = [];
     mapsMap.setView(BWK_CENTER, BWK_ZOOM);
-    document.getElementById('btnGPS').textContent = 'Aktifkan GPS';
+    document.getElementById('btnGPS').textContent = '📍 Aktifkan GPS';
     document.getElementById('btnGPS').classList.remove('g-danger');
     document.getElementById('btnGPS').classList.add('g-brand');
     document.getElementById('btnRecord').style.display = 'none';
     document.getElementById('btnMeasure').style.display = 'none';
     document.getElementById('btnWaypoint').style.display = 'none';
+    document.getElementById('btnMeasure').textContent = '📏 Ukur Jarak';
+    document.getElementById('btnMeasure').style.background = '';
+    document.getElementById('btnWaypoint').textContent = '📌 Tambah Waypoint';
+    document.getElementById('btnWaypoint').style.background = '';
     document.getElementById('waypointList').innerHTML = '';
     document.getElementById('trackList').innerHTML = '';
     document.getElementById('badgesSection').innerHTML = '';
@@ -3524,18 +3754,158 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     toast('Peta direset', 'ok');
   };
   
+  // ===== BAWAKARAENG TRAIL DATA =====
+  function _loadBWKData() {
+    // Add peak marker
+    var peakIcon = L.divIcon({
+      className: 'bwk-peak-marker',
+      html: '<div style="background:#ff2d55;width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 12px rgba(255,45,85,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">🏔️</div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    
+    L.marker([BWK_PEAK[0], BWK_PEAK[1]], { icon: peakIcon })
+      .addTo(mapsMap)
+      .bindPopup(
+        '<div style="text-align:center;padding:8px">' +
+        '<b style="font-size:14px">Gunung Bawakaraeng</b><br>' +
+        '<span style="color:#667;font-size:12px">Puncak Tertinggi</span><br>' +
+        '<b style="font-size:18px;color:#ff2d55">' + BWK_ELEVATION + ' mdpl</b><br>' +
+        '<span style="font-size:11px;color:#888">' + BWK_PEAK[0].toFixed(5) + ', ' + BWK_PEAK[1].toFixed(5) + '</span>' +
+        '</div>'
+      )
+      ._bwkCustom = true;
+    
+    // Add camp spots
+    BWK_TRAILS.camp_spots.forEach(function(camp, i) {
+      var campIcon = L.divIcon({
+        className: 'bwk-camp-marker',
+        html: '<div style="background:#2b6fff;width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(43,111,255,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px">🏕️</div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      L.marker([camp.lat, camp.lng], { icon: campIcon })
+        .addTo(mapsMap)
+        .bindPopup(
+          '<b>' + camp.name + '</b><br>' +
+          '<span style="font-size:11px">Elevasi: ' + camp.elevation + ' mdpl</span><br>' +
+          '<span style="font-size:10px;color:#888">' + camp.lat.toFixed(5) + ', ' + camp.lng.toFixed(5) + '</span>'
+        )
+        ._bwkCustom = true;
+    });
+    
+    // Add locations
+    BWK_TRAILS.locations.forEach(function(loc, i) {
+      var locIcon = L.divIcon({
+        className: 'bwk-loc-marker',
+        html: '<div style="background:#08b96f;width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(8,185,111,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px">' + (i + 1) + '</div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+      L.marker([loc.lat, loc.lng], { icon: locIcon })
+        .addTo(mapsMap)
+        .bindPopup('<b>' + loc.name + '</b><br>' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5))
+        ._bwkCustom = true;
+    });
+    
+    // Draw trails
+    Object.keys(BWK_TRAILS).forEach(function(key) {
+      if (key === 'camp_spots' || key === 'locations') return;
+      var trail = BWK_TRAILS[key];
+      L.polyline(trail.points, {
+        color: '#ff2d55',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '10, 5'
+      }).addTo(mapsMap).bindPopup(
+        '<b>' + trail.name + '</b><br>' +
+        'Jarak: ' + trail.distance + ' km<br>' +
+        'Elevasi: +' + trail.elevation_gain + 'm<br>' +
+        'Waktu: ' + trail.time + '<br>' +
+        'Difficulty: ' + trail.difficulty
+      )._bwkTrack = true;
+    });
+    
+    // Add bounds circle
+    L.circle([BWK_CENTER[0], BWK_CENTER[1]], {
+      radius: 2000,
+      color: '#08b96f',
+      weight: 2,
+      opacity: 0.3,
+      fillColor: '#08b96f',
+      fillOpacity: 0.05
+    }).addTo(mapsMap)._bwkCustom = true;
+  }
+  
+  window._loadBWKTrail = function(trailKey) {
+    if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
+    var trail = BWK_TRAILS[trailKey];
+    if (!trail || !trail.points) { toast('Trek tidak ditemukan', 'err'); return; }
+    
+    // Remove existing trail
+    var oldLines = mapsMap._layers;
+    for (var key in oldLines) {
+      if (oldLines[key] instanceof L.Polyline && oldLines[key]._bwkTrack) {
+        mapsMap.removeLayer(oldLines[key]);
+      }
+    }
+    
+    // Add new trail
+    L.polyline(trail.points, {
+      color: '#2b6fff',
+      weight: 5,
+      opacity: 0.9
+    }).addTo(mapsMap).bindPopup(
+      '<b>' + trail.name + '</b><br>' +
+      'Jarak: ' + trail.distance + ' km<br>' +
+      'Elevasi: +' + trail.elevation_gain + 'm<br>' +
+      'Waktu: ' + trail.time
+    )._bwkTrack = true;
+    
+    // Fit bounds
+    setTimeout(function() {
+      if (mapsMap) mapsMap.fitBounds(trail.points, { padding: [50, 50] });
+    }, 300);
+    
+    toast('Trek dimuat: ' + trail.name, 'ok');
+  };
+  
+  window._exportBWKGPX = function(trailKey) {
+    var trail = BWK_TRAILS[trailKey];
+    if (!trail || !trail.points) return;
+    
+    var gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="MAPS Pintu Angin">\n';
+    gpx += '<metadata><name>' + trail.name + '</name><time>' + new Date().toISOString() + '</time></metadata>\n';
+    gpx += '<trk><name>' + trail.name + '</name><trkseg>';
+    trail.points.forEach(function(p) {
+      gpx += '<trkpt lat="' + p[0].toFixed(6) + '" lon="' + p[1].toFixed(6) + '"/>';
+    });
+    gpx += '</trkseg></trk></gpx>';
+    
+    var blob = new Blob([gpx], { type: 'application/gpx+xml' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = trailKey + '.gpx';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('GPX diunduh!', 'ok');
+  };
+  
   function _addMeasurePoint(latlng) {
     mapsMeasurePoints.push(latlng);
-    L.circleMarker(latlng, { radius: 6, color: '#2b6fff', weight: 2, fillColor: '#fff', fillOpacity: 1 }).addTo(mapsMap);
+    // Add point marker with custom property
+    L.circleMarker(latlng, { radius: 6, color: '#2b6fff', weight: 2, fillColor: '#fff', fillOpacity: 1 }).addTo(mapsMap)._bwkMeasure = true;
     if (mapsMeasurePoints.length === 2) {
       var p1 = mapsMeasurePoints[0];
       var p2 = mapsMeasurePoints[1];
       var dist = mapsMap.distance(p1, p2);
       var bearing = _calculateBearing(p1, p2);
-      L.polyline([p1, p2], { color: '#2b6fff', weight: 3, dashArray: '8 4' }).addTo(mapsMap);
+      // Draw line with custom property
+      L.polyline([p1, p2], { color: '#2b6fff', weight: 3, dashArray: '8 4' }).addTo(mapsMap)._bwkMeasure = true;
       toast('Jarak: ' + (dist >= 1000 ? (dist / 1000).toFixed(2) + ' km' : dist.toFixed(0) + ' m') + ' | Bearing: ' + bearing.toFixed(0) + '°', 'ok');
       mapsMeasurePoints = [];
-      mapsMap.off('click', _addMeasurePoint);
+      // Exit measure mode automatically
       if (mapsMeasureMode) window.toggleMeasure();
     }
   }
@@ -3598,7 +3968,118 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     var oldLines = mapsMap._layers;
     for (var key in oldLines) { if (oldLines[key] instanceof L.Polyline && oldLines[key]._bwkTrack) mapsMap.removeLayer(oldLines[key]); }
     L.polyline(track.points, { color: '#2b6fff', weight: 4, opacity: 0.8 }).addTo(mapsMap)._bwkTrack = true;
-    mapsMap.fitBounds(track.points, { padding: [50, 50] });
+    // Zoom to fit bounds with delay to ensure map is ready
+    setTimeout(function() {
+      mapsMap.fitBounds(track.points, { padding: [50, 50] });
+    }, 300);
+  };
+  
+  // ===== TILE CACHE (OFFLINE) =====
+  function _initTileCache() {
+    try {
+      var request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      request.onsuccess = function(e) {
+        mapsTileCache = e.target.result;
+      };
+      request.onerror = function() {
+        console.log('Tile cache init failed');
+      };
+    } catch (e) {
+      console.log('IndexedDB not available');
+    }
+  }
+  
+  function _cacheTile(z, x, y) {
+    if (!mapsTileCache) return;
+    try {
+      var key = mapsCurrentLayer + '/' + z + '/' + x + '/' + y;
+      var url = TILE_SOURCES[mapsCurrentLayer].url
+        .replace('{z}', z)
+        .replace('{x}', x)
+        .replace('{y}', y);
+      
+      fetch(url).then(function(resp) {
+        if (!resp.ok) return;
+        return resp.blob();
+      }).then(function(blob) {
+        if (!blob) return;
+        var tx = mapsTileCache.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put({ key: key, tile: blob, timestamp: Date.now() });
+      }).catch(function(err) {
+        console.log('Cache error:', err);
+      });
+    } catch (e) {}
+  }
+  
+  function _getCachedTile(z, x, y) {
+    return new Promise(function(resolve) {
+      if (!mapsTileCache) { resolve(null); return; }
+      try {
+        var key = mapsCurrentLayer + '/' + z + '/' + x + '/' + y;
+        var tx = mapsTileCache.transaction(STORE_NAME, 'readonly');
+        var store = tx.objectStore(STORE_NAME);
+        var request = store.get(key);
+        request.onsuccess = function(e) {
+          resolve(e.target.result ? e.target.result.tile : null);
+        };
+        request.onerror = function() { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+  }
+  
+  function _updateOfflineStatus() {
+    var el = document.getElementById('offlineStatus');
+    if (!el) return;
+    var src = TILE_SOURCES[mapsCurrentLayer];
+    var cacheable = mapsCurrentLayer === 'topo' || mapsCurrentLayer === 'osm';
+    el.innerHTML = cacheable 
+      ? '✅ Mode Offline Aktif — Tile tersimpan di device'
+      : '⚠️ Mode Offline — Layer ini butuh koneksi internet';
+    el.style.display = 'block';
+    el.style.background = cacheable 
+      ? 'rgba(8, 179, 111, 0.12)' 
+      : 'rgba(255, 152, 0, 0.12)';
+    el.style.color = cacheable ? '#08b96f' : '#ff9800';
+  }
+  
+  // ===== GEOCODING =====
+  window._geocode = async function(query) {
+    if (!query || query.length < 3) return null;
+    try {
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=id';
+      var resp = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+      var data = await resp.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+          display_name: data[0].display_name
+        };
+      }
+    } catch (e) {
+      console.log('Geocode error:', e);
+    }
+    return null;
+  };
+  
+  window._reverseGeocode = async function(lat, lng) {
+    try {
+      var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
+      var resp = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+      var data = await resp.json();
+      if (data && data.display_name) {
+        return data.display_name;
+      }
+    } catch (e) {
+      console.log('Reverse geocode error:', e);
+    }
+    return null;
   };
   
   window._exportTrackAsGPX = function(idx) {
@@ -3630,6 +4111,38 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   };
   
+  // ===== SEARCH / GEOCODING =====
+  window._searchLocation = async function() {
+    var input = document.getElementById('mapSearch');
+    if (!input) return;
+    var query = input.value.trim();
+    if (!query) { toast('Ketik nama lokasi dulu', 'err'); return; }
+    
+    toast('Mencari "' + query + '"...', 'ok');
+    var result = await _geocode(query);
+    
+    if (result) {
+      mapsMap.setView([result.lat, result.lng], 16);
+      
+      // Add search marker
+      if (mapsSearchMarker) mapsMap.removeLayer(mapsSearchMarker);
+      mapsSearchMarker = L.marker([result.lat, result.lng], {
+        icon: L.divIcon({
+          className: 'maps-search-marker',
+          html: '<div style="background:#2b6fff;width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">📍</div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        })
+      }).addTo(mapsMap).bindPopup('<b>📍 ' + query + '</b><br>' + result.display_name).openPopup();
+      
+      toast('Ditemukan: ' + result.display_name.split(',').slice(0, 2).join(','), 'ok');
+    } else {
+      toast('Lokasi tidak ditemukan', 'err');
+    }
+  };
+  
+  var mapsSearchMarker = null;
+
   window._deleteTrack = function(idx) {
     if (!confirm('Hapus trek ini?')) return;
     var tracks = JSON.parse(localStorage.getItem('bwkTracks') || '[]');
