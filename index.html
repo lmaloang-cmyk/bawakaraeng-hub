@@ -3400,12 +3400,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   
   // Tile sources (all FREE)
   var TILE_SOURCES = {
-    topo: {
-      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-      name: '🏔️ Topo',
-      maxZoom: 17,
-      attribution: '© OpenTopoMap'
-    },
     osm: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       name: '🗺️ OSM',
@@ -3415,13 +3409,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       name: '🛰️ Satelit',
-      maxZoom: 18,
-      attribution: '© Esri'
-    },
-    hybrid: {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      overlay: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-      name: '🌐 Hybrid',
       maxZoom: 18,
       attribution: '© Esri'
     },
