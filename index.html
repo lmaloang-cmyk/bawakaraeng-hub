@@ -3480,7 +3480,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       });
       
       // Load saved layer preference
-      var savedLayer = localStorage.getItem('bwkMapLayer') || 'topo';
+      var savedLayer = localStorage.getItem('bwkMapLayer') || 'osm';
       if (baseLayers[savedLayer]) {
         mapsMap.addLayer(baseLayers[savedLayer]);
         mapsCurrentLayer = savedLayer;
