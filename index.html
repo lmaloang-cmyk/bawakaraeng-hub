@@ -430,7 +430,8 @@
   .evt .einfo{flex:1}.evt .einfo b{font-size:14px}.evt .einfo small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
   .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
   .evt .ebtn.done{background:#c7ccd6}
-  #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);position:relative}
+  #jalurMap .leaflet-container{height:100%;width:100%;font-family:var(--font)}
   .sig-dot{width:12px;height:12px;border-radius:50%;align-self:center;flex:0 0 auto;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
   .sigmark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #2ecc71;border-radius:50%;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
   .signav{margin-top:12px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#0b1f3a,#132e4d);color:#eaf2ff;border:1px solid rgba(120,180,255,.25)}
@@ -2653,18 +2654,44 @@ window.playLogoMantra=playLogoMantra;
 
   window.retryLive=function(){window._liveDone=false;if(typeof loadLiveData==='function')loadLiveData();};
 
-  var deferred=null;
+  var deferredPrompt=null;
   function dismissed(){try{return localStorage.getItem('bwkInstallDismiss')==='1';}catch(e){return false;}}
   function showBar(){
     if(dismissed()||document.getElementById('installBar'))return;
     var bar=document.createElement('div');bar.id='installBar';bar.className='installbar';
     bar.innerHTML='<span class="ib-ic">📲</span><div class="ib-tx"><b>Pasang Pintu Angin</b><small>Akses cepat dari layar utama, bisa jalan offline.</small></div><button class="ib-yes" id="ibYes">Pasang</button><button class="ib-no" id="ibNo" aria-label="Tutup">✕</button>';
     document.body.appendChild(bar);
-    document.getElementById('ibYes').onclick=function(){if(!deferred){bar.remove();return;}deferred.prompt();deferred.userChoice.then(function(){deferred=null;bar.remove();});};
+    document.getElementById('ibYes').onclick=function(){
+      if(!deferredPrompt){bar.remove();return;}
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(result){
+        deferredPrompt=null;
+        bar.remove();
+        if(result.outcome==='accepted'){
+          if(window.toast)toast('✅ Aplikasi berhasil dipasang!','ok');
+        }else{
+          if(window.toast)toast('Install dibatalkan','ok');
+        }
+      }).catch(function(err){
+        deferredPrompt=null;
+        bar.remove();
+        console.log('Install error:',err);
+      });
+    };
     document.getElementById('ibNo').onclick=function(){bar.remove();try{localStorage.setItem('bwkInstallDismiss','1');}catch(e){}};
   }
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;showBar();});
-  window.addEventListener('appinstalled',function(){var b=document.getElementById('installBar');if(b)b.remove();deferred=null;});
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    deferredPrompt=e;
+    console.log('PWA Install prompt ready');
+    showBar();
+  });
+  window.addEventListener('appinstalled',function(){
+    var b=document.getElementById('installBar');
+    if(b)b.remove();
+    deferredPrompt=null;
+    console.log('PWA Installed successfully');
+  });
 })();
 </script>
 <script>
@@ -3410,6 +3437,11 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       ensureLeaflet(initMaps);
       return;
     }
+    var container = document.getElementById('mapsMap');
+    if (!container) {
+      console.error('Map container #mapsMap not found');
+      return;
+    }
     if (mapsMap) {
       mapsMap.invalidateSize();
       return;
@@ -3418,54 +3450,64 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     // Initialize tile cache
     _initTileCache();
     
-    mapsMap = L.map('mapsMap', {
-      center: BWK_CENTER,
-      zoom: BWK_ZOOM,
-      zoomControl: true,
-      scrollWheelZoom: true,
-      maxZoom: 18
-    });
-    
-    // Add default layer (topo)
-    _addTileLayer('topo');
-    
-    // Add layer selector to map
-    var layerControl = L.control.layers(null, null, { collapsed: false, position: 'topright' });
-    var baseLayers = {};
-    Object.keys(TILE_SOURCES).forEach(function(key) {
-      baseLayers[TILE_SOURCES[key].name] = L.tileLayer(TILE_SOURCES[key].url, {
-        attribution: TILE_SOURCES[key].attribution,
-        maxZoom: TILE_SOURCES[key].maxZoom
+    try {
+      mapsMap = L.map('mapsMap', {
+        center: BWK_CENTER,
+        zoom: BWK_ZOOM,
+        zoomControl: true,
+        scrollWheelZoom: true,
+        maxZoom: 18,
+        attributionControl: true
       });
-      layerControl.addBaseLayer(baseLayers[key], TILE_SOURCES[key].name);
-    });
-    layerControl.addTo(mapsMap);
-    
-    // Switch layer when changed
-    mapsMap.on('baselayerchange', function(e) {
+      
+      // Add default layer (topo)
+      _addTileLayer('topo');
+      
+      // Add layer selector to map
+      var layerControl = L.control.layers(null, null, { collapsed: false, position: 'topright' });
+      var baseLayers = {};
       Object.keys(TILE_SOURCES).forEach(function(key) {
-        if (e.layer === baseLayers[TILE_SOURCES[key].name]) {
-          mapsCurrentLayer = key;
-          localStorage.setItem('bwkMapLayer', key);
-          _updateOfflineStatus();
-        }
+        baseLayers[TILE_SOURCES[key].name] = L.tileLayer(TILE_SOURCES[key].url, {
+          attribution: TILE_SOURCES[key].attribution,
+          maxZoom: TILE_SOURCES[key].maxZoom
+        });
+        layerControl.addBaseLayer(baseLayers[key], TILE_SOURCES[key].name);
       });
-    });
-    
-    // Load saved layer preference
-    var savedLayer = localStorage.getItem('bwkMapLayer') || 'topo';
-    if (baseLayers[savedLayer]) {
-      mapsMap.addLayer(baseLayers[savedLayer]);
-      mapsCurrentLayer = savedLayer;
+      layerControl.addTo(mapsMap);
+      
+      // Switch layer when changed
+      mapsMap.on('baselayerchange', function(e) {
+        Object.keys(TILE_SOURCES).forEach(function(key) {
+          if (e.layer === baseLayers[TILE_SOURCES[key].name]) {
+            mapsCurrentLayer = key;
+            localStorage.setItem('bwkMapLayer', key);
+            _updateOfflineStatus();
+          }
+        });
+      });
+      
+      // Load saved layer preference
+      var savedLayer = localStorage.getItem('bwkMapLayer') || 'topo';
+      if (baseLayers[savedLayer]) {
+        mapsMap.addLayer(baseLayers[savedLayer]);
+        mapsCurrentLayer = savedLayer;
+      }
+      
+      // Load Bawakaraeng data
+      _loadBWKData();
+      _loadMapsData();
+      
+      // Add click handler
+      mapsMap.on('click', function(e) {
+        if (mapsWaypointMode) _addWaypoint(e.latlng.lat, e.latlng.lng);
+        else if (mapsMeasureMode) _addMeasurePoint(e.latlng);
+      });
+      
+      console.log('Map initialized successfully');
+    } catch (e) {
+      console.error('Error initializing map:', e);
+      container.innerHTML = '<div style="padding:34px 20px;text-align:center;color:#ff2d55;font-size:13px;font-weight:600">⚠️ Gagal memuat peta. Refresh halaman untuk mencoba lagi.</div>';
     }
-    
-    // Load Bawakaraeng data
-    _loadBWKData();
-    _loadMapsData();
-    mapsMap.on('click', function(e) {
-      if (mapsWaypointMode) _addWaypoint(e.latlng.lat, e.latlng.lng);
-      else if (mapsMeasureMode) _addMeasurePoint(e.latlng);
-    });
   };
   
   window._addWaypoint = function(lat, lng) {
@@ -4151,6 +4193,42 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     _renderTracks();
     toast('Trek dihapus', 'ok');
   };
+  
+  // ===== TILE LAYER FUNCTION =====
+  function _addTileLayer(name) {
+    if (!window.L || !mapsMap) return;
+    var src = TILE_SOURCES[name];
+    if (!src) return;
+    
+    try {
+      var layer = L.tileLayer(src.url, {
+        attribution: src.attribution,
+        maxZoom: src.maxZoom,
+        keepBuffer: 2
+      });
+      
+      // Add cache event for offline support
+      layer.on('tileload', function(e) {
+        var tile = e.tile;
+        var url = layer.getTileUrl(e.coords);
+        var match = url.match(/\/(\d+)\/(\d+)\/(\d+)\./);
+        if (match && match.length >= 4) {
+          _cacheTile(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+        }
+      });
+      
+      layer.addTo(mapsMap);
+      mapsCurrentLayer = name;
+      
+      // Update offline status
+      if (typeof _updateOfflineStatus === 'function') {
+        _updateOfflineStatus();
+      }
+      
+    } catch (e) {
+      console.error('Error adding tile layer:', e);
+    }
+  }
   
   function _loadMapsData() {
     var saved = localStorage.getItem('bwkWaypoints');
