@@ -3629,6 +3629,17 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         }
       });
       
+      // Store handler reference for cleanup
+      mapsMap._mapClickHandler = function(e) {
+        if (mapsWaypointMode) {
+          e.originalEvent.stopPropagation();
+          _addWaypoint(e.latlng.lat, e.latlng.lng);
+        } else if (mapsMeasureMode) {
+          e.originalEvent.stopPropagation();
+          _addMeasurePoint(e.latlng);
+        }
+      };
+      
       console.log('Map initialized successfully');
     } catch (e) {
       console.error('Error initializing map:', e);
@@ -3883,9 +3894,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       // Remove old measure layers
       var oldLayers = mapsMap._layers;
       for (var key in oldLayers) { if (oldLayers[key]._bwkMeasure) mapsMap.removeLayer(oldLayers[key]); }
-      // Store reference for cleanup
-      mapsMap._measureHandler = _addMeasurePoint;
-      mapsMap.on('click', _addMeasurePoint);
+      // Use the same handler, don't add duplicate
       toast('Mode pengukuran aktif - ketuk 2 titik di peta', 'ok');
     } else {
       btn.textContent = '📏 Ukur Jarak';
@@ -3893,7 +3902,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       // Clean up any remaining measure layers
       var oldLayers2 = mapsMap._layers;
       for (var key2 in oldLayers2) { if (oldLayers2[key2]._bwkMeasure) mapsMap.removeLayer(oldLayers2[key2]); }
-      mapsMap.off('click', mapsMap._measureHandler || _addMeasurePoint);
       mapsMeasurePoints = [];
       toast('Mode pengukuran dimatikan', 'ok');
     }
@@ -4071,17 +4079,18 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     toast('Backup berhasil diunduh! (' + waypoints.length + ' WP, ' + tracks.length + ' tracks)', 'ok');
   };
   
-  // Add compass button to controls
-  document.addEventListener('DOMContentLoaded', function() {
+  // Add compass button to controls (only once)
+  (function() {
     var controls = document.querySelector('.maps-controls');
-    if (controls) {
+    if (controls && !document.getElementById('btnCompass')) {
       var compassBtn = document.createElement('button');
+      compassBtn.id = 'btnCompass';
       compassBtn.className = 'btn';
       compassBtn.textContent = '🧭 Kompas';
       compassBtn.onclick = function() { toggleCompass(); };
       controls.insertBefore(compassBtn, controls.lastElementChild);
     }
-  });
+  })();
   
   // ===== BAWAKARAENG TRAIL DATA =====
   function _loadBWKData() {
