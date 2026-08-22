@@ -3426,9 +3426,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var STORE_NAME = 'tiles';
   
   window.initMaps = function() {
-    console.log('[Maps] initMaps called, L exists:', !!window.L, 'mapsMap:', !!mapsMap);
     if (!window.L) {
-      console.log('[Maps] Leaflet not loaded, waiting...');
       ensureLeaflet(initMaps);
       return;
     }
@@ -3437,16 +3435,14 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       console.error('Map container #mapsMap not found');
       return;
     }
-    console.log('[Maps] Container found:', container.offsetWidth, 'x', container.offsetHeight);
     if (mapsMap) {
-      console.log('[Maps] Map already exists, invalidating size');
       mapsMap.invalidateSize();
       return;
     }
-    
+
     // Initialize tile cache
     _initTileCache();
-    
+
     try {
       mapsMap = L.map('mapsMap', {
         center: BWK_CENTER,
@@ -3456,7 +3452,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         maxZoom: 18,
         attributionControl: true
       });
-      
+
       // Add default layer (osm)
       var defaultLayer = L.tileLayer(TILE_SOURCES['osm'].url, {
         attribution: TILE_SOURCES['osm'].attribution,
@@ -3464,20 +3460,28 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       });
       defaultLayer.addTo(mapsMap);
       mapsCurrentLayer = 'osm';
-      
-      // Add layer selector to map
+
+      // Add layer selector to map (with fallback for DOM ready)
       var baseLayers = {};
-      var layerControl = L.control.layers();
       Object.keys(TILE_SOURCES).forEach(function(key) {
         var layerName = TILE_SOURCES[key].name;
-        var layer = L.tileLayer(TILE_SOURCES[key].url, {
+        baseLayers[layerName] = L.tileLayer(TILE_SOURCES[key].url, {
           attribution: TILE_SOURCES[key].attribution,
           maxZoom: TILE_SOURCES[key].maxZoom
         });
-        baseLayers[layerName] = layer;
-        layerControl.addBaseLayer(layer, layerName);
       });
-      layerControl.addTo(mapsMap);
+      try {
+        var layerControl = L.control.layers(baseLayers).addTo(mapsMap);
+      } catch(e2) {
+        console.warn('Layer control init failed, will retry:', e2.message);
+        setTimeout(function() {
+          try {
+            L.control.layers(baseLayers).addTo(mapsMap);
+          } catch(e3) {
+            console.error('Layer control retry failed:', e3);
+          }
+        }, 200);
+      }
       
       // Switch layer when changed
       mapsMap.on('baselayerchange', function(e) {
