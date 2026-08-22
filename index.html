@@ -3382,6 +3382,65 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       time: '2-3 jam',
       difficulty: 'Susah'
     },
+    // Bulu Ballea Trail
+    bulu_ballea: {
+      name: '🌿 Bulu Ballea',
+      points: [
+        [-5.251, 119.924], // Bulu Balea - batas Gowa-Sinjai
+        [-5.265, 119.928],
+        [-5.280, 119.925],
+        [-5.295, 119.925]  // Connect to Summit
+      ],
+      distance: 3.2,
+      elevation_gain: 680,
+      time: '2-3 jam',
+      difficulty: 'Sedang'
+    },
+    // Tassoso Trail
+    tassoso_trail: {
+      name: '🏔️ Bukit Tassoso',
+      points: [
+        [-5.3566, 119.8198], // Bukit Tassoso peak
+        [-5.345, 119.835],
+        [-5.330, 119.865],
+        [-5.3173, 119.944]  // Connect to Summit area
+      ],
+      distance: 4.5,
+      elevation_gain: 950,
+      time: '3-4 jam',
+      difficulty: 'Susah'
+    },
+    // Panaikang Trail
+    panaikang_trail: {
+      name: '🥾 Panaikang',
+      points: [
+        [-5.182, 120.278], // Panaikang village
+        [-5.200, 120.220],
+        [-5.230, 120.150],
+        [-5.260, 120.080],
+        [-5.285, 119.980],
+        [-5.295, 119.944]  // Connect to Summit
+      ],
+      distance: 8.5,
+      elevation_gain: 1200,
+      time: '5-6 jam',
+      difficulty: 'Sulit'
+    },
+    // Kanre Apia Trail
+    kanre_apia: {
+      name: '🌲 Kanre Apia',
+      points: [
+        [-5.28, 119.89], // Kanre Apia start
+        [-5.29, 119.90],
+        [-5.30, 119.91],
+        [-5.31, 119.925],
+        [-5.3173, 119.944]  // Connect to Summit
+      ],
+      distance: 3.8,
+      elevation_gain: 820,
+      time: '3-4 jam',
+      difficulty: 'Sedang'
+    },
     // Camp spots
     camp_spots: [
       { name: '🏕️ Base Camp Pintu Angin', lat: -5.285, lng: 119.920, elevation: 1273 },
@@ -4101,23 +4160,28 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     maxLng: 120.08
   };
   
-  // Hardcoded local locations for Bawakaraeng area
-  var BWK_LOCAL_LOCATIONS = [
-    { name: 'Gunung Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'peak' },
-    { name: 'Pintu Angin (入口)', lat: -5.285, lng: 119.92, type: 'entrance' },
-    { name: 'Bonto (起点)', lat: -5.31, lng: 119.94, type: 'entrance' },
-    { name: 'Lembanna Village', lat: -5.254, lng: 119.904, type: 'village' },
-    { name: 'Pos 1 - Air Terjun', lat: -5.29, lng: 119.923, type: 'trail' },
-    { name: 'Pos 2 - Ridge', lat: -5.295, lng: 119.925, type: 'trail' },
-    { name: 'Summit - Puncak Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'summit' },
-    { name: 'Sungai Jeneberang', lat: -5.283, lng: 119.912, type: 'river' },
-    { name: 'Kaldera Longsor 2004', lat: -5.3105, lng: 119.9385, type: 'landmark' },
-    { name: 'Polewali', lat: -5.4, lng: 119.58, type: 'city' },
-    { name: 'Sinjai', lat: -5.31, lng: 120.03, type: 'city' },
-    { name: 'Malino', lat: -5.26, lng: 119.85, type: 'town' },
-    { name: 'Tinggimoncong', lat: -5.25, lng: 119.88, type: 'district' },
-    { name: 'Pangkajene', lat: -4.75, lng: 119.55, type: 'city' }
-  ];
+   // Hardcoded local locations for Bawakaraeng area
+   var BWK_LOCAL_LOCATIONS = [
+     { name: 'Gunung Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'peak' },
+     { name: 'Pintu Angin', lat: -5.285, lng: 119.92, type: 'entrance' },
+     { name: 'Bonto', lat: -5.31, lng: 119.94, type: 'entrance' },
+     { name: 'Lembanna', lat: -5.254, lng: 119.904, type: 'village' },
+     { name: 'Pos 1 - Air Terjun', lat: -5.29, lng: 119.923, type: 'trail' },
+     { name: 'Pos 2 - Ridge', lat: -5.295, lng: 119.925, type: 'trail' },
+     { name: 'Summit - Puncak Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'summit' },
+     { name: 'Sungai Jeneberang', lat: -5.283, lng: 119.912, type: 'river' },
+     { name: 'Kaldera Longsor 2004', lat: -5.3105, lng: 119.9385, type: 'landmark' },
+     { name: 'Bulu Balea', lat: -5.251, lng: 119.924, type: 'landmark' },
+     { name: 'Bukit Tassoso', lat: -5.3566, lng: 119.8198, type: 'peak' },
+     { name: 'Panaikang', lat: -5.182, lng: 120.278, type: 'village' },
+     { name: 'Kanre Apia', lat: -5.28, lng: 119.89, type: 'trail' },
+     { name: 'Pattapang', lat: -5.252, lng: 119.907, type: 'village' },
+     { name: 'Sinjai', lat: -5.31, lng: 120.03, type: 'city' },
+     { name: 'Malino', lat: -5.26, lng: 119.85, type: 'town' },
+     { name: 'Tinggimoncong', lat: -5.25, lng: 119.88, type: 'district' },
+     { name: 'Polewali', lat: -5.4, lng: 119.58, type: 'city' },
+     { name: 'Pangkajene', lat: -4.75, lng: 119.55, type: 'city' }
+   ];
   
   // Check if coordinates are within Bawakaraeng area
   function isInBWKArea(lat, lng) {
