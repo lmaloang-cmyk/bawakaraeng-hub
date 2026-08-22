@@ -4092,13 +4092,80 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   }
   
   // ===== GEOCODING =====
+  
+  // Bawakaraeng area bounds (Nego, Sinjai, Gowa border area)
+  var BWK_AREA = {
+    minLat: -5.38,
+    maxLat: -5.22,
+    minLng: 119.82,
+    maxLng: 120.08
+  };
+  
+  // Hardcoded local locations for Bawakaraeng area
+  var BWK_LOCAL_LOCATIONS = [
+    { name: 'Gunung Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'peak' },
+    { name: 'Pintu Angin (入口)', lat: -5.285, lng: 119.92, type: 'entrance' },
+    { name: 'Bonto (起点)', lat: -5.31, lng: 119.94, type: 'entrance' },
+    { name: 'Lembanna Village', lat: -5.254, lng: 119.904, type: 'village' },
+    { name: 'Pos 1 - Air Terjun', lat: -5.29, lng: 119.923, type: 'trail' },
+    { name: 'Pos 2 - Ridge', lat: -5.295, lng: 119.925, type: 'trail' },
+    { name: 'Summit - Puncak Bawakaraeng', lat: -5.3173, lng: 119.944, type: 'summit' },
+    { name: 'Sungai Jeneberang', lat: -5.283, lng: 119.912, type: 'river' },
+    { name: 'Kaldera Longsor 2004', lat: -5.3105, lng: 119.9385, type: 'landmark' },
+    { name: 'Polewali', lat: -5.4, lng: 119.58, type: 'city' },
+    { name: 'Sinjai', lat: -5.31, lng: 120.03, type: 'city' },
+    { name: 'Malino', lat: -5.26, lng: 119.85, type: 'town' },
+    { name: 'Tinggimoncong', lat: -5.25, lng: 119.88, type: 'district' },
+    { name: 'Pangkajene', lat: -4.75, lng: 119.55, type: 'city' }
+  ];
+  
+  // Check if coordinates are within Bawakaraeng area
+  function isInBWKArea(lat, lng) {
+    return lat >= BWK_AREA.minLat && lat <= BWK_AREA.maxLat &&
+           lng >= BWK_AREA.minLng && lng <= BWK_AREA.maxLng;
+  }
+  
   window._geocode = async function(query) {
-    if (!query || query.length < 3) return null;
+    if (!query || query.length < 2) return null;
+    
+    // First check local hardcoded locations
+    var queryLower = query.toLowerCase();
+    var localMatch = BWK_LOCAL_LOCATIONS.find(function(loc) {
+      return loc.name.toLowerCase().includes(queryLower) ||
+             queryLower.includes(loc.name.toLowerCase().split(' ')[0]);
+    });
+    
+    if (localMatch) {
+      return {
+        lat: localMatch.lat,
+        lng: localMatch.lng,
+        display_name: localMatch.name + ', South Sulawesi, Indonesia'
+      };
+    }
+    
+    // Use Nominatim with Bawakaraeng area context
     try {
-      var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=id';
+      var contextQuery = query + ', Bawakaraeng, South Sulawesi, Indonesia';
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + 
+                encodeURIComponent(contextQuery) + 
+                '&limit=5&countrycodes=id&addressdetails=1';
       var resp = await fetch(url, { headers: { 'Accept-Language': 'id' } });
       var data = await resp.json();
+      
       if (data && data.length > 0) {
+        // Filter results to Bawakaraeng area
+        for (var i = 0; i < data.length; i++) {
+          var lat = parseFloat(data[i].lat);
+          var lng = parseFloat(data[i].lon);
+          if (isInBWKArea(lat, lng)) {
+            return {
+              lat: lat,
+              lng: lng,
+              display_name: data[i].display_name
+            };
+          }
+        }
+        // If no results in area, return first result anyway
         return {
           lat: parseFloat(data[0].lat),
           lng: parseFloat(data[0].lon),
