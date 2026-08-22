@@ -3834,10 +3834,10 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   window.resetMap = function() {
     if (!mapsMap) return;
     
-    // Remove all custom layers
+    // Remove all custom layers (keep default trails _bwkDefault)
     var layers = mapsMap._layers;
     for (var key in layers) { 
-      if (layers[key]._bwkCustom || layers[key]._bwkMeasure) {
+      if (layers[key]._bwkCustom || layers[key]._bwkMeasure || layers[key]._bwkTrack) {
         mapsMap.removeLayer(layers[key]); 
       }
     }
@@ -3855,7 +3855,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     mapsWaypoints = [];
     mapsTrackPoints = [];
     mapsMap.setView(BWK_CENTER, BWK_ZOOM);
-    document.getElementById('btnGPS').textContent = '📍 Aktifkan GPS';
+    document.getElementById('btnGPS').textContent = '📍 Lokasi Saya';
     document.getElementById('btnGPS').classList.remove('g-danger');
     document.getElementById('btnGPS').classList.add('g-brand');
     document.getElementById('btnRecord').style.display = 'none';
@@ -3926,10 +3926,12 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         ._bwkCustom = true;
     });
     
-    // Draw trails
+    // Draw trails - separate default trails from user-selected
     Object.keys(BWK_TRAILS).forEach(function(key) {
       if (key === 'camp_spots' || key === 'locations') return;
       var trail = BWK_TRAILS[key];
+      // Default trails get _bwkDefault flag (never removed by reset)
+      // User-selected trails get _bwkTrack flag (can be replaced)
       L.polyline(trail.points, {
         color: '#ff2d55',
         weight: 4,
@@ -3941,7 +3943,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         'Elevasi: +' + trail.elevation_gain + 'm<br>' +
         'Waktu: ' + trail.time + '<br>' +
         'Difficulty: ' + trail.difficulty
-      )._bwkTrack = true;
+      )._bwkDefault = true;
     });
     
     // Add bounds circle
