@@ -1107,10 +1107,10 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     <div id="mapsPanel" style="margin-top:12px">
       <!-- Map Controls -->
       <div class="maps-controls" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button class="btn g-brand" id="btnGPS" onclick="toggleGPS()">📍 Aktifkan GPS</button>
-        <button class="btn" id="btnRecord" onclick="toggleRecording()" style="display:none;background:#ff2d55;color:#fff">⏺ Rekam Trek</button>
-        <button class="btn" id="btnMeasure" onclick="toggleMeasure()" style="display:none">📏 Ukur Jarak</button>
-        <button class="btn" id="btnWaypoint" onclick="toggleWaypointMode()" style="display:none">📌 Tambah Waypoint</button>
+        <button class="btn g-brand" id="btnGPS" onclick="toggleGPS()">📍 Lokasi Saya</button>
+        <button class="btn" id="btnRecord" onclick="toggleRecording()" style="display:none;background:#ff2d55;color:#fff">⏺ Rekam</button>
+        <button class="btn" id="btnMeasure" onclick="toggleMeasure()" style="display:none">📏 Ukur</button>
+        <button class="btn" id="btnWaypoint" onclick="toggleWaypointMode()" style="display:none">📌 WP</button>
         <button class="btn" onclick="resetMap()">🔄 Reset</button>
       </div>
       
@@ -1144,6 +1144,18 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
           <button class="btn" style="background:#ff9800;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('ridge_trail')">
             ⛰️ Ridge Traverse (2.5 km, 750m)
           </button>
+          <button class="btn" style="background:#8b5cf6;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('bulu_ballea')">
+            🌿 Bulu Ballea (3.2 km, 680m)
+          </button>
+          <button class="btn" style="background:#ec4899;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('tassoso_trail')">
+            🏔️ Bukit Tassoso (4.5 km, 950m)
+          </button>
+          <button class="btn" style="background:#14b8a6;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('panaikang_trail')">
+            🥾 Panaikang (8.5 km, 1200m)
+          </button>
+          <button class="btn" style="background:#f59e0b;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="window._loadBWKTrail('kanre_apia')">
+            🌲 Kanre Apia (3.8 km, 820m)
+          </button>
         </div>
       </div>
       
@@ -1156,15 +1168,13 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <!-- Help Text -->
       <div class="jhint" style="margin-top:14px">
         💡 <b>Cara Pakai:</b><br>
-        • <b>GPS:</b> Ketuk tombol untuk aktivasi, trek akan terekam otomatis<br>
-        • <b>Waypoint:</b> Aktifkan mode, lalu ketuk peta untuk tambah marker<br>
-        • <b>Ukur:</b> Ketuk 2 titik di peta untuk lihat jarak & bearing<br>
-        • <b>Cari:</b> Ketik nama lokasi lalu tekan "Cari" atau Enter<br>
-        • <b>Layer:</b> Klik ikon layer (kanan atas) untuk ganti tampilan peta<br>
-        • <b>Offline:</b> Mode topo & OSM bisa offline, satelit butuh internet<br>
-        • <b>Share:</b> Klik tombol 📤 di waypoint atau trek untuk kirim ke WA<br>
-        • <b>Import:</b> Klik "Import dari WA" untuk menambah waypoint dari pesan WA<br>
-        • <b>Export:</b> Klik "Export GPX" untuk unduh file trek
+        • <b>📍 Lokasi:</b> Ketuk untuk tracking GPS Anda<br>
+        • <b>⏺ Rekam:</b> Mulai/rekam trek saat jalan<br>
+        • <b>📏 Ukur:</b> Ketuk 2 titik untuk hitung jarak<br>
+        • <b>📌 WP:</b> Tambah waypoint di peta<br>
+        • <b>🔍 Cari:</b> Ketik nama lokasi (cth: Bawakaraeng)<br>
+        • <b>🗺️ Trek:</b> Pilih trek di daftar bawah<br>
+        • <b>🔄 Reset:</b> Bersihkan waypoint & rekaman
       </div>
     </div>
   </section>
@@ -3559,8 +3569,13 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       
       // Add click handler
       mapsMap.on('click', function(e) {
-        if (mapsWaypointMode) _addWaypoint(e.latlng.lat, e.latlng.lng);
-        else if (mapsMeasureMode) _addMeasurePoint(e.latlng);
+        if (mapsWaypointMode) {
+          e.originalEvent.stopPropagation();
+          _addWaypoint(e.latlng.lat, e.latlng.lng);
+        } else if (mapsMeasureMode) {
+          e.originalEvent.stopPropagation();
+          _addMeasurePoint(e.latlng);
+        }
       });
       
       console.log('Map initialized successfully');
@@ -3698,14 +3713,14 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   };
   
   window.toggleGPS = function() {
-    if (!navigator.geolocation) { toast('GPS tidak tersedia', 'err'); return; }
+    if (!navigator.geolocation) { toast('GPS tidak tersedia di perangkat ini', 'err'); return; }
     var btn = document.getElementById('btnGPS');
     if (mapsGPSWatch) {
       navigator.geolocation.clearWatch(mapsGPSWatch);
       mapsGPSWatch = null;
       if (mapsGPS) { mapsMap.removeLayer(mapsGPS); mapsGPS = null; }
       if (mapsGPSCircle) { mapsMap.removeLayer(mapsGPSCircle); mapsGPSCircle = null; }
-      btn.textContent = '📍 Aktifkan GPS';
+      btn.textContent = '📍 Lokasi Saya';
       btn.classList.remove('g-danger');
       btn.classList.add('g-brand');
       toast('GPS dimatikan', 'ok');
@@ -3713,6 +3728,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     }
     var lastPos = null;
     var lastTime = Date.now();
+    toast('Mencari lokasi Anda...', 'ok');
     mapsGPSWatch = navigator.geolocation.watchPosition(function(pos) {
       var lat = pos.coords.latitude;
       var lng = pos.coords.longitude;
@@ -3745,7 +3761,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         _updateTrack();
       }
       
-      btn.textContent = '📍 GPS Aktif';
+      btn.textContent = '📍 Lacak';
       btn.classList.remove('g-brand');
       btn.classList.add('g-danger');
       var recBtn = document.getElementById('btnRecord');
