@@ -3471,7 +3471,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
           attribution: TILE_SOURCES[key].attribution,
           maxZoom: TILE_SOURCES[key].maxZoom
         });
-        layerControl.addBaseLayer(baseLayers[key], TILE_SOURCES[key].name);
+        layerControl.addBaseLayer(baseLayers[TILE_SOURCES[key].name], TILE_SOURCES[key].name);
       });
       layerControl.addTo(mapsMap);
       
