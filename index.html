@@ -3459,13 +3459,17 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       // Add layer selector to map
       var layerControl = L.control.layers();
       var baseLayers = {};
+      var layerNames = [];
       Object.keys(TILE_SOURCES).forEach(function(key) {
-        baseLayers[TILE_SOURCES[key].name] = L.tileLayer(TILE_SOURCES[key].url, {
+        var layerName = TILE_SOURCES[key].name;
+        baseLayers[layerName] = L.tileLayer(TILE_SOURCES[key].url, {
           attribution: TILE_SOURCES[key].attribution,
           maxZoom: TILE_SOURCES[key].maxZoom
         });
-        layerControl.addBaseLayer(baseLayers[TILE_SOURCES[key].name], TILE_SOURCES[key].name);
+        layerControl.addBaseLayer(baseLayers[layerName], layerName);
+        layerNames.push(layerName);
       });
+      layerControl.addTo(mapsMap);
       layerControl.addTo(mapsMap);
       
       // Switch layer when changed
