@@ -3455,7 +3455,8 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         center: BWK_CENTER,
         zoom: BWK_ZOOM,
         zoomControl: true,
-        scrollWheelZoom: true,
+        scrollWheelZoom: false,
+        touchScrollZoom: false,
         maxZoom: 18,
         attributionControl: true
       });
@@ -3761,7 +3762,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     // Remove all custom layers
     var layers = mapsMap._layers;
     for (var key in layers) { 
-      if (layers[key]._bwkCustom || layers[key]._bwkTrack || layers[key]._bwkMeasure) {
+      if (layers[key]._bwkCustom || layers[key]._bwkMeasure) {
         mapsMap.removeLayer(layers[key]); 
       }
     }
