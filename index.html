@@ -1231,7 +1231,26 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         • <b>📌 WP:</b> Tambah waypoint di peta<br>
         • <b>🎯 Target:</b> Tambah waypoint di tengah peta (crosshair)<br>
         • <b>💾 Backup:</b> Unduh semua data (GPX + KML)<br>
+        • <b>🥾 Tracker:</b> Aktifkan tracking checkpoint<br>
         • <b>🔄 Reset:</b> Bersihkan waypoint & rekaman
+      </div>
+      
+      <!-- Hiking Tracker Panel -->
+      <div id="hikingTracker" style="margin-top:14px;display:none">
+        <div style="padding:14px;background:linear-gradient(135deg,#1a3a2a,#1a2a3a);border-radius:12px;border:1px solid rgba(43,111,255,0.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <b style="color:#78e1ad;font-size:14px">🥾 Tracker Pendakian</b>
+            <button onclick="hikingStop()" style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;border:none;font-size:11px">Tutup</button>
+          </div>
+          <div id="hikingStatus" style="font-size:13px;color:#e8f4ee;margin-bottom:8px"></div>
+          <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+            <div id="hikingProgress" style="height:100%;background:linear-gradient(90deg,#2b6fff,#78e1ad);width:0%;border-radius:3px;transition:width 0.3s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a94a6">
+            <span id="hikingCheckpoint">Pos 0 - Lembanna (1.514m)</span>
+            <span id="hikingNext">→ Pos 1</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -4095,8 +4114,119 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       compassBtn.textContent = '🧭 Kompas';
       compassBtn.onclick = function() { toggleCompass(); };
       controls.insertBefore(compassBtn, controls.lastElementChild);
+      
+      // Add hiking tracker button
+      var hikingBtn = document.createElement('button');
+      hikingBtn.id = 'btnHiking';
+      hikingBtn.className = 'btn';
+      hikingBtn.textContent = '🥾 Tracker';
+      hikingBtn.onclick = function() { hikingStart(); };
+      controls.insertBefore(hikingBtn, controls.lastElementChild);
     }
   })();
+  
+  // ===== HIKING TRACKER =====
+  var hikingActive = false;
+  var hikingCheckpoint = 0;
+  var hikingWatch = null;
+  var hikingMarkers = [];
+  
+  // Trail checkpoints (from jalurPos data)
+  var hikingCheckpoints = [
+    {name:'Lembanna (Pintu Masuk)',lat:-5.2536,lng:119.9056,el:1514,status:'ok'},
+    {name:'Pos 0',lat:-5.262,lng:119.912,el:1680,status:'ok'},
+    {name:'Pos 1',lat:-5.265,lng:119.915,el:1719,status:'ok'},
+    {name:'Pos 2',lat:-5.271,lng:119.920,el:1810,status:'ok'},
+    {name:'Pintu Rimba',lat:-5.275,lng:119.923,el:1893,status:'ok'},
+    {name:'Pos 3',lat:-5.279,lng:119.926,el:1950,status:'warn'},
+    {name:'Pos 5',lat:-5.286,lng:119.930,el:2170,status:'warn'},
+    {name:'Memorial',lat:-5.289,lng:119.932,el:2230,status:'warn'},
+    {name:'Pos 8',lat:-5.294,lng:119.936,el:2440,status:'warn'},
+    {name:'Pos 9',lat:-5.298,lng:119.940,el:2610,status:'danger'},
+    {name:'Puncak Bawakaraeng',lat:-5.3169,lng:119.9444,el:2830,status:'danger'}
+  ];
+  
+  window.hikingStart = function() {
+    if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
+    
+    hikingActive = true;
+    hikingCheckpoint = 0;
+    document.getElementById('hikingTracker').style.display = 'block';
+    
+    // Clear existing checkpoint markers
+    hikingMarkers.forEach(function(m) { mapsMap.removeLayer(m); });
+    hikingMarkers = [];
+    
+    // Add checkpoint markers
+    hikingCheckpoints.forEach(function(cp, i) {
+      var color = cp.status === 'ok' ? '#08a35f' : (cp.status === 'warn' ? '#e5951c' : '#ff2d55');
+      var marker = L.circleMarker([cp.lat, cp.lng], {
+        radius: 10,
+        color: '#fff',
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1
+      }).addTo(mapsMap);
+      
+      marker.bindPopup('<b>' + cp.name + '</b><br>' + cp.el + ' mdpl');
+      marker._hikingIdx = i;
+      hikingMarkers.push(marker);
+    });
+    
+    // Add trail line
+    var trailPoints = hikingCheckpoints.map(function(cp) { return [cp.lat, cp.lng]; });
+    L.polyline(trailPoints, { color: '#ff2d55', weight: 3, dashArray: '8 4', opacity: 0.7 }).addTo(mapsMap)._bwkCustom = true;
+    
+    // Start GPS tracking
+    if (navigator.geolocation) {
+      hikingWatch = navigator.geolocation.watchPosition(function(pos) {
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        
+        // Check distance to next checkpoint
+        var nextCp = hikingCheckpoints[hikingCheckpoint];
+        if (nextCp) {
+          var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(nextCp.lat, nextCp.lng));
+          
+          // Update progress
+          var progress = (hikingCheckpoint / (hikingCheckpoints.length - 1)) * 100;
+          document.getElementById('hikingProgress').style.width = progress + '%';
+          document.getElementById('hikingCheckpoint').textContent = nextCp.name + ' (' + nextCp.el + 'm)';
+          document.getElementById('hikingNext').textContent = hikingCheckpoint < hikingCheckpoints.length - 1 ? '→ ' + hikingCheckpoints[hikingCheckpoint + 1].name : '🎉 Puncak!';
+          
+          // Check if reached checkpoint
+          if (dist < 100) { // 100m threshold
+            if (hikingCheckpoint < hikingCheckpoints.length - 1) {
+              hikingCheckpoint++;
+              toast('Check-in: ' + hikingCheckpoints[hikingCheckpoint].name, 'ok');
+              
+              // Update marker style
+              if (hikingMarkers[hikingCheckpoint]) {
+                hikingMarkers[hikingCheckpoint].setRadius(14);
+                hikingMarkers[hikingCheckpoint]..setStyle({ weight: 3, opacity: 1 });
+              }
+            }
+          }
+          
+          document.getElementById('hikingStatus').textContent = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' · ' + Math.round(dist/1000*10)/10 + ' km ke ' + nextCp.name;
+        }
+      }, function(err) {
+        console.error('Hiking tracker error:', err);
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }
+    
+    toast('Tracker pendakian dimulai! Ikuti jalur checkpoint.', 'ok');
+  };
+  
+  window.hikingStop = function() {
+    hikingActive = false;
+    if (hikingWatch) {
+      navigator.geolocation.clearWatch(hikingWatch);
+      hikingWatch = null;
+    }
+    document.getElementById('hikingTracker').style.display = 'none';
+    toast('Tracker dihentikan', 'ok');
+  };
   
   // ===== BAWAKARAENG TRAIL DATA =====
   function _loadBWKData() {
