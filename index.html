@@ -1111,6 +1111,8 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         <button class="btn" id="btnRecord" onclick="toggleRecording()" style="display:none;background:#ff2d55;color:#fff">⏺ Rekam</button>
         <button class="btn" id="btnMeasure" onclick="toggleMeasure()" style="display:none">📏 Ukur</button>
         <button class="btn" id="btnWaypoint" onclick="toggleWaypointMode()" style="display:none">📌 WP</button>
+        <button class="btn" onclick="toggleTarget()">🎯 Target</button>
+        <button class="btn" onclick="exportBackup()">💾 Backup</button>
         <button class="btn" onclick="resetMap()">🔄 Reset</button>
       </div>
       
@@ -1126,6 +1128,23 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <!-- Offline Status -->
       <div id="offlineStatus" style="margin-top:10px;padding:10px 14px;background:rgba(8,179,111,.12);border-radius:12px;font-size:13px;color:#08b96f;display:none">
         ✅ Mode Offline Aktif — Tile tersimpan di device
+      </div>
+      
+      <!-- GPS Status -->
+      <div id="gpsStatus" style="margin-top:10px;padding:10px 14px;background:rgba(43,111,255,.1);border-radius:12px;font-size:13px;color:#2b6fff;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span id="gpsCoords">📍 - , -</span>
+          <span id="gpsSpeed" style="font-weight:700">0 km/h</span>
+        </div>
+        <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:12px">
+          <span id="gpsAccuracy">Akurasi: - m</span>
+          <span id="gpsAltitude">Elevasi: - m</span>
+        </div>
+      </div>
+      
+      <!-- GPS Warning -->
+      <div id="gpsWarning" style="margin-top:10px;padding:10px 14px;background:rgba(255,45,85,.12);border-radius:12px;font-size:13px;color:#ff2d55;display:none">
+        ⚠️ <span id="gpsWarningText">Sinyal GPS lemah</span>
       </div>
       
       <!-- Waypoint List -->
@@ -1204,8 +1223,8 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         • <b>⏺ Rekam:</b> Mulai/rekam trek saat jalan<br>
         • <b>📏 Ukur:</b> Ketuk 2 titik untuk hitung jarak<br>
         • <b>📌 WP:</b> Tambah waypoint di peta<br>
-        • <b>🔍 Cari:</b> Ketik nama lokasi (cth: Bawakaraeng)<br>
-        • <b>🗺️ Trek:</b> Pilih trek di daftar bawah<br>
+        • <b>🎯 Target:</b> Tambah waypoint di tengah peta (crosshair)<br>
+        • <b>💾 Backup:</b> Unduh semua data (GPX + KML)<br>
         • <b>🔄 Reset:</b> Bersihkan waypoint & rekaman
       </div>
     </div>
@@ -3753,17 +3772,50 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       btn.textContent = '📍 Lokasi Saya';
       btn.classList.remove('g-danger');
       btn.classList.add('g-brand');
+      document.getElementById('gpsStatus').style.display = 'none';
+      document.getElementById('gpsWarning').style.display = 'none';
       toast('GPS dimatikan', 'ok');
       return;
     }
     var lastPos = null;
     var lastTime = Date.now();
+    var lastSpeed = 0;
+    var lastSpeedTime = Date.now();
     toast('Mencari lokasi Anda...', 'ok');
     mapsGPSWatch = navigator.geolocation.watchPosition(function(pos) {
       var lat = pos.coords.latitude;
       var lng = pos.coords.longitude;
       var acc = pos.coords.accuracy;
+      var alt = pos.coords.altitude || 0;
+      var speed = pos.coords.speed || 0;
       var now = Date.now();
+      
+      // Update GPS info panel
+      var gpsStatus = document.getElementById('gpsStatus');
+      var gpsWarning = document.getElementById('gpsWarning');
+      if (gpsStatus) {
+        gpsStatus.style.display = 'block';
+        document.getElementById('gpsCoords').textContent = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        document.getElementById('gpsAccuracy').textContent = 'Akurasi: ' + Math.round(acc) + ' m';
+        document.getElementById('gpsAltitude').textContent = 'Elevasi: ' + Math.round(alt || 0) + ' m';
+        
+        // Calculate speed (m/s to km/h)
+        if (speed >= 0) {
+          lastSpeed = speed * 3.6; // convert to km/h
+          document.getElementById('gpsSpeed').textContent = lastSpeed.toFixed(1) + ' km/h';
+        }
+        
+        // GPS Warning - bad accuracy
+        if (acc > 50) {
+          gpsWarning.style.display = 'block';
+          document.getElementById('gpsWarningText').textContent = 'Sinyal GPS lemah (akurasi: ' + Math.round(acc) + 'm). Cari area terbuka.';
+        } else if (acc > 20) {
+          gpsWarning.style.display = 'block';
+          document.getElementById('gpsWarningText').textContent = 'Akurasi sedang (' + Math.round(acc) + 'm)';
+        } else {
+          gpsWarning.style.display = 'none';
+        }
+      }
       
       // Debounce: only update every 3 seconds
       if (now - lastTime < 3000) return;
@@ -3876,6 +3928,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     if (mapsGPSCircle) { mapsMap.removeLayer(mapsGPSCircle); mapsGPSCircle = null; }
     if (mapsGPS) { mapsMap.removeLayer(mapsGPS); mapsGPS = null; }
     if (mapsGPSWatch) { navigator.geolocation.clearWatch(mapsGPSWatch); mapsGPSWatch = null; }
+    if (mapsTargetMarker) { mapsMap.removeLayer(mapsTargetMarker); mapsTargetMarker = null; }
     
     // Clear modes
     mapsMeasureMode = false;
@@ -3898,8 +3951,137 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     document.getElementById('waypointList').innerHTML = '';
     document.getElementById('trackList').innerHTML = '';
     document.getElementById('offlineStatus').style.display = 'none';
+    document.getElementById('gpsStatus').style.display = 'none';
+    document.getElementById('gpsWarning').style.display = 'none';
     toast('Peta direset', 'ok');
   };
+  
+  // ===== TARGET / CROSSHAIR =====
+  var mapsTargetMarker = null;
+  window.toggleTarget = function() {
+    if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
+    if (mapsTargetMarker) {
+      mapsMap.removeLayer(mapsTargetMarker);
+      mapsTargetMarker = null;
+      toast('Target dihapus', 'ok');
+      return;
+    }
+    var center = mapsMap.getCenter();
+    var targetIcon = L.divIcon({
+      className: 'maps-target-marker',
+      html: '<div style="width:24px;height:24px;position:relative"><div style="position:absolute;width:2px;height:24px;background:#ff9800;left:11px;top:0"></div><div style="position:absolute;height:2px;width:24px;background:#ff9800;top:11px;left:0"></div><div style="position:absolute;width:8px;height:8px;border:2px solid #ff9800;border-radius:50%;left:8px;top:8px"></div></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    mapsTargetMarker = L.marker([center.lat, center.lng], { icon: targetIcon }).addTo(mapsMap);
+    mapsTargetMarker.bindPopup('<b>🎯 Target</b><br>' + center.lat.toFixed(5) + ', ' + center.lng.toFixed(5)).openPopup();
+    toast('Target ditambahkan - ketuk untuk hapus', 'ok');
+  };
+  
+  // ===== COMPASS =====
+  var mapsCompassMarker = null;
+  window.toggleCompass = function() {
+    if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
+    if (mapsCompassMarker) {
+      mapsMap.removeLayer(mapsCompassMarker);
+      mapsCompassMarker = null;
+      toast('Kompas dihapus', 'ok');
+      return;
+    }
+    var center = mapsMap.getCenter();
+    var compassIcon = L.divIcon({
+      className: 'maps-compass-marker',
+      html: '<div style="width:32px;height:32px;position:relative;background:rgba(0,0,0,0.7);border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:bold">⬆</div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    mapsCompassMarker = L.marker([center.lat, center.lng], { icon: compassIcon }).addTo(mapsMap);
+    mapsCompassMarker.bindPopup('<b>🧭 Kompas</b><br>Arah utara ke atas').openPopup();
+    toast('Kompas ditambahkan', 'ok');
+  };
+  
+  // ===== BACKUP / EXPORT =====
+  window.exportBackup = function() {
+    var waypoints = JSON.parse(localStorage.getItem('bwkWaypoints') || '[]');
+    var tracks = JSON.parse(localStorage.getItem('bwkTracks') || '[]');
+    
+    if (waypoints.length === 0 && tracks.length === 0) {
+      toast('Tidak ada data untuk di-backup', 'err');
+      return;
+    }
+    
+    // Generate GPX for tracks
+    var gpxContent = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Bawakaraeng Hub">\n';
+    gpxContent += '<metadata><name>Bawakaraeng Hub Backup</name><time>' + new Date().toISOString() + '</time></metadata>\n';
+    
+    tracks.forEach(function(t, i) {
+      gpxContent += '<trk><name>' + t.name + '</name><trkseg>\n';
+      t.points.forEach(function(p) {
+        gpxContent += '<trkpt lat="' + p[0].toFixed(6) + '" lon="' + p[1].toFixed(6) + '"/>\n';
+      });
+      gpxContent += '</trkseg></trk>\n';
+    });
+    
+    waypoints.forEach(function(w, i) {
+      gpxContent += '<wpt lat="' + w.lat.toFixed(6) + '" lon="' + w.lng.toFixed(6) + '"><name>' + w.name + '</name></wpt>\n';
+    });
+    
+    gpxContent += '</gpx>';
+    
+    // Generate KML
+    var kmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
+    kmlContent += '<name>Bawakaraeng Hub Backup</name>\n';
+    
+    waypoints.forEach(function(w) {
+      kmlContent += '<Placemark><name>' + w.name + '</name><Point><coordinates>' + w.lng + ',' + w.lat + ',0</coordinates></Point></Placemark>\n';
+    });
+    
+    tracks.forEach(function(t) {
+      kmlContent += '<Placemark><name>' + t.name + '</name><LineString><coordinates>\n';
+      t.points.forEach(function(p) {
+        kmlContent += p[1] + ',' + p[0] + ',0\n';
+      });
+      kmlContent += '</coordinates></LineString></Placemark>\n';
+    });
+    
+    kmlContent += '</Document>\n</kml>';
+    
+    // Download files
+    var gpxBlob = new Blob([gpxContent], { type: 'application/gpx+xml' });
+    var kmlBlob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
+    
+    var gpxUrl = URL.createObjectURL(gpxBlob);
+    var kmlUrl = URL.createObjectURL(kmlBlob);
+    
+    var date = new Date().toISOString().slice(0, 10);
+    
+    var gpxLink = document.createElement('a');
+    gpxLink.href = gpxUrl;
+    gpxLink.download = 'bawakaraeng_backup_' + date + '.gpx';
+    gpxLink.click();
+    
+    var kmlLink = document.createElement('a');
+    kmlLink.href = kmlUrl;
+    kmlLink.download = 'bawakaraeng_backup_' + date + '.kml';
+    kmlLink.click();
+    
+    URL.revokeObjectURL(gpxUrl);
+    URL.revokeObjectURL(kmlUrl);
+    
+    toast('Backup berhasil diunduh! (' + waypoints.length + ' WP, ' + tracks.length + ' tracks)', 'ok');
+  };
+  
+  // Add compass button to controls
+  document.addEventListener('DOMContentLoaded', function() {
+    var controls = document.querySelector('.maps-controls');
+    if (controls) {
+      var compassBtn = document.createElement('button');
+      compassBtn.className = 'btn';
+      compassBtn.textContent = '🧭 Kompas';
+      compassBtn.onclick = function() { toggleCompass(); };
+      controls.insertBefore(compassBtn, controls.lastElementChild);
+    }
+  });
   
   // ===== BAWAKARAENG TRAIL DATA =====
   function _loadBWKData() {
@@ -4481,6 +4663,28 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   background: var(--card);
   border-radius: 12px;
   border: 1px solid var(--line);
+}
+
+/* Target Marker */
+.maps-target-marker {
+  background: transparent !important;
+}
+
+/* GPS Status Panel */
+#gpsStatus {
+  background: rgba(43, 111, 255, 0.1);
+  border: 1px solid rgba(43, 111, 255, 0.3);
+}
+
+#gpsWarning {
+  background: rgba(255, 45, 85, 0.12);
+  border: 1px solid rgba(255, 45, 85, 0.3);
+}
+
+#gpsWarning.warning-good {
+  background: rgba(8, 179, 111, 0.12);
+  border-color: rgba(8, 179, 111, 0.3);
+  color: #08b96f;
 }
 </style>
 
