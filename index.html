@@ -3453,8 +3453,8 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         attributionControl: true
       });
       
-      // Add default layer (topo)
-      _addTileLayer('topo');
+      // Add default layer (osm)
+      _addTileLayer('osm');
       
       // Add layer selector to map
       var layerControl = L.control.layers(null, null, { collapsed: false, position: 'topright' });
