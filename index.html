@@ -1162,8 +1162,40 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <!-- Track List -->
       <div id="trackList" style="margin-top:14px"></div>
       
-      <!-- Badge Section -->
-      <div id="badgesSection"></div>
+      <!-- Map Legend -->
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(43,111,255,.08);border-radius:12px;font-size:13px">
+        <b style="color:#2b6fff">🗺️ Keterangan Peta:</b>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:4px;background:#ff2d55;border-radius:2px;border-style:dashed"></div>
+            <span style="color:#4a5169">Trail default (7 jalur pendakian)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:4px;background:#2b6fff;border-radius:2px"></div>
+            <span style="color:#4a5169">Trail aktif (yang dipilih)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#ff2d55;border:2px solid #fff"></div>
+            <span style="color:#4a5169">Puncak / Summit</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#2b6fff;border:2px solid #fff"></div>
+            <span style="color:#4a5169">GPS Anda (tracking)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#ff2d55;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:bold">1</div>
+            <span style="color:#4a5169">Waypoint (titik penanda)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#08b96f;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:bold">1</div>
+            <span style="color:#4a5169">Lokasi penting (1-5)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:50%;border:2px solid #2b6fff;background:rgba(43,111,255,0.1)"></div>
+            <span style="color:#4a5169">Akurasi GPS (radius)</span>
+          </div>
+        </div>
+      </div>
       
       <!-- Help Text -->
       <div class="jhint" style="margin-top:14px">
@@ -3618,7 +3650,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     }).addTo(mapsMap).bindPopup('<b>' + name + '</b><br>' + lat.toFixed(5) + ', ' + lng.toFixed(5));
     wp.marker = marker;
     toast('Waypoint "' + name + '" ditambahkan', 'ok');
-    _checkBadges();
     mapsWaypointMode = false;
     document.getElementById('btnWaypoint').textContent = '📌 Tambah Waypoint';
     document.getElementById('btnWaypoint').style.background = '';
@@ -3659,7 +3690,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     var msg = '*Waypoint Pintu Angin*\n\nNama: ' + wp.name + '\nKoordinat: ' + wp.lat.toFixed(5) + ', ' + wp.lng.toFixed(5) + '\nWaktu: ' + new Date(wp.created).toLocaleString('id-ID') + '\n\n_Dikirim dari MAPS Pintu Angin_';
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
     localStorage.setItem('bwkBadge_share_waypoint', 'true');
-    _checkBadges();
+    toast('Waypoint dibagikan ke WhatsApp', 'ok');
   };
   
   window._shareAllWaypoints = function() {
@@ -3709,7 +3740,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       }).addTo(mapsMap).bindPopup('<b>' + wp.name + '</b><br>' + wp.lat.toFixed(5) + ', ' + wp.lng.toFixed(5));
     });
     toast('Import ' + newWaypoints.length + ' waypoint berhasil', 'ok');
-    _checkBadges();
   };
   
   window.toggleGPS = function() {
@@ -3867,7 +3897,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     document.getElementById('btnWaypoint').style.background = '';
     document.getElementById('waypointList').innerHTML = '';
     document.getElementById('trackList').innerHTML = '';
-    document.getElementById('badgesSection').innerHTML = '';
     document.getElementById('offlineStatus').style.display = 'none';
     toast('Peta direset', 'ok');
   };
@@ -4054,7 +4083,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     tracks.push(track);
     localStorage.setItem('bwkTracks', JSON.stringify(tracks));
     _renderTracks();
-    _checkBadges();
   };
   
   function _calculateTrackDistance(points) {
@@ -4291,7 +4319,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
     toast('GPX berhasil diunduh', 'ok');
     localStorage.setItem('bwkBadge_export_gpx', 'true');
-    _checkBadges();
+    toast('GPX berhasil diunduh', 'ok');
   };
   
   window._shareTrackWA = function(idx) {
@@ -4405,56 +4433,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   function _saveMapsData() {
     localStorage.setItem('bwkWaypoints', JSON.stringify(mapsWaypoints.map(function(w) { return { id: w.id, name: w.name, lat: w.lat, lng: w.lng, created: w.created }; })));
   }
-  
-  var MAPS_BADGES = [
-    { id: 'first_waypoint', name: 'Penjelajah', emoji: '📍', desc: 'Tambah waypoint pertama', check: function() { return mapsWaypoints.length >= 1; } },
-    { id: 'five_waypoints', name: 'Pemeta', emoji: '🗺️', desc: 'Kumpulkan 5 waypoint', check: function() { return mapsWaypoints.length >= 5; } },
-    { id: 'ten_waypoints', name: 'Cartographer', emoji: '🌍', desc: 'Kumpulkan 10 waypoint', check: function() { return mapsWaypoints.length >= 10; } },
-    { id: 'first_track', name: 'Trekking', emoji: '🥾', desc: 'Rekam trek pertama', check: function() { return JSON.parse(localStorage.getItem('bwkTracks') || '[]').length >= 1; } },
-    { id: 'five_tracks', name: 'Pendaki Rutin', emoji: '⛰️', desc: 'Rekam 5 trek', check: function() { return JSON.parse(localStorage.getItem('bwkTracks') || '[]').length >= 5; } },
-    { id: 'ten_tracks', name: 'Legend', emoji: '👑', desc: 'Rekam 10 trek', check: function() { return JSON.parse(localStorage.getItem('bwkTracks') || '[]').length >= 10; } },
-    { id: 'long_track', name: 'Marathon', emoji: '🏃', desc: 'Trek > 5 km', check: function() { var tracks = JSON.parse(localStorage.getItem('bwkTracks') || '[]'); return tracks.some(function(t) { return t.distance >= 5000; }); } },
-    { id: 'share_waypoint', name: 'Komunikator', emoji: '💬', desc: 'Bagikan waypoint ke WA', check: function() { return localStorage.getItem('bwkBadge_share_waypoint') === 'true'; } },
-    { id: 'export_gpx', name: 'Digital Nomad', emoji: '💾', desc: 'Export trek ke GPX', check: function() { return localStorage.getItem('bwkBadge_export_gpx') === 'true'; } }
-  ];
-  
-  window._checkBadges = function() {
-    var earned = JSON.parse(localStorage.getItem('bwkBadges') || '[]');
-    var newBadges = [];
-    MAPS_BADGES.forEach(function(badge) {
-      if (earned.indexOf(badge.id) === -1 && badge.check()) {
-        earned.push(badge.id);
-        newBadges.push(badge);
-        localStorage.setItem('bwkBadges', JSON.stringify(earned));
-      }
-    });
-    if (newBadges.length > 0) {
-      setTimeout(function() {
-        var names = newBadges.map(function(b) { return b.emoji + ' ' + b.name; }).join(', ');
-        toast('Badge baru: ' + names, 'ok');
-        _renderBadges();
-      }, 500);
-    }
-  };
-  
-  window._renderBadges = function() {
-    var el = document.getElementById('badgesSection');
-    if (!el) return;
-    var earned = JSON.parse(localStorage.getItem('bwkBadges') || '[]');
-    var total = MAPS_BADGES.length;
-    var count = earned.length;
-    var html = '<div style="margin-top:14px"><div class="sec-sub" style="margin-bottom:8px">Badge MAPS Pintu Angin (' + count + '/' + total + ')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">';
-    MAPS_BADGES.forEach(function(b) {
-      var isEarned = earned.indexOf(b.id) !== -1;
-      html += '<div style="padding:10px;background:' + (isEarned ? 'var(--card)' : '#f0f0f0') + ';border-radius:12px;text-align:center;border:2px solid ' + (isEarned ? 'var(--g-green)' : '#ddd') + ';opacity:' + (isEarned ? '1' : '0.5') + '"><div style="font-size:24px">' + b.emoji + '</div><div style="font-size:11px;font-weight:600;margin-top:4px">' + b.name + '</div><div style="font-size:9px;color:var(--sub);margin-top:2px">' + b.desc + '</div></div>';
-    });
-    html += '</div></div>';
-    el.innerHTML = html;
-  };
-  
-  setTimeout(function() {
-    if (window._renderBadges) window._renderBadges();
-  }, 100);
 })();
 </script>
 
@@ -4503,52 +4481,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   background: var(--card);
   border-radius: 12px;
   border: 1px solid var(--line);
-}
-
-/* Badge Styles */
-#badgesSection {
-  margin-top: 14px;
-}
-
-#badgesSection .badge-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 8px;
-}
-
-#badgesSection .badge-item {
-  padding: 10px;
-  background: var(--card);
-  border-radius: 12px;
-  text-align: center;
-  border: 2px solid #ddd;
-  opacity: 0.5;
-  transition: all 0.3s ease;
-}
-
-#badgesSection .badge-item.earned {
-  opacity: 1;
-  border-color: var(--g-green);
-  box-shadow: 0 2px 8px rgba(8, 179, 111, 0.2);
-}
-
-#badgesSection .badge-item .badge-emoji {
-  font-size: 24px;
-  display: block;
-}
-
-#badgesSection .badge-item .badge-name {
-  font-size: 11px;
-  font-weight: 600;
-  margin-top: 4px;
-  display: block;
-}
-
-#badgesSection .badge-item .badge-desc {
-  font-size: 9px;
-  color: var(--sub);
-  margin-top: 2px;
-  display: block;
 }
 </style>
 
