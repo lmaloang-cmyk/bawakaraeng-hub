@@ -3462,16 +3462,14 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       mapsCurrentLayer = 'osm';
       
       // Add layer selector to map
-      var layerControl = L.control.layers();
       var baseLayers = {};
+      var layerControl = L.control.layers(baseLayers);
       Object.keys(TILE_SOURCES).forEach(function(key) {
         var layerName = TILE_SOURCES[key].name;
-        var layer = L.tileLayer(TILE_SOURCES[key].url, {
+        baseLayers[layerName] = L.tileLayer(TILE_SOURCES[key].url, {
           attribution: TILE_SOURCES[key].attribution,
           maxZoom: TILE_SOURCES[key].maxZoom
         });
-        baseLayers[layerName] = layer;
-        layerControl.addBaseLayer(layer, layerName);
       });
       layerControl.addTo(mapsMap);
       
