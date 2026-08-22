@@ -3426,7 +3426,9 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var STORE_NAME = 'tiles';
   
   window.initMaps = function() {
+    console.log('[Maps] initMaps called, L exists:', !!window.L, 'mapsMap:', !!mapsMap);
     if (!window.L) {
+      console.log('[Maps] Leaflet not loaded, waiting...');
       ensureLeaflet(initMaps);
       return;
     }
@@ -3435,7 +3437,9 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       console.error('Map container #mapsMap not found');
       return;
     }
+    console.log('[Maps] Container found:', container.offsetWidth, 'x', container.offsetHeight);
     if (mapsMap) {
+      console.log('[Maps] Map already exists, invalidating size');
       mapsMap.invalidateSize();
       return;
     }
