@@ -18,7 +18,9 @@
   try{
     if(window.__bwkSosKitLoaded)return;
     window.__bwkSosKitLoaded=true;
-    if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=20000;
+    // Mode uji coba: radius unlimited (Infinity) untuk test jangkauan SOS
+    // Setelah launching, ganti kembali ke 20000 (20 km)
+    if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=Infinity;
 
     var CSS='/sos-ui.css';
     if(!document.querySelector('link[data-bwk-sos-css]')){

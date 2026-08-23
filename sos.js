@@ -66,9 +66,10 @@
 
   // TEMUAN S7: dulu Infinity ("mode percobaan"). Klien menampilkan alarm dari SOS
   // yang bahkan tidak pernah dikirimi push oleh server (server memakai 20 km), lalu
-  // jaraknya ditulis "± 1.284 km" \u2014 membuat orang panik tanpa bisa menolong.
-  // Sekarang mengikuti satu sumber kebenaran yang sama dengan server.
-  var SOS_RADIUS=(window.BWK_SOS_RADIUS_M||20000);
+  // jaraknya ditulis "± 1.284 km" — membuat orang panik tanpa bisa menolong.
+  // SEKARANG: Mode uji coba radius unlimited (Infinity) untuk test jangkauan.
+  // Setelah launching, ganti kembali ke 20000 (20 km).
+  var SOS_RADIUS=(window.BWK_SOS_RADIUS_M||Infinity);
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var POLL_ALARM=15000;    // alarm sedang tampil: cepat, supaya status "selesai" cepat terdeteksi
   var POLL_ACTIVE=25000;   // aplikasi terlihat & baru disentuh
