@@ -117,88 +117,36 @@ self.addEventListener('push',function(e){
   
   // Mainkan beep/alaru suara SEBELUM notifikasi muncul
   // Service Worker memiliki Web Audio API sendiri
-  e.waitUntil(self.registration.showNotification(title,opts).then(function(){
-    // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
-    // langsung diperiksa tanpa menunggu siklus polling berikutnya.
-    return self.clients.matchAll({type:'window',includeUncontrolled:true});
-  }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null,urgent:data.urgency==='high'});}catch(err2){}});}).catch(function(){}));
-  
-  // CRITICAL: Jika app tidak responsif, kirim ulang dengan prioritas lebih tinggi setelah 5 detik
-  if(data.id && !data.retryCount){
-    setTimeout(function(){
-      // Cek apakah masih ada client yang terbuka
-      self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
-        if(!list||!list.length){
-          // App mungkin tertutup, coba kirim lagi dengan flag retry
-          var payload=JSON.stringify({
-            title:'🚨 SOS DARURAT! Buka sekarang!',
-            body:'Ada pendaki membutuhkan bantuan segera. Ketuk untuk membuka.',
-            id:data.id,
-            tag:'sos-'+data.id,
-            urgency:'high',
-            retryCount:1
-          });
-          self.registration.showNotification('🚨 SOS DARURAT!',{
-            body:'Ketuk untuk membuka aplikasi',
-            icon:'/rc-logo.webp',
-            badge:'/rc-logo.webp',
-            tag:'sos-'+data.id+'-retry',
-            renotify:true,
-            requireInteraction:true,
-            vibrate:[800,200,800,200,800],
-            data:{url:'/?sos='+encodeURIComponent(data.id),id:data.id},
-            actions:[{action:'open',title:'BUKA SEKARANG'}]
-          });
-        }
-      });
-    },5000);
-  }
-});
-
-// --- Alaru suara di Service Worker (beep berulang) ---
-// Dipanggil setelah push diterima, meski aplikasi tertutup
-self.addEventListener('push',function(e){
-  var data={};
-  try{data=e.data?e.data.json():{};}catch(err){try{data={body:e.data.text()};}catch(e2){data={};}}
-  if(!data.id)return; // Hanya bunyikan beep jika ada ID SOS
-  
-  e.waitUntil(new Promise(function(resolve){
-    // Buat beep audio menggunakan Web Audio API Service Worker
-    try{
-      var ctx=new (window.AudioContext||window.webkitAudioContext)();
-      var duration=0.3;
-      var frequency=880;
-      var loops=5; // 5x beep
-      
-      function playBeep(time){
-        var osc=ctx.createOscillator();
-        var gain=ctx.createGain();
-        osc.type='square';
-        osc.frequency.value=frequency;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        var t=ctx.currentTime+time;
-        gain.gain.setValueAtTime(0.3,t);
-        gain.gain.exponentialRampToValueAtTime(0.001,t+duration);
-        
-        osc.start(t);
-        osc.stop(t+duration+0.1);
-      }
-      
-      for(var i=0;i<loops;i++){
-        playBeep(i*0.5);
-      }
-      
-      // Tutup audio context setelah selesai
+  e.waitUntil(Promise.all([
+    // Notifikasi utama
+    self.registration.showNotification(title,opts).then(function(){
+      // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
+      // langsung diperiksa tanpa menunggu siklus polling berikutnya.
+      return self.clients.matchAll({type:'window',includeUncontrolled:true});
+    }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null,urgent:data.urgency==='high'});}catch(err2){}});}).catch(function(){}),
+    // CRITICAL: Jika app tidak responsif, kirim ulang dengan prioritas lebih tinggi setelah 5 detik
+    new Promise(function(resolve){
+      if(!data.id||data.retryCount){resolve();return;}
       setTimeout(function(){
-        try{ctx.close();}catch(e){}
+        self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
+          if(!list||!list.length){
+            self.registration.showNotification('🚨 SOS DARURAT!',{
+              body:'Ketuk untuk membuka aplikasi',
+              icon:'/rc-logo.webp',
+              badge:'/rc-logo.webp',
+              tag:'sos-'+data.id+'-retry',
+              renotify:true,
+              requireInteraction:true,
+              vibrate:[800,200,800,200,800],
+              data:{url:'/?sos='+encodeURIComponent(data.id),id:data.id},
+              actions:[{action:'open',title:'BUKA SEKARANG'}]
+            });
+          }
+        }).catch(function(){});
         resolve();
-      },loops*500+200);
-    }catch(err){
-      resolve();
-    }
-  }));
+      },5000);
+    })
+  ]));
 });
 
 self.addEventListener('notificationclick',function(e){

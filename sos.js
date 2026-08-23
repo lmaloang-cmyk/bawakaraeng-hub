@@ -119,6 +119,7 @@
   function _speakSOS(){
     try{
       if(!('speechSynthesis' in window))return false;
+      _ttsTryCount=0; // RESET di awal untuk cegah infinite loop
       // TEMUAN S10: _playAlarm dipanggil tiap 8 detik, tetapi satu kalimat butuh ~4-6
       // detik. Tanpa cancel(), antrian ucapan menumpuk tanpa batas sampai suaranya
       // saling bertindih dan menjadi bunyi yang tidak bisa dipahami.
