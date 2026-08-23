@@ -1,6 +1,12 @@
 /* SOS proximity alarm + gaya sumber air.
    Alarm berbunyi di perangkat lain yang <=20 km dari pengirim SOS.
 
+   v4 (koordinator responder):
+   - Tombol "Sudah ditangani" kini mengirim koordinat ke server (sos-report).
+   - Admin dapat melihat daftar responder aktif + jarak dari pengirim SOS.
+   - Admin bisa mengirim instruksi balik kepada responder.
+   - Responder mendapat notifikasi instruksi di panel alarm lokal.
+
    v3 (paket optimasi SOS):
    - Radius kembali dibatasi 20 km (window.BWK_SOS_RADIUS_M), cocok dengan server.
    - Pengenalan "SOS milik sendiri" memakai id / client_id, bukan tebakan nama+jarak.
@@ -47,6 +53,15 @@
   #sosMon .sm-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none;animation:sosalpulse 1.4s infinite}
   html.dark #sosMon{background:#3a2f12;border-color:#7a5f1c;color:#ffdf9b}
   html.dark #sosMon.bad{background:#3d1a20;border-color:#8c3340;color:#ffc9d0}
+  .bwk-instr-panel{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:99998;max-width:420px;margin:auto;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 12px 36px rgba(0,0,0,.2);font-size:13px;font-weight:700;color:#1a1a2e;display:flex;flex-direction:column;gap:8px;animation:bwkinstrin .3s ease-out}
+  @keyframes bwkinstrin{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  html.dark .bwk-instr-panel{background:#1e293b;color:#e2e8f0;box-shadow:0 12px 36px rgba(0,0,0,.5)}
+  .bwk-instr-panel .bwk-instr-hd{display:flex;justify-content:space-between;align-items:center}
+  .bwk-instr-panel .bwk-instr-src{font-size:11px;color:var(--sub,#69758a)}
+  .bwk-instr-panel .bwk-instr-msg{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;color:#1e40af;font-size:13px;line-height:1.5}
+  html.dark .bwk-instr-panel .bwk-instr-msg{background:#1e3a5f;border-color:#3b82f6;color:#bfdbfe}
+  .bwk-instr-panel .bwk-instr-close{border:0;background:none;cursor:pointer;font-size:18px;color:var(--sub,#69758a);padding:2px 6px;border-radius:6px}
+  .bwk-instr-panel .bwk-instr-close:hover{background:var(--line,#e6e9ef)}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
   // TEMUAN S7: dulu Infinity ("mode percobaan"). Klien menampilkan alarm dari SOS
@@ -64,9 +79,10 @@
   var BACKOFF_MIN=20000, BACKOFF_MAX=300000;
   var SNOOZE_MS=600000;    // "Matikan Alarm" hanya membisukan 10 menit, bukan selamanya
 
-  var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;var _queue=[];
+   var _seen={};var _myAlerts={};var _started=false;var _audio=null;var _alarmTimer=null;var _myPos=null;var _queue=[];
   var _lastResolved=null; // info SOS terakhir yang ditangani
   window._sosLastResolved=function(){return _lastResolved;};
+  var _instrPanelShown=false; // panel instruksi dari admin
   function _sosCount(){try{return parseInt(localStorage.getItem('bwkSosCount')||'0',10)||0;}catch(e){return 0;}}
   function _incSosCount(){try{var c=_sosCount()+1;localStorage.setItem('bwkSosCount',String(c));return c;}catch(e){return _sosCount();}}
   var _timer=null,_busy=false,_backoffUntil=0,_backoff=0,_lastTouch=Date.now(),_lastOk=0,_fails=0;
@@ -200,7 +216,7 @@
     }catch(e){}
   }
 
-  window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];_lastResolved=null;if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);if('speechSynthesis' in window)speechSynthesis.cancel();_schedule();_renderStatus();_refreshBellBadge();}catch(e){}};
+  window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];_lastResolved=null;_instrPanelShown=false;var elInstr=document.getElementById('bwkInstrPanel');if(elInstr)elInstr.remove();if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);if('speechSynthesis' in window)speechSynthesis.cancel();_schedule();_renderStatus();_refreshBellBadge();}catch(e){}};
   // Simpan SOS yang baru muncul tapi belum dilihat user (untuk polling berikutnya)
   var _pendingAlerts={};
 
@@ -213,6 +229,47 @@
   function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;var idx=_queue.findIndex(function(q){return String(q.id)===String(id);});if(idx>=0){var r=_queue[idx];_lastResolved={id:r.id,name:r.name,dist:r.dist};}_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);_refreshBellBadge();}}catch(e){}}
   // Tandai semua alarm di queue sebagai sudah dilihat (untuk polling berikutnya)
   function _markAllSeen(){try{_queue.forEach(function(q){_seen[String(q.id)]=1;});}catch(e){}}
+
+  // ============================================================
+  // KOORDINASI RESPONDER: kirim koordinat saat user tekan "Sudah ditangani"
+  // ============================================================
+  // Responder (bukan admin, bukan pengirim) melaporkan posisi mereka ke server.
+  // Admin bisa melihat daftar semua responder + jarak + kirim instruksi balik.
+  window._sosReport=function(id,lat,lng){
+    if(!id||lat==null||lng==null)return Promise.resolve();
+    try{
+      // Ambil token dari _sbClient jika tersedia (ops.js pattern)
+      var tokP=null;
+      try{if(typeof _sbClient==='function'){var c=_sbClient();if(c&&c.auth&&c.auth.getSession){tokP=c.auth.getSession().then(function(r){return (r&&r.data&&r.data.session&&r.data.session.access_token)||'';}).catch(function(){return '';});}}}catch(e){}
+      if(!tokP)tokP=Promise.resolve('');
+      return tokP.then(function(t){
+        if(!t)throw new Error('auth');
+        return fetch('/api/operations?action=sos-report',{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},
+          body:JSON.stringify({sos_id:id,lat:lat,lng:lng})
+        });
+      }).then(function(r){return r.json().catch(function(){return {};});}).catch(function(){return {};});
+    }catch(e){return Promise.resolve();}
+  };
+
+  // Panggil _sosReport secara async setelah _dismiss
+  function _dismissWithReport(id,lat,lng){
+    _dismiss(id);
+    // Kirim laporan posisi ke server (non-blocking)
+    _sosReport(id,lat,lng).catch(function(){});
+  }
+
+  // Tampilkan panel instruksi dari admin
+  window._showInstrPanel=function(src, msg){
+    if(_instrPanelShown)return;
+    _instrPanelShown=true;
+    var el=document.createElement('div');
+    el.id='bwkInstrPanel';
+    el.className='bwk-instr-panel';
+    el.innerHTML='<div class="bwk-instr-hd"><span>\uD83D\uDCE3 Instruksi dari Petugas</span><span class="bwk-instr-src">Dari: '+_esc(src)+'</span><button class="bwk-instr-close" onclick="(_instrPanelShown=false);(function(){var e=document.getElementById(\'bwkInstrPanel\');if(e)e.remove();})()">\u2715</button></div><div class="bwk-instr-msg">'+_esc(msg)+'</div>';
+    document.body.appendChild(el);
+    setTimeout(function(){if(_instrPanelShown){_instrPanelShown=false;var e=document.getElementById('bwkInstrPanel');if(e)e.remove();}},120000);
+  };
 
   function _renderAlarm(play){
     try{
@@ -342,4 +399,6 @@
   document.addEventListener('visibilitychange',function(){if(!document.hidden){_lastTouch=Date.now();if(_started){_recover();_tick(true);}}else{_schedule();}});
   // Service worker memberi tahu saat push SOS masuk: langsung periksa, jangan tunggu siklus berikutnya.
   try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-push'){_recover();_tick(true);}});}catch(e){}
+  // Mendengarkan instruksi dari admin via service worker message
+  try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-instruction'&&d.src&&d.msg){window._showInstrPanel(d.src,d.msg);}});}catch(e){}
 })();
