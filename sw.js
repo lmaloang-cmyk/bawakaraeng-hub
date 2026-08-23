@@ -91,6 +91,8 @@ self.addEventListener('message',function(e){
 });
 
 // --- Web Push: peringatan SOS masuk walau aplikasi tertutup / layar HP mati ---
+// Service Worker BISA memainkan beep suara meskipun aplikasi tidak terbuka.
+// Ini adalah alarm darurat tambahan di luar notifikasi sistem.
 self.addEventListener('push',function(e){
   var data={};
   try{data=e.data?e.data.json():{};}catch(err){try{data={body:e.data.text()};}catch(e2){data={};}}
@@ -113,9 +115,11 @@ self.addEventListener('push',function(e){
   // iOS: tampilkan notifikasi critical dengan urgency tinggi
   if(data.urgency==='high'){opts.renotify=true;}
   
-  // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
-  // langsung diperiksa tanpa menunggu siklus polling berikutnya.
+  // Mainkan beep/alaru suara SEBELUM notifikasi muncul
+  // Service Worker memiliki Web Audio API sendiri
   e.waitUntil(self.registration.showNotification(title,opts).then(function(){
+    // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
+    // langsung diperiksa tanpa menunggu siklus polling berikutnya.
     return self.clients.matchAll({type:'window',includeUncontrolled:true});
   }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null,urgent:data.urgency==='high'});}catch(err2){}});}).catch(function(){}));
   
@@ -149,6 +153,52 @@ self.addEventListener('push',function(e){
       });
     },5000);
   }
+});
+
+// --- Alaru suara di Service Worker (beep berulang) ---
+// Dipanggil setelah push diterima, meski aplikasi tertutup
+self.addEventListener('push',function(e){
+  var data={};
+  try{data=e.data?e.data.json():{};}catch(err){try{data={body:e.data.text()};}catch(e2){data={};}}
+  if(!data.id)return; // Hanya bunyikan beep jika ada ID SOS
+  
+  e.waitUntil(new Promise(function(resolve){
+    // Buat beep audio menggunakan Web Audio API Service Worker
+    try{
+      var ctx=new (window.AudioContext||window.webkitAudioContext)();
+      var duration=0.3;
+      var frequency=880;
+      var loops=5; // 5x beep
+      
+      function playBeep(time){
+        var osc=ctx.createOscillator();
+        var gain=ctx.createGain();
+        osc.type='square';
+        osc.frequency.value=frequency;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        var t=ctx.currentTime+time;
+        gain.gain.setValueAtTime(0.3,t);
+        gain.gain.exponentialRampToValueAtTime(0.001,t+duration);
+        
+        osc.start(t);
+        osc.stop(t+duration+0.1);
+      }
+      
+      for(var i=0;i<loops;i++){
+        playBeep(i*0.5);
+      }
+      
+      // Tutup audio context setelah selesai
+      setTimeout(function(){
+        try{ctx.close();}catch(e){}
+        resolve();
+      },loops*500+200);
+    }catch(err){
+      resolve();
+    }
+  }));
 });
 
 self.addEventListener('notificationclick',function(e){
