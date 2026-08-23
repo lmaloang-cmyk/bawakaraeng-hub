@@ -136,9 +136,15 @@ export default async function handler(req, res) {
 
   const plus = sos.plus_code ? String(sos.plus_code).slice(0, 16) : '';
   const payload = JSON.stringify({
-    title: '\uD83C\uDD98 ' + String(sos.name || 'Pendaki').slice(0, 80) + ' butuh bantuan',
-    body: 'Ada sinyal SOS darurat di dekatmu.' + (plus ? (' Kode lokasi: ' + plus + '.') : '') + ' Ketuk untuk membuka peta & koordinasi bantuan.',
-    id: String(sos.id), tag: 'sos-' + String(sos.id), url: '/?sos=' + encodeURIComponent(String(sos.id))
+    title: '🚨 ' + String(sos.name || 'Pendaki').slice(0, 80) + ' butuh bantuan',
+    body: 'ADA SOS DARURAT! ' + String(sos.name || 'Seorang pendaki') + ' membutuhkan bantuan segera di dekatmu. Ketuk untuk membuka.',
+    id: String(sos.id), tag: 'sos-' + String(sos.id), url: '/?sos=' + encodeURIComponent(String(sos.id)), urgency: 'high'
+  });
+  // Payload tambahan untuk retry (dikirim setelah 5 detik jika app tidak merespon)
+  const payloadRetry = JSON.stringify({
+    title: '🚨 SOS TIDAK DIBACA! Buka sekarang!',
+    body: 'Notifikasi SOS sebelumnya diabaikan. Ketuk untuk membuka aplikasi.',
+    id: String(sos.id), tag: 'sos-' + String(sos.id) + '-retry', url: '/?sos=' + encodeURIComponent(String(sos.id)), urgency: 'high', retryCount: 1
   });
   const targets = subs.filter(s => {
     if (!s || !s.endpoint || !s.p256dh || !s.auth) return false;
@@ -162,6 +168,19 @@ export default async function handler(req, res) {
         else { failed++; lastError = sc ? ('HTTP ' + sc) : String((err && err.message) || 'gagal'); }
       }
     }));
+  }
+  
+  // RETRY: Kirim ulang setelah 5 detik jika app mungkin tidak merespon
+  if (sent > 0 && ageMin < 10) {
+    setTimeout(async () => {
+      try {
+        await Promise.all(targets.slice(0, 12).map(async s => {
+          try {
+            await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payloadRetry, { TTL: 1800, urgency: 'high' });
+          } catch(err2) {}
+        }));
+      } catch(e) {}
+    }, 5000);
   }
   if (dead.length) await Promise.all(dead.map(ep => {
     const u = new URL(SB_URL + '/rest/v1/push_subscriptions'); u.searchParams.set('endpoint', 'eq.' + ep);

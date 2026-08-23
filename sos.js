@@ -428,7 +428,9 @@
   window.addEventListener('online',function(){_recover();if(_started)_tick(true);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden){_lastTouch=Date.now();if(_started){_recover();_tick(true);}}else{_schedule();}});
   // Service worker memberi tahu saat push SOS masuk: langsung periksa, jangan tunggu siklus berikutnya.
-  try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-push'){_recover();_tick(true);}});}catch(e){}
+  try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-push'){_recover();_tick(true);
+    // Wake lock: cegah layar tidur saat ada SOS darurat
+    if(d.urgent && 'wakeLock' in navigator){try{navigator.wakeLock.request('screen');}catch(e){}}}});}catch(e){}
   // Mendengarkan instruksi dari admin via service worker message
   try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-instruction'&&d.src&&d.msg){window._showInstrPanel(d.src,d.msg);}});}catch(e){}
 })();

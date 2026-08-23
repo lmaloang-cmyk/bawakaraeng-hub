@@ -96,13 +96,59 @@ self.addEventListener('push',function(e){
   try{data=e.data?e.data.json():{};}catch(err){try{data={body:e.data.text()};}catch(e2){data={};}}
   var title=data.title||'\uD83C\uDD98 Sinyal Darurat SOS';
   var body=data.body||'Ada pendaki yang butuh bantuan di dekatmu.';
-  var opts={body:body,icon:'/rc-logo.webp',badge:'/rc-logo.webp',tag:data.tag||('sos-'+(data.id||Date.now())),renotify:true,requireInteraction:true,vibrate:[400,150,400,150,700],data:{url:data.url||'/',id:data.id||null},
-    actions:[{action:'open',title:'Buka'},{action:'map',title:'Lihat peta'}]};
+  var opts={
+    body:body,
+    icon:'/rc-logo.webp',
+    badge:'/rc-logo.webp',
+    tag:data.tag||('sos-'+(data.id||Date.now())),
+    renotify:true,
+    requireInteraction:true,
+    vibrate:[400,150,400,150,700,150,400,150,700],
+    data:{url:data.url||'/',id:data.id||null},
+    actions:[
+      {action:'open',title:'Buka Aplikasi'},
+      {action:'map',title:'Lihat Peta'}
+    ]
+  };
+  // iOS: tampilkan notifikasi critical dengan urgency tinggi
+  if(data.urgency==='high'){opts.renotify=true;}
+  
   // Selain notifikasi, beri tahu tab yang sedang terbuka supaya alarm dalam aplikasi
   // langsung diperiksa tanpa menunggu siklus polling berikutnya.
   e.waitUntil(self.registration.showNotification(title,opts).then(function(){
     return self.clients.matchAll({type:'window',includeUncontrolled:true});
-  }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null});}catch(err2){}});}).catch(function(){}));
+  }).then(function(list){(list||[]).forEach(function(c){try{c.postMessage({type:'sos-push',id:data.id||null,urgent:data.urgency==='high'});}catch(err2){}});}).catch(function(){}));
+  
+  // CRITICAL: Jika app tidak responsif, kirim ulang dengan prioritas lebih tinggi setelah 5 detik
+  if(data.id && !data.retryCount){
+    setTimeout(function(){
+      // Cek apakah masih ada client yang terbuka
+      self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
+        if(!list||!list.length){
+          // App mungkin tertutup, coba kirim lagi dengan flag retry
+          var payload=JSON.stringify({
+            title:'🚨 SOS DARURAT! Buka sekarang!',
+            body:'Ada pendaki membutuhkan bantuan segera. Ketuk untuk membuka.',
+            id:data.id,
+            tag:'sos-'+data.id,
+            urgency:'high',
+            retryCount:1
+          });
+          self.registration.showNotification('🚨 SOS DARURAT!',{
+            body:'Ketuk untuk membuka aplikasi',
+            icon:'/rc-logo.webp',
+            badge:'/rc-logo.webp',
+            tag:'sos-'+data.id+'-retry',
+            renotify:true,
+            requireInteraction:true,
+            vibrate:[800,200,800,200,800],
+            data:{url:'/?sos='+encodeURIComponent(data.id),id:data.id},
+            actions:[{action:'open',title:'BUKA SEKARANG'}]
+          });
+        }
+      });
+    },5000);
+  }
 });
 
 self.addEventListener('notificationclick',function(e){
@@ -111,8 +157,21 @@ self.addEventListener('notificationclick',function(e){
   var url=d.url||'/';
   if(e.action==='map'&&d.id)url='/?sos='+encodeURIComponent(d.id);
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
-    for(var i=0;i<list.length;i++){var c=list[i];if('focus' in c){if(c.navigate){try{c.navigate(url);}catch(e3){}}return c.focus();}}
+    // Cari window yang sudah ada, fokuskan
+    for(var i=0;i<list.length;i++){
+      var c=list[i];
+      if('focus' in c){
+        if(c.navigate){try{c.navigate(url);}catch(e3){}}
+        return c.focus();
+      }
+    }
+    // Jika tidak ada window terbuka, buka baru
     if(self.clients.openWindow)return self.clients.openWindow(url);
+  }).then(function(){
+    // WAKE LOCK: Coba akhiri screen sleep setelah app terbuka
+    if('wakeLock' in navigator){
+      try{navigator.wakeLock.request('screen');}catch(err){}
+    }
   }));
 });
 
