@@ -1,0 +1,26 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/.well-known/assetlinks.json", "destination": "/assetlinks.json" }
+  ],
+  "headers": [
+    {
+      "source": "/assetlinks.json",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }]
+    }
+  ],
+  "functions": {
+    "api/ai.js":           { "maxDuration": 30 },
+    "api/identify.js":     { "maxDuration": 30 },
+    "api/sos-push.js":     { "maxDuration": 20 },
+    "api/operations.js":   { "maxDuration": 15 },
+    "api/push-subscribe.js": { "maxDuration": 15 },
+    "api/bmkg.js":         { "maxDuration": 15 },
+    "api/hotspot.js":      { "maxDuration": 15 },
+    "api/species-search.js": { "maxDuration": 10 }
+  }
+}

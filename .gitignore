@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+package-lock.json
+
+# Build
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+knowledge.db
+knowledge.db-shm
+knowledge.db-wal
+
+# Images (keep originals, ignore duplicates)
+*.png.jpeg
+*.png.txt
+*.png.json
+*.jpg.jpeg
+
+# Screenshots (large, not needed in repo)
+screenshots/
+*.png
+
+# Temporary
+*.tmp
+*.bak
