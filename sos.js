@@ -93,6 +93,7 @@
 
   // ===== Alarm suara =====
   var _ttsQueue=[];var _ttsPlaying=false;var _ttsVoicesReady=false;
+  var _ttsTryCount=0;var _ttsMaxRetries=5;
   // TEMUAN S11: suara lama berbahasa Inggris ("SOS! SOS! Help! Help!"). Sebagian besar
   // pendaki Bawakaraeng berbahasa Indonesia; kalimat Inggris memperlambat pemahaman
   // pada detik-detik yang paling menentukan. Suara berbahasa Indonesia diprioritaskan.
@@ -122,27 +123,42 @@
       // saling bertindih dan menjadi bunyi yang tidak bisa dipahami.
       try{speechSynthesis.cancel();}catch(e2){}
       var voices=speechSynthesis.getVoices();
+      // TEMUAN iPhone/Safari: getVoices() sering empty meski TTS tersedia.
+      // Coba max _ttsMaxRetries kali dengan delay bertambah.
       if(!voices||!voices.length){
-        // Android WebView memuat daftar suara secara asinkron; coba lagi sebentar.
-        setTimeout(function(){
-          var v=speechSynthesis.getVoices();
-          if(v&&v.length)_speakSOS();
-        },200);
+        _ttsTryCount++;
+        if(_ttsTryCount<=_ttsMaxRetries){
+          setTimeout(function(){
+            var v=speechSynthesis.getVoices();
+            if(v&&v.length)_speakSOS();
+            else if(_ttsTryCount>=_ttsMaxRetries)_beep(); // fallback ke beep
+          },200*_ttsTryCount);
+        }else{_beep();}
         return false;
       }
+      _ttsTryCount=0; // reset counter
       var voice=_getFemaleVoice();
       var utter=new SpeechSynthesisUtterance('Darurat! Ada pendaki minta tolong di dekat kamu. Buka aplikasi sekarang.');
       utter.lang='id-ID';
       utter.rate=0.95;utter.pitch=1.15;utter.volume=1;
       if(voice)utter.voice=voice;
+      // Handler untuk iOS: beberapa versi Safari butuh explicit trigger
+      utter.onend=function(){_ttsPlaying=false;};
+      utter.onerror=function(){_ttsPlaying=false;_beep();};
       speechSynthesis.speak(utter);
+      _ttsPlaying=true;
       return true;
     }catch(e){return false;}
   }
-  // Tunggu voices siap (Chrome memuatnya secara asinkron)
+  // Tunggu voices siap (Chrome memuatnya secara asinkron, Safari kadang perlu retry)
   if(typeof speechSynthesis!=='undefined'){
-    speechSynthesis.addEventListener('voiceschanged',function(){try{_ttsVoicesReady=true;}catch(e){}});
-    setTimeout(function(){try{speechSynthesis.getVoices();_ttsVoicesReady=true;}catch(e){}},500);
+    speechSynthesis.addEventListener('voiceschanged',function(){
+      try{
+        var v=speechSynthesis.getVoices();
+        if(v&&v.length){_ttsVoicesReady=true;_ttsTryCount=0;}
+      }catch(e){}
+    });
+    setTimeout(function(){try{var v=speechSynthesis.getVoices();if(v&&v.length)_ttsVoicesReady=true;}catch(e){}},500);
   }
   function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
   function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
@@ -389,7 +405,20 @@
     else if(!_queue.length&&document.getElementById('sosAlarm')){window._sosStop();}
   }
 
-  function _unlockAudio(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();}catch(e){}}
+  function _unlockAudio(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();}catch(e){}
+    // iPhone/Safari butuh gesture untuk speechSynthesis; coba trigger dengan utter kosong
+    try{
+      if(typeof speechSynthesis!=='undefined'&&!speechSynthesis.speaking){
+        var u=document.createElement('span');u.style.cssText='position:absolute;left:-9999px;top:-9999px';
+        document.body.appendChild(u);
+        var ut=new SpeechSynthesisUtterance('');
+        ut.volume=0;
+        speechSynthesis.speak(ut);
+        speechSynthesis.cancel();
+        setTimeout(function(){try{speechSynthesis.cancel();}catch(e){}if(u.parentNode)u.parentNode.removeChild(u);},100);
+      }
+    }catch(e){}
+  }
   ['pointerdown','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){_lastTouch=Date.now();_unlockAudio();},{passive:true});});
 
   window._sosStart=function(){if(_started)return;_started=true;localStorage.setItem('bwkSosCount','0');_tick(true);};
