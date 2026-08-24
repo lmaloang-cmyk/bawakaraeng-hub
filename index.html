@@ -1111,15 +1111,24 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     </div>
 
     <!-- Usage Guide -->
-    <div id="mapsGuide" style="margin-top:12px;padding:12px 14px;background:rgba(43,111,255,.08);border-radius:12px;border:1px solid rgba(43,111,255,.2);font-size:13px;color:#8fa8d6">
-      <b style="color:#2b6fff">💡 Cara Pakai:</b>
+    <div id="mapsGuide" style="margin-top:12px;padding:12px 14px;background:rgba(43,111,255,.08);border-radius:12px;border:1px solid rgba(43,111,255,.2);font-size:13px;color:#8fa8d6;overflow:visible">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b style="color:#2b6fff">💡 Panduan Penggunaan</b>
+        <button onclick="document.getElementById('mapsGuide').style.display='none'" style="padding:4px 8px;border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;border:none;font-size:11px">✕</button>
+      </div>
       <ol style="margin:8px 0 4px 18px;padding:0;line-height:1.8">
-        <li>Ketuk <b>📍 GPS</b> dulu untuk aktivasi lokasi</li>
+        <li>Ketuk <b>📍 GPS</b> untuk aktivasi lokasi Anda</li>
         <li>Ketuk <b>⏺ Rekam</b> untuk mulai tracking trek</li>
         <li>Setelah stop rekam, tombol <b>📏 Ukur</b> & <b>📌 WP</b> akan muncul</li>
         <li>Gunakan <b>🎯 Target</b> untuk tambah waypoint cepat, <b>🥾 Tracker</b> untuk hiking checkpoint</li>
+        <li><b>📈 Profil Elevasi</b> otomatis muncul di bawah - pilih jalur untuk melihat data elevasi real</li>
+        <li><b>🔔 Alarm</b> akan berbunyi jika Anda keluar jalur >50m</li>
       </ol>
+      <p style="font-size:11px;color:#69758a;margin-top:8px">Tip: Ketuk <b>🥾 Tracker</b> → pilih checkpoint → mulai navigasi. Klik tombol check-in saat tiba di pos!</p>
     </div>
+
+    <!-- Toggle Guide Button (muncul saat panduan tertutup) -->
+    <button id="btnToggleGuide" onclick="document.getElementById('mapsGuide').style.display='block';this.style.display='none'" style="display:none;position:fixed;bottom:90px;right:50%;transform:translateX(50%);z-index:50;background:rgba(43,111,255,.9);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:22px;box-shadow:0 6px 20px rgba(43,111,255,.4);cursor:pointer">💡</button>
 
     <div id="mapsPanel" style="margin-top:12px">
       <!-- Map Controls -->
@@ -1148,7 +1157,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
           <span class="maps-btn-icon">💾</span>
           <span class="maps-btn-label">Backup</span>
         </button>
-        <button class="maps-btn maps-btn-hiking" id="btnHiking" onclick="hikingStart()" title="Hiking Tracker">
+        <button class="maps-btn maps-btn-hiking" id="btnHiking" onclick="window.hikingStart()" title="Hiking Tracker">
           <span class="maps-btn-icon">🥾</span>
           <span class="maps-btn-label">Tracker</span>
         </button>
@@ -1356,14 +1365,49 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
             <b style="color:#78e1ad;font-size:14px">🥾 Tracker Pendakian</b>
             <button onclick="hikingStop()" style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;border:none;font-size:11px">Tutup</button>
           </div>
-          <div id="hikingStatus" style="font-size:13px;color:#e8f4ee;margin-bottom:8px"></div>
-          <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
-            <div id="hikingProgress" style="height:100%;background:linear-gradient(90deg,#2b6fff,#78e1ad);width:0%;border-radius:3px;transition:width 0.3s"></div>
+
+          <!-- Checkpoint Selection -->
+          <div id="hikingCheckpointSelect" style="margin-bottom:12px">
+            <div style="font-size:12px;color:#8fa8d6;margin-bottom:8px">Pilih jalur pendakian:</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <button class="btn" style="background:#2b6fff;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="startHikingCheckpoint('pintu_angin')">
+                🏔️ Pintu Angin - 7 Checkpoint
+              </button>
+              <button class="btn" style="background:#08b96f;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="startHikingCheckpoint('bonto_trail')">
+                🥾 Bonto - 6 Checkpoint
+              </button>
+              <button class="btn" style="background:#ff9800;color:#fff;font-size:12px;padding:8px 12px;text-align:left" onclick="startHikingCheckpoint('ridge_trail')">
+                ⛰️ Ridge Traverse - 5 Checkpoint
+              </button>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a94a6">
-            <span id="hikingCheckpoint">Pos 0 - Lembanna (1.514m)</span>
-            <span id="hikingNext">→ Pos 1</span>
+
+          <!-- Active Checkpoint Status -->
+          <div id="hikingCheckpointStatus" style="display:none;margin-bottom:12px;padding:10px;background:rgba(8,179,111,.1);border-radius:8px;border:1px solid rgba(8,179,111,.3)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:#78e1ad" id="hikingCpLabel">Pos 0 - Lembanna</span>
+              <span style="font-size:12px;color:#8fa8d6" id="hikingCpDist">→ 1.5 km</span>
+            </div>
+            <!-- Check-in Button -->
+            <button id="checkInBtn" onclick="checkInCheckpoint()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;background:linear-gradient(135deg,#08b96f,#06a55f);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">
+              ✓ CHECK-IN POS
+            </button>
+            <p style="font-size:11px;color:#69758a;margin:6px 0 0">Ketuk saat Anda tiba di checkpoint ini</p>
           </div>
+
+          <!-- Progress -->
+          <div id="hikingProgressContainer" style="display:none">
+            <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+              <div id="hikingProgress" style="height:100%;background:linear-gradient(90deg,#2b6fff,#78e1ad);width:0%;border-radius:3px;transition:width 0.3s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a94a6">
+              <span id="hikingCheckpoint">Pos 0 - Lembanna (1.514m)</span>
+              <span id="hikingNext">→ Pos 1</span>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div id="hikingStatus" style="font-size:13px;color:#e8f4ee;margin-top:8px;display:none"></div>
         </div>
       </div>
     </div>
@@ -3807,8 +3851,14 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         }
       };
       
-      console.log('Map initialized successfully');
-    } catch (e) {
+       console.log('Map initialized successfully');
+
+       // Auto-load elevation profile for default trail
+       setTimeout(function() {
+         var sel = document.getElementById('elevTrailSelect');
+         if (sel) { sel.value = 'pintu_angin'; _loadElevationProfile('pintu_angin'); }
+       }, 500);
+     } catch (e) {
       console.error('Error initializing map:', e);
       container.innerHTML = '<div style="padding:34px 20px;text-align:center;color:#ff2d55;font-size:13px;font-weight:600">⚠️ Gagal memuat peta. Refresh halaman untuk mencoba lagi.</div>';
     }
@@ -4015,9 +4065,11 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       }
       mapsMap.setView([lat, lng], 16);
 
-      // Hide usage guide after first GPS success
-      var guide = document.getElementById('mapsGuide');
-      if (guide) guide.style.display = 'none';
+       // Hide usage guide after first GPS success, show toggle button
+       var guide = document.getElementById('mapsGuide');
+       if (guide) guide.style.display = 'none';
+       var toggleBtn = document.getElementById('btnToggleGuide');
+       if (toggleBtn) toggleBtn.style.display = 'flex';
 
       if (mapsIsRecording) {
         mapsTrackPoints.push([lat, lng]);
@@ -4031,10 +4083,10 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
        var recBtn = document.getElementById('btnRecord');
        if (recBtn) recBtn.style.display = 'inline-flex';
        
-       // Update bearing if hiking tracker is active
-       if (hikingActive && hikingCheckpoints[hikingCheckpoint]) {
-         _updateBearing(lat, lng);
-       }
+        // Update bearing if hiking tracker is active
+        if (hikingActive && HIKING_TRAILS[hikingTrailKey] && HIKING_TRAILS[hikingTrailKey][hikingCheckpoint]) {
+          _updateBearing(lat, lng);
+        }
      }, function(err) { toast('GPS error: ' + err.message, 'err'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
   
@@ -4137,11 +4189,46 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     // Show usage guide again after reset
     var guide = document.getElementById('mapsGuide');
     if (guide) guide.style.display = 'block';
+    var toggleBtn = document.getElementById('btnToggleGuide');
+    if (toggleBtn) toggleBtn.style.display = 'none';
     document.getElementById('offlineStatus').style.display = 'none';
     document.getElementById('gpsStatus').style.display = 'none';
     document.getElementById('gpsWarning').style.display = 'none';
     toast('Peta direset', 'ok');
   };
+
+  // ===== GUIDE TOGGLE: watch for guide being hidden, show floating button =====
+  (function initGuideToggle(){
+    var g = document.getElementById('mapsGuide');
+    var t = document.getElementById('btnToggleGuide');
+    if (!g || !t) return;
+    // Observe the guide element for style/display changes
+    try {
+      new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          if (m.attributeName === 'style') {
+            var d = g.style.display;
+            if (d === 'none') {
+              if (t.style.display !== 'flex') t.style.display = 'flex';
+            } else {
+              t.style.display = 'none';
+            }
+          }
+        });
+      }).observe(g, { attributes: true, attributeFilter: ['style'] });
+    } catch(e) {}
+    // Also watch for childNodes changes on the button itself
+    try {
+      var obs2 = new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          if (m.target === t && t.style.display === 'none' && g.style.display === 'none') {
+            t.style.display = 'flex';
+          }
+        });
+      });
+      obs2.observe(t, { attributes: true, attributeFilter: ['style'] });
+    } catch(e) {}
+  })();
   
   // ===== TARGET / CROSSHAIR =====
   var mapsTargetMarker = null;
@@ -4242,7 +4329,8 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     });
     
     // Also check hiking checkpoints
-    hikingCheckpoints.forEach(function(cp) {
+    var trailCps = HIKING_TRAILS[hikingTrailKey] || [];
+    trailCps.forEach(function(cp) {
       var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(cp.lat, cp.lng));
       if (dist < minDist) minDist = dist;
     });
@@ -4509,7 +4597,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       hikingBtn.id = 'btnHiking';
       hikingBtn.className = 'btn';
       hikingBtn.textContent = '🥾 Tracker';
-      hikingBtn.onclick = function() { hikingStart(); };
+      hikingBtn.onclick = function() { window.hikingStart(); };
       controls.insertBefore(hikingBtn, controls.lastElementChild);
     }
   })();
@@ -4519,92 +4607,146 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var hikingCheckpoint = 0;
   var hikingWatch = null;
   var hikingMarkers = [];
+  var hikingTrailKey = 'pintu_angin';
   
-  // Trail checkpoints (from jalurPos data)
-  var hikingCheckpoints = [
-    {name:'Lembanna (Pintu Masuk)',lat:-5.2536,lng:119.9056,el:1514,status:'ok'},
-    {name:'Pos 0',lat:-5.262,lng:119.912,el:1680,status:'ok'},
-    {name:'Pos 1',lat:-5.265,lng:119.915,el:1719,status:'ok'},
-    {name:'Pos 2',lat:-5.271,lng:119.920,el:1810,status:'ok'},
-    {name:'Pintu Rimba',lat:-5.275,lng:119.923,el:1893,status:'ok'},
-    {name:'Pos 3',lat:-5.279,lng:119.926,el:1950,status:'warn'},
-    {name:'Pos 5',lat:-5.286,lng:119.930,el:2170,status:'warn'},
-    {name:'Memorial',lat:-5.289,lng:119.932,el:2230,status:'warn'},
-    {name:'Pos 8',lat:-5.294,lng:119.936,el:2440,status:'warn'},
-    {name:'Pos 9',lat:-5.298,lng:119.940,el:2610,status:'danger'},
-    {name:'Puncak Bawakaraeng',lat:-5.3169,lng:119.9444,el:2830,status:'danger'}
-  ];
+  // Trail-specific checkpoints
+  var HIKING_TRAILS = {
+    pintu_angin: [
+      {name:'Lembanna',lat:-5.283,lng:119.918,el:1273},
+      {name:'Pos 0 - Base Camp',lat:-5.285,lng:119.920,el:1310},
+      {name:'Pos 1 - Air Terjun',lat:-5.288,lng:119.922,el:1500},
+      {name:'Pos 2',lat:-5.290,lng:119.923,el:1720},
+      {name:'Pos 3',lat:-5.292,lng:119.924,el:1950},
+      {name:'Puncak Bawakaraeng',lat:-5.295,lng:119.925,el:2180}
+    ],
+    bonto_trail: [
+      {name:'Bonto',lat:-5.310,lng:119.940,el:1100},
+      {name:'Pos 1',lat:-5.305,lng:119.935,el:1350},
+      {name:'Pos 2',lat:-5.300,lng:119.930,el:1620},
+      {name:'Pos 3',lat:-5.295,lng:119.925,el:1890},
+      {name:'Puncak Bawakaraeng',lat:-5.295,lng:119.925,el:2180}
+    ],
+    ridge_trail: [
+      {name:'Start Ridge',lat:-5.280,lng:119.915,el:1400},
+      {name:'Pos 1',lat:-5.285,lng:119.918,el:1700},
+      {name:'Pos 2',lat:-5.290,lng:119.922,el:1950},
+      {name:'Pos 3',lat:-5.292,lng:119.924,el:2100},
+      {name:'Puncak Bawakaraeng',lat:-5.295,lng:119.925,el:2180}
+    ]
+  };
   
-  window.hikingStart = function() {
+  window.startHikingCheckpoint = function(trailKey) {
     if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
     
+    var trails = HIKING_TRAILS[trailKey];
+    if (!trails) return;
+    
+    hikingTrailKey = trailKey;
     hikingActive = true;
     hikingCheckpoint = 0;
-    document.getElementById('hikingTracker').style.display = 'block';
+    document.getElementById('hikingCheckpointSelect').style.display = 'none';
+    document.getElementById('hikingCheckpointStatus').style.display = 'block';
+    document.getElementById('hikingProgressContainer').style.display = 'block';
+    document.getElementById('hikingStatus').style.display = 'block';
     
     // Clear existing checkpoint markers
     hikingMarkers.forEach(function(m) { mapsMap.removeLayer(m); });
     hikingMarkers = [];
     
+    // Get actual checkpoints for this trail
+    var cps = trails;
+    
     // Add checkpoint markers
-    hikingCheckpoints.forEach(function(cp, i) {
-      var color = cp.status === 'ok' ? '#08a35f' : (cp.status === 'warn' ? '#e5951c' : '#ff2d55');
+    cps.forEach(function(cp, i) {
       var marker = L.circleMarker([cp.lat, cp.lng], {
         radius: 10,
         color: '#fff',
         weight: 2,
-        fillColor: color,
+        fillColor: i === 0 ? '#2b6fff' : '#08a35f',
         fillOpacity: 1
       }).addTo(mapsMap);
       
       marker.bindPopup('<b>' + cp.name + '</b><br>' + cp.el + ' mdpl');
-      marker._hikingIdx = i;
       hikingMarkers.push(marker);
     });
     
     // Add trail line
-    var trailPoints = hikingCheckpoints.map(function(cp) { return [cp.lat, cp.lng]; });
+    var trailPoints = cps.map(function(cp) { return [cp.lat, cp.lng]; });
     L.polyline(trailPoints, { color: '#ff2d55', weight: 3, dashArray: '8 4', opacity: 0.7 }).addTo(mapsMap)._bwkCustom = true;
+    
+    // Update UI
+    _updateHikingUI(cps);
     
     // Start GPS tracking
     if (navigator.geolocation) {
+      if (hikingWatch) navigator.geolocation.clearWatch(hikingWatch);
       hikingWatch = navigator.geolocation.watchPosition(function(pos) {
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
         
-        // Check distance to next checkpoint
-        var nextCp = hikingCheckpoints[hikingCheckpoint];
+        var nextCp = cps[hikingCheckpoint];
         if (nextCp) {
           var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(nextCp.lat, nextCp.lng));
           
-          // Update progress
-          var progress = (hikingCheckpoint / (hikingCheckpoints.length - 1)) * 100;
+          var progress = (hikingCheckpoint / (cps.length - 1)) * 100;
           document.getElementById('hikingProgress').style.width = progress + '%';
-          document.getElementById('hikingCheckpoint').textContent = nextCp.name + ' (' + nextCp.el + 'm)';
-          document.getElementById('hikingNext').textContent = hikingCheckpoint < hikingCheckpoints.length - 1 ? '→ ' + hikingCheckpoints[hikingCheckpoint + 1].name : '🎉 Puncak!';
+          document.getElementById('hikingNext').textContent = hikingCheckpoint < cps.length - 1 ? '→ ' + cps[hikingCheckpoint + 1].name : '🎉 Puncak!';
           
-          // Check if reached checkpoint
-          if (dist < 100) { // 100m threshold
-            if (hikingCheckpoint < hikingCheckpoints.length - 1) {
-              hikingCheckpoint++;
-              toast('Check-in: ' + hikingCheckpoints[hikingCheckpoint].name, 'ok');
-              
-              // Update marker style
-              if (hikingMarkers[hikingCheckpoint]) {
-                hikingMarkers[hikingCheckpoint].setRadius(14);
-                hikingMarkers[hikingCheckpoint].setStyle({ weight: 3, opacity: 1 });
-              }
+          document.getElementById('hikingStatus').textContent = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' · ' + (dist < 1000 ? Math.round(dist) + 'm' : (dist/1000).toFixed(1) + 'km') + ' ke ' + nextCp.name;
+          
+          // Check if reached checkpoint (auto check-in at 50m)
+          if (dist < 50 && hikingCheckpoint < cps.length - 1) {
+            hikingCheckpoint++;
+            toast('✓ Check-in otomatis: ' + cps[hikingCheckpoint].name, 'ok');
+            
+            if (hikingMarkers[hikingCheckpoint]) {
+              hikingMarkers[hikingCheckpoint].setRadius(14);
             }
+            _updateHikingUI(cps);
           }
-          
-          document.getElementById('hikingStatus').textContent = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' · ' + Math.round(dist/1000*10)/10 + ' km ke ' + nextCp.name;
         }
       }, function(err) {
         console.error('Hiking tracker error:', err);
       }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
     }
     
-    toast('Tracker pendakian dimulai! Ikuti jalur checkpoint.', 'ok');
+    toast('Tracker ' + trailKey + ' dimulai!', 'ok');
+  };
+  
+  function _updateHikingUI(cps) {
+    var cp = cps[hikingCheckpoint];
+    var nextCp = cps[hikingCheckpoint + 1];
+    if (!cp) return;
+    
+    document.getElementById('hikingCpLabel').textContent = 'Pos ' + hikingCheckpoint + ' - ' + cp.name + ' (' + cp.el + 'm)';
+    document.getElementById('hikingCheckpoint').textContent = 'Pos ' + hikingCheckpoint + ' - ' + cp.name + ' (' + cp.el + 'm)';
+    
+    if (nextCp) {
+      document.getElementById('hikingCpDist').textContent = '→ ' + nextCp.name;
+    } else {
+      document.getElementById('hikingCpDist').textContent = '🎉 Puncak!';
+    }
+  }
+  
+  window.checkInCheckpoint = function() {
+    var cps = HIKING_TRAILS[hikingTrailKey];
+    if (!cps || hikingCheckpoint >= cps.length - 1) {
+      toast('Anda sudah sampai di checkpoint terakhir!', 'warn');
+      return;
+    }
+    
+    hikingCheckpoint++;
+    toast('✓ Check-in: ' + cps[hikingCheckpoint].name, 'ok');
+    
+    if (hikingMarkers[hikingCheckpoint]) {
+      hikingMarkers[hikingCheckpoint].setRadius(14);
+    }
+    _updateHikingUI(cps);
+    
+    // Check if reached summit
+    if (hikingCheckpoint >= cps.length - 1) {
+      toast('🎉 Selamat! Anda mencapai ' + cps[cps.length - 1].name + '!', 'ok');
+    }
   };
   
   window.hikingStop = function() {
@@ -4632,8 +4774,9 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   }
   
   function _updateBearing(lat, lng) {
-    var nextCp = hikingCheckpoints[hikingCheckpoint];
-    if (!nextCp) return;
+    var cps = HIKING_TRAILS[hikingTrailKey];
+    if (!cps || !cps[hikingCheckpoint]) return;
+    var nextCp = cps[hikingCheckpoint];
     
     var bearing = _calculateBearing(lat, lng, nextCp.lat, nextCp.lng);
     var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(nextCp.lat, nextCp.lng));
