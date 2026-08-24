@@ -3847,7 +3847,32 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       { name: '🏔️ Puncak Bawakaraeng', lat: -5.295, lng: 119.925 },
       { name: '🌅 Spot Sunset', lat: -5.293, lng: 119.928 },
       { name: '⛺ Area Camping', lat: -5.285, lng: 119.920 }
-    ]
+    ],
+    // Elevation checkpoints for each trail
+    checkpoints: {
+      pintu_angin: [
+        {name:'Lembanna',lat:-5.283,lng:119.918,el:1273},
+        {name:'Base Camp',lat:-5.285,lng:119.920,el:1310},
+        {name:'Pos 1 - Air Terjun',lat:-5.288,lng:119.922,el:1500},
+        {name:'Pos 2',lat:-5.290,lng:119.923,el:1720},
+        {name:'Pos 3',lat:-5.292,lng:119.924,el:1950},
+        {name:'Puncak',lat:-5.295,lng:119.925,el:2180}
+      ],
+      bonto_trail: [
+        {name:'Bonto',lat:-5.310,lng:119.940,el:1100},
+        {name:'Pos 1',lat:-5.305,lng:119.935,el:1350},
+        {name:'Pos 2',lat:-5.300,lng:119.930,el:1620},
+        {name:'Pos 3',lat:-5.295,lng:119.925,el:1890},
+        {name:'Puncak',lat:-5.295,lng:119.925,el:2180}
+      ],
+      ridge_trail: [
+        {name:'Start Ridge',lat:-5.280,lng:119.915,el:1400},
+        {name:'Pos 1',lat:-5.285,lng:119.918,el:1700},
+        {name:'Pos 2',lat:-5.290,lng:119.922,el:1950},
+        {name:'Pos 3',lat:-5.292,lng:119.924,el:2100},
+        {name:'Puncak',lat:-5.295,lng:119.925,el:2180}
+      ]
+    }
   };
   
   // Tile sources (all FREE)
@@ -4525,10 +4550,10 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     var trail = BWK_TRAILS[trailKey];
     if (!trail) return;
     
-    // Use HIKING_TRAILS data which has actual elevation values
-    var trailData = HIKING_TRAILS[trailKey];
-    if (!trailData || !trailData.length) {
-      // Fallback to BWK_TRAILS if no HIKING_TRAILS data
+    // Use checkpoints data from BWK_TRAILS (defined early)
+    var trailData = BWK_TRAILS.checkpoints && BWK_TRAILS.checkpoints[trailKey];
+    if (!trailData) {
+      // Fallback to points without elevation
       trailData = trail.points.map(function(p, i) {
         var progress = i / (trail.points.length - 1);
         return { name: 'P' + (i+1), el: Math.round(1273 + progress * trail.elevation_gain) };
