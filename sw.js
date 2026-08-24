@@ -6,11 +6,12 @@
 //   file sw.js          -> harus "ASCII text" atau "UTF-8 Unicode text"
 //   node --check sw.js  -> harus lulus tanpa keluaran
 
-const CACHE='bwk-v78-sos-kit';
+const CACHE='bwk-v79-sos-kit';
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
-  '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js',
+  '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/bmkg.js',
   '/leaflet.js','/leaflet.css',
   '/sos-pluscode.js','/sos-context.js','/sos-auth.js','/sos-outbox.js','/sos-relay.js','/sos-ui.css',
+  '/maps-offline.js','/maps-storage.js','/maps-safety.js','/maps-ui.js','/maps-ui.css',
   '/images/marker-icon.png','/images/marker-icon-2x.png','/images/marker-shadow.png',
   '/images/layers.png','/images/layers-2x.png'];
 

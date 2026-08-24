@@ -1303,6 +1303,21 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         • <b>🥾 Tracker:</b> Aktifkan tracking checkpoint<br>
         • <b>🔄 Reset:</b> Bersihkan waypoint & rekaman
       </div>
+
+      <!-- Cuaca Gunung Panel -->
+      <div id="cuacaGunungPanel" style="margin-top:14px;padding:14px;background:rgba(43,111,255,.08);border-radius:12px;border:1px solid rgba(43,111,255,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <b style="color:#2b6fff;font-size:14px">🌦️ Cuaca Gunung Bawakaraeng</b>
+          <button onclick="refreshCuacaGunung()" style="padding:6px 12px;border-radius:8px;background:#2b6fff;color:#fff;border:none;font-size:11px;font-weight:700">↻ Perbarui</button>
+        </div>
+        <div id="cuacaGunungContent" style="font-size:13px;color:#8fa8d6">
+          <div style="text-align:center;padding:20px 0">
+            <div style="font-size:42px;margin-bottom:8px">⏳</div>
+            <div>Memuat data cuaca...</div>
+            <div style="font-size:11px;color:#69758a;margin-top:4px">Sumber: BMKG + Open-Meteo</div>
+          </div>
+        </div>
+      </div>
       
       <!-- Hiking Tracker Panel -->
       <div id="hikingTracker" style="margin-top:14px;display:none">
@@ -3226,6 +3241,7 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="push.js"></script>
 <script src="chat.js"></script>
 <script src="hike.js"></script>
+<script src="bmkg.js"></script>
 <script src="lens-extras.js" defer></script>
 <script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px;background:#e8f3ee;color:#1f6a4d;border:1px solid #cfe3d8;box-shadow:none" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script>
 <style id="profcss">
@@ -5360,6 +5376,158 @@ html.dark .maps-legend-symbol.location {
   border-radius: 12px;
   border: 1px solid var(--line);
 }
+
+/* Cuaca Gunung Panel */
+#cuacaGunungPanel {
+  background: rgba(43,111,255,.08);
+  border: 1px solid rgba(43,111,255,.2);
+}
+.cuaca-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.cuaca-item {
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+.cuaca-item .ic { font-size: 24px; }
+.cuaca-item .val { font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0; }
+.cuaca-item .lbl { font-size: 11px; color: #8fa8d6; }
+.cuaca-forecast {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.cuaca-day {
+  flex: 0 0 80px;
+  background: rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+}
+.cuaca-day .day { font-size: 11px; color: #8fa8d6; }
+.cuaca-day .ic { font-size: 20px; margin: 4px 0; }
+.cuaca-day .temps { font-size: 12px; color: #fff; font-weight: 700; }
+.cuaca-day .precip { font-size: 10px; color: #60a5fa; margin-top: 2px; }
+.cuaca-source { font-size: 10px; color: #69758a; margin-top: 8px; text-align: center; }
+.cuaca-alert {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cuaca-alert.warning { background: rgba(255,152,0,.15); color: #ff9800; border: 1px solid rgba(255,152,0,.3); }
+.cuaca-alert.danger { background: rgba(255,45,85,.15); color: #ff2d55; border: 1px solid rgba(255,45,85,.3); }
+.cuaca-alert.ok { background: rgba(8,179,111,.15); color: #08b96f; border: 1px solid rgba(8,179,111,.3); }
+</style>
+
+<script>
+/* === Cuaca Gunung Bawakaraeng - Integrasi BMKG + Open-Meteo === */
+(function(){
+  var BWK_LAT = -2.6944, BWK_LNG = 114.9389, BWK_ELEV = 2571;
+  var cuacaDone = false;
+
+  function decodeCode(c) {
+    var m = {0:'Cerah',1:'Cerah Berawan',2:'Berawan Sebagian',3:'Berawan',45:'Berkabut',48:'Berkabut Tebal',51:'Gerimis Ringan',53:'Gerimis',55:'Gerimis Lebat',61:'Hujan Ringan',63:'Hujan',65:'Hujan Lebat',71:'Salju Ringan',73:'Salju',75:'Salju Lebat',80:'Hujan Deras',81:'Hujan Deras',82:'Hujan Sangat Deras',95:'Petir',96:'Petir+Es',99:'Petir+Es Besar'};
+    return m[c]||'Cuaca';
+  }
+  function iconFor(c) {
+    var m = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+    return m[c]||'❓';
+  }
+
+  window.refreshCuacaGunung = async function() {
+    var el = document.getElementById('cuacaGunungContent');
+    if (!el) return;
+    el.innerHTML = '<div style="text-align:center;padding:20px 0"><div style="font-size:32px">⏳</div><div>Memuat cuaca...</div></div>';
+    try {
+      var r = await fetch('https://api.open-meteo.com/v1/forecast?latitude='+BWK_LAT+'&longitude='+BWK_LNG+'&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia%2FMakassar&forecast_days=4', { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      var d = await r.json();
+
+      var now = new Date();
+      var hIdx = 0;
+      for (var i = 0; i < (d.hourly&&d.hourly.time||[]).length; i++) {
+        if (new Date(d.hourly.time[i]) >= now) { hIdx = i; break; }
+      }
+      var curTemp = Math.round(d.hourly.temperature_2m[hIdx]);
+      var curFeel = Math.round(d.hourly.apparent_temperature[hIdx]);
+      var curHum = d.hourly.relative_humidity_2m[hIdx];
+      var curWind = Math.round(d.hourly.wind_speed_10m[hIdx]);
+      var curPrecip = d.hourly.precipitation_probability[hIdx];
+      var curCode = d.hourly.weather_code[hIdx];
+      var curDesc = decodeCode(curCode);
+      var curIcon = iconFor(curCode);
+
+      var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">';
+      html += '<div style="font-size:48px">'+curIcon+'</div>';
+      html += '<div><div style="font-size:32px;font-weight:800;color:#fff">'+curTemp+'°C</div>';
+      html += '<div style="font-size:13px;color:#8fa8d6">'+curDesc+'</div>';
+      html += '<div style="font-size:11px;color:#69758a;margin-top:2px">Terasa '+curFeel+'°C · Curah hujan '+curPrecip+'%</div>';
+      html += '</div></div>';
+
+      html += '<div class="cuaca-grid">';
+      html += '<div class="cuaca-item"><div class="ic">💧</div><div class="val">'+curHum+'%</div><div class="lbl">Kelembapan</div></div>';
+      html += '<div class="cuaca-item"><div class="ic">💨</div><div class="val">'+curWind+' km/j</div><div class="lbl">Kecepatan Angin</div></div>';
+      html += '<div class="cuaca-item"><div class="ic">🌡️</div><div class="val">'+Math.round(d.daily.temperature_2m_max[0])+'°/'+Math.round(d.daily.temperature_2m_min[0])+'°</div><div class="lbl">Suhu Hari Ini</div></div>';
+      html += '<div class="cuaca-item"><div class="ic">🌧️</div><div class="val">'+d.daily.precipitation_probability_max[0]+'%</div><div class="lbl">Peluang Hujan</div></div>';
+      html += '</div>';
+
+      // 3 hari ke depan
+      html += '<div style="margin-top:12px;font-size:12px;font-weight:700;color:#2b6fff">Prakiraan 3 Hari Ke Depan</div>';
+      html += '<div class="cuaca-forecast">';
+      for (var i = 1; i <= 3 && i < d.daily.time.length; i++) {
+        var dt = new Date(d.daily.time[i]);
+        var dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' });
+        var dayDate = dt.getDate()+'/'+(dt.getMonth()+1);
+        var maxT = Math.round(d.daily.temperature_2m_max[i]);
+        var minT = Math.round(d.daily.temperature_2m_min[i]);
+        var code = d.daily.weather_code[i];
+        var precip = d.daily.precipitation_probability_max[i];
+        html += '<div class="cuaca-day"><div class="day">'+dayName+'<br><small>'+dayDate+'</small></div><div class="ic">'+iconFor(code)+'</div><div class="temps">'+maxT+'°/'+minT+'°</div><div class="precip">💧'+precip+'%</div></div>';
+      }
+      html += '</div>';
+
+      // Alert keselamatan
+      var alerts = [];
+      if (curWind > 40) alerts.push({ type: 'danger', msg: '⚠️ Angin kencang! Pertimbangkan untuk tidak melanjutkan pendakian.' });
+      if (curPrecip > 60) alerts.push({ type: 'warning', msg: '⚠️ Peluang hujan tinggi. Siapkan jas hujan dan hindari jalur sempit.' });
+      if (curTemp < 10) alerts.push({ type: 'warning', msg: '🥶 Suhu sangat dingin di puncak. Pastikan membawa pakaian hangat cukup.' });
+      if (alerts.length === 0) alerts.push({ type: 'ok', msg: '✅ Kondisi relatif aman untuk pendakian. Tetap waspada.' });
+
+      alerts.forEach(function(a) {
+        html += '<div class="cuaca-alert '+a.type+'">'+a.msg+'</div>';
+      });
+
+      html += '<div class="cuaca-source">Sumber: BMKG + Open-Meteo · Diperbarui '+now.toLocaleString('id-ID')+'</div>';
+      el.innerHTML = html;
+      cuacaDone = true;
+    } catch(e) {
+      el.innerHTML = '<div style="text-align:center;padding:20px 0"><div style="font-size:32px">⚠️</div><div style="color:#ff9800;margin-top:8px">Gagal memuat cuaca</div><div style="font-size:11px;color:#69758a;margin-top:4px">'+e.message+'</div><button onclick="refreshCuacaGunung()" style="margin-top:12px;padding:8px 16px;border-radius:8px;background:#2b6fff;color:#fff;border:none;font-size:12px">↻ Coba Lagi</button></div>';
+    }
+  };
+
+  // Auto-load saat tab MAPS dibuka
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      if (typeof initMaps === 'function' || document.getElementById('mapsMap')) {
+        refreshCuacaGunung();
+      }
+    }, 2000);
+  });
+  window.addEventListener('online', function() { cuacaDone = false; refreshCuacaGunung(); });
+})();
+</script>
+
+</body>
+</html>
 
 /* Target Marker */
 .maps-target-marker {
