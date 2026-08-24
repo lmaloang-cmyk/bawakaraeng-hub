@@ -1,4 +1,4 @@
--- Family Tracking Tables (Fixed)
+-- Family Tracking Tables (Idempotent)
 -- Run this in Supabase SQL Editor
 
 -- Enable UUID extension
@@ -58,7 +58,6 @@ create table if not exists tracking_share_tokens (
 );
 
 -- Index for tracking_share_tokens
--- NOTE: removed partial index with now() — it's STABLE not IMMUTABLE
 create index if not exists idx_tracking_share_tokens_token on tracking_share_tokens(token);
 create index if not exists idx_tracking_share_tokens_session on tracking_share_tokens(session_id);
 create index if not exists idx_tracking_share_tokens_expires on tracking_share_tokens(expires_at);
@@ -67,6 +66,15 @@ create index if not exists idx_tracking_share_tokens_expires on tracking_share_t
 alter table tracking_sessions enable row level security;
 alter table tracking_positions enable row level security;
 alter table tracking_share_tokens enable row level security;
+
+-- Drop existing policies to make migration idempotent
+drop policy if exists "Users can view own sessions" on tracking_sessions;
+drop policy if exists "Users can insert own sessions" on tracking_sessions;
+drop policy if exists "Users can update own active sessions" on tracking_sessions;
+drop policy if exists "Users can cancel own sessions" on tracking_sessions;
+drop policy if exists "Session owners can view positions" on tracking_positions;
+drop policy if exists "Session owners can insert positions" on tracking_positions;
+drop policy if exists "Anyone can view valid share tokens" on tracking_share_tokens;
 
 -- Policies for tracking_sessions
 create policy "Users can view own sessions"
@@ -126,6 +134,7 @@ end;
 $$ language plpgsql;
 
 -- Trigger for position count update
+drop trigger if exists on_position_insert on tracking_positions;
 create trigger on_position_insert
   after insert on tracking_positions
   for each row
