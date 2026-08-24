@@ -207,18 +207,29 @@ alter table public.tracking_positions replica identity full;
 -- ---------------------------------------------------------------------------
 -- 7. Cleanup otomatis posisi lama (>7 hari)
 -- ---------------------------------------------------------------------------
-do $$
+-- CATATAN: pg_cron tidak selalu tersedia di semua plan Supabase.
+-- Gunakan function terpisah agar lebih aman dan bisa dijalankan manual.
+create or replace function public.cleanup_old_tracking_positions()
+returns void language plpgsql security definer set search_path=public
+as $func$
 begin
-  if not exists (
-    select 1 from pg_cron.job where jobname = 'tracking_cleanup_old_positions'
-  ) then
-    select cron.schedule(
+  delete from public.tracking_positions
+  where sent_at < now() - interval '7 days';
+end;
+$func$;
+
+-- Coba setup cron job (opsional, gagal tanpa error jika pg_cron tidak tersedia)
+do $body$
+begin
+  if exists (select 1 from pg_extension where extname = 'cron') then
+    perform cron.schedule(
       'tracking_cleanup_old_positions',
       '0 2 * * *',  -- setiap jam 2 pagi
-      $$delete from public.tracking_positions where sent_at < now() - interval '7 days'$$
+      'select public.cleanup_old_tracking_positions()'
     );
   end if;
-end $$;
+end;
+$body$;
 
 commit;
 
