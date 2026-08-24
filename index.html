@@ -4487,7 +4487,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     var nearestTrail = null;
     
     Object.keys(BWK_TRAILS).forEach(function(key) {
-      if (key === 'camp_spots' || key === 'locations') return;
+      if (key === 'camp_spots' || key === 'locations' || key === 'checkpoints') return;
       var trail = BWK_TRAILS[key];
       for (var i = 0; i < trail.points.length - 1; i++) {
         var p1 = trail.points[i];
@@ -5098,7 +5098,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     
     // Draw trails - separate default trails from user-selected
     Object.keys(BWK_TRAILS).forEach(function(key) {
-      if (key === 'camp_spots' || key === 'locations') return;
+      if (key === 'camp_spots' || key === 'locations' || key === 'checkpoints') return;
       var trail = BWK_TRAILS[key];
       // Default trails get _bwkDefault flag (never removed by reset)
       // User-selected trails get _bwkTrack flag (can be replaced)
