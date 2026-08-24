@@ -6838,6 +6838,37 @@ var _tkSessions = [];
 var _tkCurrentSessionId = null;
 var _tkDuration = 4;
 
+// Get auth token for API calls
+function _tkAuthToken() {
+  try {
+    if (typeof _sbClient === 'function') {
+      var c = _sbClient();
+      if (c && c.auth && c.auth.session) {
+        var s = c.auth.session();
+        if (s && s.access_token) return s.access_token;
+      }
+    }
+  } catch(e) {}
+  // Fallback: localStorage (Supabase SDK older versions)
+  try {
+    var keys = Object.keys(localStorage);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf('sb-') === 0 && keys[i].indexOf('-auth-token') > -1) {
+        var data = JSON.parse(localStorage.getItem(keys[i]));
+        if (data && data.access_token) return data.access_token;
+      }
+    }
+  } catch(e) {}
+  return '';
+}
+
+function _tkHeaders() {
+  var token = _tkAuthToken();
+  var h = {'Content-Type': 'application/json'};
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  return h;
+}
+
 function setTkDuration(h) {
   _tkDuration = h;
   document.querySelectorAll('#tkDuration button').forEach(b => {
@@ -6869,8 +6900,7 @@ async function startTrackingSession() {
   try {
     var r = await fetch('/api/tracking?act=create', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      credentials: 'include',
+      headers: _tkHeaders(),
       body: JSON.stringify({ name: name, note: note, expiry_hours: _tkDuration })
     });
     var d = await r.json();
@@ -6884,7 +6914,7 @@ async function startTrackingSession() {
       openActiveTrackingModal({ ...d.session, share_token: shareToken });
       // Fetch full share URL if not included
       if (!shareToken) {
-        fetch('/api/tracking?act=share&id=' + d.session.id).then(r => r.json()).then(sd => {
+        fetch('/api/tracking?act=share&id=' + d.session.id, { headers: _tkHeaders() }).then(r => r.json()).then(sd => {
           if (sd.ok && sd.share_url) {
             openActiveTrackingModal({ ...d.session, share_url: sd.share_url });
           }
@@ -6937,7 +6967,7 @@ function shareTracking(sessionId) {
 async function viewTracking(sessionId) {
   // Need token to open tracker — reuse share endpoint
   try {
-    var r = await fetch('/api/tracking?act=share&id=' + sessionId);
+    var r = await fetch('/api/tracking?act=share&id=' + sessionId, { headers: _tkHeaders() });
     var d = await r.json();
     if (d.ok && d.share_url) {
       window.open(d.share_url, '_blank');
@@ -6952,7 +6982,7 @@ async function viewTracking(sessionId) {
 
 async function generateShareToken(sessionId) {
   try {
-    var r = await fetch('/api/tracking?act=share&id=' + sessionId);
+    var r = await fetch('/api/tracking?act=share&id=' + sessionId, { headers: _tkHeaders() });
     var d = await r.json();
     if (d.ok) {
       openActiveTrackingModal({ ...d.session, share_token: d.share_token, share_url: d.share_url });
@@ -6997,8 +7027,7 @@ async function stopActiveSession() {
   try {
     var r = await fetch('/api/tracking?act=stop', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      credentials: 'include',
+      headers: _tkHeaders(),
       body: JSON.stringify({ session_id: _tkCurrentSessionId })
     });
     var d = await r.json();
@@ -7022,10 +7051,14 @@ window.addEventListener('load', function() {
 
 async function loadTrackingSessions() {
   try {
-    var r = await fetch('/api/tracking?act=list');
+    var r = await fetch('/api/tracking?act=list', { headers: _tkHeaders() });
     var d = await r.json();
     if (d.ok) {
       _tkSessions = d.sessions || [];
+      renderTrackingList();
+    } else if (r.status === 401) {
+      // Not logged in, clear sessions
+      _tkSessions = [];
       renderTrackingList();
     }
   } catch (e) {
