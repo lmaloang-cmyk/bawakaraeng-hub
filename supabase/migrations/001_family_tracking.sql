@@ -1,5 +1,5 @@
--- Family Tracking Tables
--- Run this in Supabase SQL Editor to create the tracking system
+-- Family Tracking Tables (Fixed)
+-- Run this in Supabase SQL Editor
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -7,7 +7,7 @@ create extension if not exists "uuid-ossp";
 -- 1. tracking_sessions table
 create table if not exists tracking_sessions (
   id uuid primary key default uuid_generate_v4(),
-  created_by text not null,
+  created_by uuid not null,
   name text not null default 'Pelacakan Keluarga',
   note text default '',
   device_name text default '',
@@ -70,19 +70,19 @@ alter table tracking_share_tokens enable row level security;
 -- Policies for tracking_sessions
 create policy "Users can view own sessions"
   on tracking_sessions for select
-  using (auth.uid() = created_by::uuid);
+  using (auth.uid() = created_by);
 
 create policy "Users can insert own sessions"
   on tracking_sessions for insert
-  with check (auth.uid() = created_by::uuid);
+  with check (auth.uid() = created_by);
 
 create policy "Users can update own active sessions"
   on tracking_sessions for update
-  using (auth.uid() = created_by::uuid and active = true);
+  using (auth.uid() = created_by and active = true);
 
 create policy "Users can cancel own sessions"
   on tracking_sessions for update
-  using (auth.uid() = created_by::uuid);
+  using (auth.uid() = created_by);
 
 -- Policies for tracking_positions
 create policy "Session owners can view positions"
@@ -90,7 +90,7 @@ create policy "Session owners can view positions"
   using (exists (
     select 1 from tracking_sessions
     where tracking_sessions.id = tracking_positions.session_id
-    and tracking_sessions.created_by::uuid = auth.uid()
+    and tracking_sessions.created_by = auth.uid()
     and tracking_sessions.active = true
   ));
 
@@ -99,7 +99,7 @@ create policy "Session owners can insert positions"
   with check (exists (
     select 1 from tracking_sessions
     where tracking_sessions.id = tracking_positions.session_id
-    and tracking_sessions.created_by::uuid = auth.uid()
+    and tracking_sessions.created_by = auth.uid()
     and tracking_sessions.active = true
   ));
 
@@ -112,22 +112,14 @@ create policy "Anyone can view valid share tokens"
 create or replace function update_position_count()
 returns trigger as $$
 begin
-  if new.sent_at > coalesce((
-    select last_seen from tracking_sessions where id = new.session_id
-  ), '1970-01-01') then
-    update tracking_sessions
-    set last_lat = new.lat,
-        last_lng = new.lng,
-        last_seen = new.sent_at,
-        position_count = position_count + 1,
-        updated_at = now()
-    where id = new.session_id;
-  else
-    update tracking_sessions
-    set position_count = position_count + 1,
-        updated_at = now()
-    where id = new.session_id;
-  end if;
+  update tracking_sessions
+  set 
+    last_lat = new.lat,
+    last_lng = new.lng,
+    last_seen = new.sent_at,
+    position_count = position_count + 1,
+    updated_at = now()
+  where id = new.session_id;
   return new;
 end;
 $$ language plpgsql;
