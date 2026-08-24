@@ -280,6 +280,54 @@
         setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, duration);
       }
 
+      // ===== HELPER NORMALISASI FIELD API =====
+      function _tkAcc(p) {
+        if (!p) return null;
+        if (p.accuracy_m != null) return p.accuracy_m;
+        if (p.accuracy != null) return p.accuracy;
+        return null;
+      }
+
+      function _tkBat(p) {
+        if (!p) return null;
+        if (p.battery_pct != null) return p.battery_pct;
+        if (p.battery != null) return p.battery;
+        return null;
+      }
+
+      function _tkSpeedKmh(prev, cur) {
+        if (!prev || !cur) return null;
+        var t1 = new Date(prev.sent_at || prev.at).getTime();
+        var t2 = new Date(cur.sent_at || cur.at).getTime();
+        var dt = (t2 - t1) / 1000;
+        if (!isFinite(dt) || dt < 5) return null;
+        var R = 6371000, rad = Math.PI / 180;
+        var dLat = (cur.lat - prev.lat) * rad;
+        var dLng = (cur.lng - prev.lng) * rad;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(prev.lat * rad) * Math.cos(cur.lat * rad) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        var d = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+        var kmh = (d / dt) * 3.6;
+        if (!isFinite(kmh) || kmh < 0 || kmh > 200) return null;
+        return Math.round(kmh * 10) / 10;
+      }
+
+      // ===== TAMPILKAN KEGAGALAN (tidak lagi diam-diam) =====
+      function _tkFail(msg) {
+        var badge = document.getElementById('statusBadge');
+        var statusText = document.getElementById('statusText');
+        var meta = document.getElementById('infoMeta');
+        var name = document.getElementById('trackName');
+        if (badge) badge.className = 'status-badge paused';
+        if (statusText) statusText.textContent = 'Gagal';
+        if (name && name.textContent === 'Memuat...') name.textContent = 'Tidak terhubung';
+        if (meta) {
+          meta.innerHTML = '\u26a0\ufe0f ' + escapeHtml(String(msg)) +
+            '<br><small>Tekan \ud83d\udd04 Perbarui Lokasi untuk mencoba lagi.</small>';
+        }
+      }
+
       // ===== SHOW ERROR =====
       function showError(title, msg) {
         document.getElementById('app').innerHTML = `
@@ -312,6 +360,17 @@
       // Add layer switcher
       var baseMaps = { 'Peta': osm, 'Satelit': satellite };
       L.control.layers(baseMaps).addTo(map);
+
+      // Ukur ulang setelah layout selesai — tanpa ini tile hanya mengisi sebagian kotak
+      setTimeout(function () { if (map) map.invalidateSize(); }, 60);
+      setTimeout(function () { if (map) map.invalidateSize(); }, 450);
+      window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
+      if (window.ResizeObserver) {
+        try {
+          new ResizeObserver(function () { if (map) map.invalidateSize(); })
+            .observe(document.getElementById('map'));
+        } catch (e) {}
+      }
       }
 
       // ===== SHOW APP VIEW =====
@@ -416,16 +475,25 @@
           const sessRes = await fetch(`${API}?act=status&id=${SESSION_ID}&token=${TOKEN}`);
           const sessData = await sessRes.json();
 
-          if (sessData.error) {
-            if (sessData.error.includes('tidak ditemukan') || sessData.error.includes('berakhir')) {
-              clearInterval(watchTimer);
-              showError('Sesi Berakhir', 'Pelacakan sudah dihentikan atau habis waktunya.');
-              return;
-            }
+          if (!sessRes.ok && !sessData.error) sessData.error = 'HTTP ' + sessRes.status;
+
+        if (sessData.error) {
+          console.error('[TRACKER] status gagal:', sessData.error);
+          const em = String(sessData.error);
+          if (em.indexOf('tidak ditemukan') >= 0 || em.indexOf('berakhir') >= 0) {
+            clearInterval(watchTimer);
+            showError('Sesi Berakhir', 'Pelacakan sudah dihentikan atau habis waktunya.');
             return;
           }
+          _tkFail(em);
+          return;
+        }
 
-          sessionData = sessData.session;
+        sessionData = sessData.session || sessData.data;
+        if (!sessionData) {
+          _tkFail('Server tidak mengirim data sesi.');
+          return;
+        }
           updateSessionStatus();
 
           // Get last position
@@ -448,6 +516,7 @@
 
         } catch (err) {
           console.error('[TRACKER] Refresh error:', err);
+        _tkFail('Gagal menghubungi server: ' + (err && err.message ? err.message : err));
         }
       }
 
@@ -520,7 +589,7 @@
               <div style="font-family:-apple-system,sans-serif;padding:4px">
                 <b>Lokasi Saat Ini</b><br>
                 <small>${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</small><br>
-                ${pos.accuracy ? `<small>Akurasi: ±${pos.accuracy}m</small>` : ''}
+                ${_tkAcc(pos) ? `<small>Akurasi: ±${_tkAcc(pos)}m</small>` : ''}
               </div>
             `);
 
@@ -531,8 +600,8 @@
             <div style="font-family:-apple-system,sans-serif;padding:4px">
               <b>Lokasi Saat Ini</b><br>
               <small>${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</small><br>
-              ${pos.accuracy ? `<small>Akurasi: ±${pos.accuracy}m</small>` : ''}
-              ${pos.battery != null ? `<small>🔋 ${pos.battery}%</small>` : ''}
+              ${_tkAcc(pos) ? `<small>Akurasi: ±${_tkAcc(pos)}m</small>` : ''}
+              ${_tkBat(pos) != null ? `<small>🔋 ${_tkBat(pos)}%</small>` : ''}
             </div>
           `);
         }
@@ -552,6 +621,8 @@
         if (positionsList.length < 2) return;
 
         positions = positionsList;
+        var _pts = document.getElementById('statPoints');
+        if (_pts) _pts.textContent = positions.length;
 
         if (polyline) {
           map.removeLayer(polyline);
@@ -583,17 +654,17 @@
         }
 
         if (accuracy) {
-          const acc = pos.accuracy;
+          const acc = _tkAcc(pos);
           accuracy.textContent = acc ? `±${acc}m` : '—';
           accuracy.className = 'value ' + (acc ? (acc < 20 ? 'good' : acc < 50 ? 'warn' : 'bad') : '');
         }
 
         if (points) {
-          points.textContent = positions.length || '0';
+          points.textContent = positions.length || 1;
         }
 
         if (battery) {
-          const b = pos.battery;
+          const b = _tkBat(pos);
           battery.textContent = b != null ? `${b}%` : '—';
           battery.className = 'value ' + (b != null ? (b > 50 ? 'good' : b > 20 ? 'warn' : 'bad') : '');
         }
@@ -606,7 +677,7 @@
         }
 
         if (speed) {
-          const spd = pos.speed;
+          const spd = (pos.speed != null) ? pos.speed : _tkSpeedKmh(lastPosition, pos);
           speed.textContent = spd ? `${spd} km/j` : '—';
         }
       }
