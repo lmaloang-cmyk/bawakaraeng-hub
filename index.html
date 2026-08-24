@@ -4615,16 +4615,11 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   window._loadElevationProfile = _loadElevationProfile;
   
   function _drawElevationProfile(elevationData, trail, trailData) {
-    console.log('[DRAW] elevationData:', elevationData);
-    console.log('[DRAW] trail:', trail.name);
-    console.log('[DRAW] trailData length:', trailData ? trailData.length : 'null');
-    
     var el = document.getElementById('elevProfileInteractive');
     if (!el) return;
     
     // Fallback if no elevation data provided
     if (elevationData.length === 0 || !elevationData.length) {
-      console.log('[DRAW] Using fallback elevation data');
       if (trailData && trailData.length) {
         elevationData = trailData.map(function(p) { return p.el; });
       } else if (trail && trail.points) {
@@ -4633,11 +4628,9 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
           return Math.round(1273 + progress * trail.elevation_gain);
         });
       } else {
-        console.error('[DRAW] No elevation data available');
         return;
       }
     }
-    console.log('[DRAW] Final elevationData:', elevationData);
     
     // Get container dimensions for responsive SVG
     var containerWidth = el.offsetWidth || 400;
