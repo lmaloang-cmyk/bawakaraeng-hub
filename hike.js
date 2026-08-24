@@ -11,25 +11,25 @@ window.hikeStart=function(){var r=route();if(!r.length){toast('Data jalur belum 
 window.hikeCheckin=function(){var s=state(),r=route();if(!s)return;var row={pos:r[s.i].n,alt:r[s.i].el,at:new Date().toISOString()};s.last=Date.now();if(s.i<r.length-1)s.i++;put(KEY,s);var q=get(QKEY,[]);q.push(row);put(QKEY,q);try{localStorage.setItem('bwkTrailCheckins',String((+localStorage.getItem('bwkTrailCheckins')||0)+1))}catch(e){};render();sync();toast('Check-in tersimpan '+(navigator.onLine?'dan disinkronkan':'offline'),'ok')}
 function sync(){
   if(!navigator.onLine)return;
-  var q=get(QKEY,[]);if(!q.length)return;
-  // _sbClient() didefinisikan di scope global index.html sebagai fungsi biasa (bukan window property).
-  // Akses lewat window.() gagal karena fungsi lokal tidak otomatis jadi properti window di semua engine.
-  // Gunakan try/catch untuk memanggil _sbClient() secara aman tanpa asumsi scope.
+  var q=get(QKEY,[]);if(!q.length){console.log('[HIKE] Queue empty');return;}
+  console.log('[HIKE] Syncing',q.length,'check-ins');
   var c=null;
   try{if(typeof _sbClient==='function')c=_sbClient();}catch(e){}
   if(!c){console.log('[HIKE] Supabase client not available, keeping offline queue');return;}
   c.auth.getUser().then(function(u){
+    console.log('[HIKE] Auth user:',u&&u.data&&u.data.user?'found':'not found');
     if(!(u&&u.data&&u.data.user))throw 0;
     var rows=q.map(function(x){return {position:x.pos,altitude:x.alt,checked_in_at:x.at,user_id:u.data.user.id}});
+    console.log('[HIKE] Inserting rows:',rows.length);
     return c.from('hike_checkins').insert(rows);
   }).then(function(data,error){
+    console.log('[HIKE] Insert result:',data,error);
     if(error)throw error;
     put(QKEY,[]);
     render();
     console.log('[HIKE] Check-ins synced successfully');
   }).catch(function(err){
-    /* tetap antre lokal jika gagal */
-    console.warn('[HIKE] Sync failed, keeping offline queue:', err ? err.message : 'unknown error');
+    console.warn('[HIKE] Sync failed:',err?err.message:'unknown error');
   })
 }
 window.hikeOfflineGuide=function(){var html='<h2>📴 Mode Offline Pendakian</h2><p>Data berikut tetap tersedia di perangkat: peta jalur, daftar pos, sumber air, SOS, checklist, dan panduan tersesat.</p><div class="sknotice warn"><b>Jika tersesat:</b><br>Berhenti, hemat baterai, tetap di jalur terakhir yang dikenal, aktifkan SOS saat ada sinyal, dan jangan berpindah sendiri tanpa arah.</div><div class="sknotice ok"><b>Nomor SOS</b><br>Gunakan tombol SOS aplikasi untuk mengirim koordinat GPS saat sinyal tersedia.</div>';document.getElementById('sheetBody').innerHTML=html;openSheet()}
