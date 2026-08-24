@@ -7065,6 +7065,120 @@ async function loadTrackingSessions() {
     // Silent fail
   }
 }
+
+// ===== SEND POSITION TO API =====
+var _tkWatchId = null;
+var _tkClientId = null;
+
+function _getTkClientId() {
+  if (!_tkClientId) {
+    try {
+      var stored = localStorage.getItem('bwkTrackingClientId');
+      if (stored && stored.length === 36) {
+        _tkClientId = stored;
+      } else {
+        _tkClientId = 'tk-' + Math.random().toString(36).slice(2, 8) + '-' + Date.now().toString(36);
+        localStorage.setItem('bwkTrackingClientId', _tkClientId);
+      }
+    } catch (e) {
+      _tkClientId = 'tk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+    }
+  }
+  return _tkClientId;
+}
+
+async function _tkSendPosition(sessionId, lat, lng, accuracy, battery, altitude) {
+  if (!sessionId || lat == null || lng == null) return;
+  try {
+    var r = await fetch('/api/tracking?act=positions', {
+      method: 'POST',
+      headers: _tkHeaders(),
+      body: JSON.stringify({
+        session_id: sessionId,
+        lat: lat,
+        lng: lng,
+        accuracy: accuracy || null,
+        battery_pct: battery,
+        altitude: altitude || null,
+        client_id: _getTkClientId()
+      })
+    });
+    var d = await r.json();
+    if (!d.ok) console.warn('[tracking] position send failed:', d.error);
+  } catch (e) {
+    console.warn('[tracking] position send error:', e);
+  }
+}
+
+// ===== GPS WATCHER =====
+var _tkWatchActive = false;
+
+function _tkStartWatching(sessionId) {
+  if (_tkWatchActive || !navigator.geolocation) return;
+  _tkWatchActive = true;
+  
+  function onPos(pos) {
+    if (!_tkWatchActive) return;
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var acc = pos.coords.accuracy;
+    var alt = pos.coords.altitude;
+    var battery = pos.coords.batteryLevel != null ? pos.coords.batteryLevel * 100 : null;
+    
+    // Also update battery via Battery API if available
+    if (battery == null && navigator.getBattery) {
+      navigator.getBattery().then(function(bat) {
+        battery = Math.round(bat.level * 100);
+        _tkSendPosition(sessionId, lat, lng, acc, battery, alt);
+      }).catch(function() {
+        _tkSendPosition(sessionId, lat, lng, acc, battery, alt);
+      });
+    } else {
+      _tkSendPosition(sessionId, lat, lng, acc, battery, alt);
+    }
+  }
+  
+  function onError(err) {
+    console.warn('[tracking] GPS error:', err.code, err.message);
+  }
+  
+  _tkWatchId = navigator.geolocation.watchPosition(onPos, onError, {
+    enableHighAccuracy: true,
+    timeout: 30000,
+    maximumAge: 10000
+  });
+  
+  console.log('[tracking] GPS watcher started for session:', sessionId);
+}
+
+function _tkStopWatching() {
+  if (_tkWatchId != null) {
+    navigator.geolocation.clearWatch(_tkWatchId);
+    _tkWatchId = null;
+  }
+  _tkWatchActive = false;
+  console.log('[tracking] GPS watcher stopped');
+}
+
+// Stop watching when leaving tracking session
+window.addEventListener('beforeunload', function() {
+  if (_tkWatchActive) _tkStopWatching();
+});
+
+// Update renderTrackingList to start/stop watching
+var _origRenderTrackingList = renderTrackingList;
+renderTrackingList = function() {
+  _origRenderTrackingList();
+  
+  // Find active session
+  var activeSession = _tkSessions.find(function(s) { return s.active; });
+  if (activeSession && !_tkWatchActive) {
+    _tkStartWatching(activeSession.id);
+  } else if (!activeSession && _tkWatchActive) {
+    _tkStopWatching();
+  }
+};
+
 </script>
 
 
