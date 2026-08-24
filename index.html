@@ -5711,9 +5711,8 @@ html.dark .maps-legend-symbol.location {
     padding: 8px 12px !important;
   }
 
-  /* Stack trail buttons vertically on small screens */
-  #mapsTrailList button {
-    width: 100% !important;
+  .maps-legend-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -5741,32 +5740,13 @@ html.dark .maps-legend-symbol.location {
     height: 250px !important;
   }
 }
-  
-  .maps-btn {
-    padding: 10px 6px;
-    min-height: 58px;
-    border-radius: 12px;
-  }
-  
-  .maps-btn-icon {
-    font-size: 18px;
-  }
-  
-  .maps-btn-label {
-    font-size: 10px;
-  }
-  
-  .maps-legend-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Tablet optimization */
 @media (min-width: 481px) and (max-width: 768px) {
   .maps-controls {
     grid-template-columns: repeat(4, 1fr);
   }
-  
+
   .maps-legend-grid {
     grid-template-columns: repeat(2, 1fr);
   }
