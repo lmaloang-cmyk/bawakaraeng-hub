@@ -4567,8 +4567,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var mapsElevationData = null;
   
   async function _loadElevationProfile(trailKey) {
-    console.log('[ELEV] Loading profile for:', trailKey);
-    
     var trail = BWK_TRAILS[trailKey];
     if (!trail) {
       console.error('[ELEV] Trail not found:', trailKey);
@@ -4577,7 +4575,6 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     
     // Use checkpoints data from BWK_TRAILS (defined early)
     var trailData = BWK_TRAILS.checkpoints && BWK_TRAILS.checkpoints[trailKey];
-    console.log('[ELEV] Trail data:', trailData);
     
     if (!trailData) {
       // Fallback to points without elevation
@@ -4585,7 +4582,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         var progress = i / (trail.points.length - 1);
         return { name: 'P' + (i+1), el: Math.round(1273 + progress * trail.elevation_gain) };
       });
-      console.log('[ELEV] Using fallback trail data:', trailData);
+      // Silently use fallback
     }
     
     var el = document.getElementById('elevProfileInteractive');
@@ -4598,22 +4595,18 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       var latitudes = trailData.map(function(p) { return p.lat || p[0]; }).join(',');
       var longitudes = trailData.map(function(p) { return p.lng || p[1]; }).join(',');
       
-      console.log('[ELEV] API URL:', 'https://api.open-meteo.com/v1/elevation?latitude=' + latitudes + '&longitude=' + longitudes);
-      
       var url = 'https://api.open-meteo.com/v1/elevation?latitude=' + latitudes + '&longitude=' + longitudes + '&elevation_model=srtm';
       var r = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       
       var data = await r.json();
       mapsElevationData = data.elevation || [];
-      console.log('[ELEV] API response:', mapsElevationData);
       
       _drawElevationProfile(mapsElevationData, trail, trailData);
     } catch(e) {
       console.error('[ELEV] API error:', e);
       // Fallback to estimated elevation from trailData
       var elevations = trailData.map(function(p) { return p.el; });
-      console.log('[ELEV] Using fallback elevations:', elevations);
       _drawElevationProfile(elevations, trail, trailData);
     }
   }
