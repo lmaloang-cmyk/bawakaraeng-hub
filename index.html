@@ -1156,6 +1156,10 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
           <span class="maps-btn-icon">🧭</span>
           <span class="maps-btn-label">Kompas</span>
         </button>
+        <button class="maps-btn maps-btn-alarm" id="btnOffTrail" onclick="toggleOffTrailAlarm()" title="Alarm Keluar Jalur">
+          <span class="maps-btn-icon">🔔</span>
+          <span class="maps-btn-label">Alarm</span>
+        </button>
         <button class="maps-btn maps-btn-reset" onclick="resetMap()" title="Reset Peta" style="grid-column:span 2">
           <span class="maps-btn-icon">🔄</span>
           <span class="maps-btn-label">Reset</span>
@@ -1301,7 +1305,14 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         • <b>🎯 Target:</b> Tambah waypoint di tengah peta (crosshair)<br>
         • <b>💾 Backup:</b> Unduh semua data (GPX + KML)<br>
         • <b>🥾 Tracker:</b> Aktifkan tracking checkpoint<br>
+        • <b>🔔 Alarm:</b> Beritahu jika keluar jalur >50m<br>
+        • <b>🧭 Bearing:</b> Panah arah ke checkpoint berikutnya<br>
         • <b>🔄 Reset:</b> Bersihkan waypoint & rekaman
+      </div>
+      
+      <!-- Off-Trail Warning -->
+      <div id="offTrailWarning" style="margin-top:10px;padding:10px 14px;background:rgba(255,45,85,.12);border-radius:12px;font-size:13px;color:#ff2d55;display:none;font-weight:600">
+        ⚠️ Anda keluar dari jalur! Kembali ke trek utama.
       </div>
 
       <!-- Cuaca Gunung Panel -->
@@ -1316,6 +1327,25 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
             <div>Memuat data cuaca...</div>
             <div style="font-size:11px;color:#69758a;margin-top:4px">Sumber: BMKG + Open-Meteo</div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Elevation Profile Panel -->
+      <div id="elevProfilePanel" style="margin-top:14px;padding:14px;background:rgba(8,179,111,.08);border-radius:12px;border:1px solid rgba(8,179,111,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <b style="color:#08b96f;font-size:14px">📈 Profil Elevasi Interaktif</b>
+          <select id="elevTrailSelect" onchange="_loadElevationProfile(this.value)" style="padding:6px 10px;border-radius:8px;background:rgba(8,179,111,.2);color:#08b96f;border:1px solid rgba(8,179,111,.3);font-size:12px">
+            <option value="pintu_angin">🏔️ Pintu Angin</option>
+            <option value="bonto_trail">🥾 Bonto</option>
+            <option value="ridge_trail">⛰️ Ridge</option>
+            <option value="bulu_ballea">🌿 Bulu Ballea</option>
+            <option value="tassoso_trail">🏔️ Tassoso</option>
+            <option value="panaikang_trail">🥾 Panaikang</option>
+            <option value="kanre_apia">🌲 Kanre Apia</option>
+          </select>
+        </div>
+        <div id="elevProfileInteractive" style="height:180px;background:rgba(0,0,0,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8fa8d6;font-size:13px">
+          Pilih jalur untuk melihat profil elevasi
         </div>
       </div>
       
@@ -3508,6 +3538,28 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var BWK_PEAK = [-5.295, 119.925]; // Summit coordinate
   var BWK_ELEVATION = 2123; // meters
   
+  // Night mode detection
+  var isNightMode = false;
+  var nightCheckInterval = null;
+  function checkNightMode() {
+    var hour = new Date().getHours();
+    var wasNight = isNightMode;
+    isNightMode = hour >= 18 || hour < 6; // Senja sampai subuh
+    if (isNightMode !== wasNight) {
+      applyNightMode();
+    }
+  }
+  function applyNightMode() {
+    var container = document.getElementById('mapsMap');
+    if (!container) return;
+    if (isNightMode) {
+      container.style.filter = 'brightness(0.6) contrast(1.2) saturate(0.8)';
+      toast('🌙 Mode malam aktif - lebih ramah mata', 'info');
+    } else {
+      container.style.filter = 'none';
+    }
+  }
+  
   // Predefined trails & waypoints for Gunung Bawakaraeng
   var BWK_TRAILS = {
     // Pintu Angin Trail (main trail)
@@ -3581,20 +3633,19 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       time: '3-4 jam',
       difficulty: 'Susah'
     },
-    // Panaikang Trail
+    // Panaikang Trail - via Bonto (lebih akurat)
     panaikang_trail: {
       name: '🥾 Panaikang',
       points: [
-        [-5.182, 120.278], // Panaikang village
-        [-5.200, 120.220],
-        [-5.230, 120.150],
-        [-5.260, 120.080],
-        [-5.285, 119.980],
-        [-5.295, 119.944]  // Connect to Summit
+        [-5.220, 119.920], // Panaikang start
+        [-5.240, 119.918],
+        [-5.260, 119.920],
+        [-5.280, 119.922],
+        [-5.295, 119.925]  // Connect to Summit
       ],
-      distance: 8.5,
-      elevation_gain: 1200,
-      time: '5-6 jam',
+      distance: 5.2,
+      elevation_gain: 950,
+      time: '4-5 jam',
       difficulty: 'Sulit'
     },
     // Kanre Apia Trail
@@ -3691,8 +3742,8 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         attributionControl: true
       });
       
-      // Add default layer (topo)
-      _addTileLayer('topo');
+      // Add default layer (osm - topo sudah dihapus dari TILE_SOURCES)
+      _addTileLayer('osm');
       
        // Add layer selector to map
        var layerControl = L.control.layers(null, null, { collapsed: false, position: 'topright' });
@@ -3706,7 +3757,7 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
           layerControl.addBaseLayer(baseLayers[TILE_SOURCES[key].name], TILE_SOURCES[key].name);
         });
       
-      // Switch layer when changed
+       // Switch layer when changed
       mapsMap.on('baselayerchange', function(e) {
         Object.keys(TILE_SOURCES).forEach(function(key) {
           if (e.layer === baseLayers[TILE_SOURCES[key].name]) {
@@ -3717,8 +3768,14 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         });
       });
       
-      // Load saved layer preference
-      var savedLayer = localStorage.getItem('bwkMapLayer') || 'topo';
+      // Night mode check every minute
+      checkNightMode();
+      if (nightCheckInterval) clearInterval(nightCheckInterval);
+      nightCheckInterval = setInterval(checkNightMode, 60000);
+      
+      // Load saved layer preference (fallback ke osm jika topo tidak ada)
+      var savedLayer = localStorage.getItem('bwkMapLayer') || 'osm';
+      if (!TILE_SOURCES[savedLayer]) savedLayer = 'osm';
       if (baseLayers[savedLayer]) {
         mapsMap.addLayer(baseLayers[savedLayer]);
         mapsCurrentLayer = savedLayer;
@@ -3968,12 +4025,17 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
         _updateTrack();
       }
       
-      btn.textContent = '📍 Lacak';
-      btn.classList.remove('g-brand');
-      btn.classList.add('g-danger');
-      var recBtn = document.getElementById('btnRecord');
-      if (recBtn) recBtn.style.display = 'inline-flex';
-    }, function(err) { toast('GPS error: ' + err.message, 'err'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+       btn.textContent = '📍 Lacak';
+       btn.classList.remove('g-brand');
+       btn.classList.add('g-danger');
+       var recBtn = document.getElementById('btnRecord');
+       if (recBtn) recBtn.style.display = 'inline-flex';
+       
+       // Update bearing if hiking tracker is active
+       if (hikingActive && hikingCheckpoints[hikingCheckpoint]) {
+         _updateBearing(lat, lng);
+       }
+     }, function(err) { toast('GPS error: ' + err.message, 'err'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
   
   window.toggleRecording = function() {
@@ -4124,6 +4186,241 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     mapsCompassMarker.bindPopup('<b>🧭 Kompas</b><br>Arah utara ke atas').openPopup();
     toast('Kompas ditambahkan', 'ok');
   };
+  
+  // ===== OFF-TRAIL ALARM =====
+  var offTrailAlarmActive = false;
+  var offTrailCheckInterval = null;
+  var mapsOffTrailWarning = null;
+  
+  window.toggleOffTrailAlarm = function() {
+    if (!mapsMap) { toast('Peta belum dimuat', 'err'); return; }
+    
+    offTrailAlarmActive = !offTrailAlarmActive;
+    var btn = document.getElementById('btnOffTrail');
+    if (!btn) return;
+    
+    if (offTrailAlarmActive) {
+      btn.style.background = '#ff2d55';
+      btn.textContent = '🔔 ALARM ON';
+      toast('Alarm keluar jalur aktif - akan bergetar jika >50m dari trail', 'ok');
+      
+      // Start checking every 5 seconds
+      offTrailCheckInterval = setInterval(function() {
+        if (!mapsGPS) return;
+        var pos = mapsGPS.getLatLng();
+        _checkOffTrail(pos.lat, pos.lng);
+      }, 5000);
+    } else {
+      btn.style.background = '';
+      btn.textContent = '🔔 Alarm Jalur';
+      if (offTrailCheckInterval) clearInterval(offTrailCheckInterval);
+      if (mapsOffTrailWarning) {
+        mapsMap.removeLayer(mapsOffTrailWarning);
+        mapsOffTrailWarning = null;
+      }
+      toast('Alarm keluar jalur dimatikan', 'ok');
+    }
+  };
+  
+  function _checkOffTrail(lat, lng) {
+    // Check distance to nearest trail segment
+    var minDist = Infinity;
+    var nearestTrail = null;
+    
+    Object.keys(BWK_TRAILS).forEach(function(key) {
+      if (key === 'camp_spots' || key === 'locations') return;
+      var trail = BWK_TRAILS[key];
+      for (var i = 0; i < trail.points.length - 1; i++) {
+        var p1 = trail.points[i];
+        var p2 = trail.points[i + 1];
+        var dist = _pointToSegmentDistance(lat, lng, p1[0], p1[1], p2[0], p2[1]);
+        if (dist < minDist) {
+          minDist = dist;
+          nearestTrail = trail.name;
+        }
+      }
+    });
+    
+    // Also check hiking checkpoints
+    hikingCheckpoints.forEach(function(cp) {
+      var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(cp.lat, cp.lng));
+      if (dist < minDist) minDist = dist;
+    });
+    
+    var warningEl = document.getElementById('offTrailWarning');
+    if (minDist > 50) {
+      // User is off-trail
+      if (mapsOffTrailWarning) {
+        mapsMap.removeLayer(mapsOffTrailWarning);
+      }
+      mapsOffTrailWarning = L.circle([lat, lng], {
+        radius: minDist,
+        color: '#ff2d55',
+        weight: 2,
+        fillColor: '#ff2d55',
+        fillOpacity: 0.1
+      }).addTo(mapsMap)._bwkCustom = true;
+      
+      if (warningEl) {
+        warningEl.style.display = 'block';
+        warningEl.textContent = '⚠️ Anda ' + Math.round(minDist) + 'm dari jalur! Kembali ke trek utama.';
+      }
+      
+      // Vibrate if supported
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      
+      toast('⚠️ Keluar jalur! Kembali ke trek utama.', 'warn');
+    } else {
+      if (mapsOffTrailWarning) {
+        mapsMap.removeLayer(mapsOffTrailWarning);
+        mapsOffTrailWarning = null;
+      }
+      if (warningEl) warningEl.style.display = 'none';
+    }
+  }
+  
+  function _pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+    var A = px - x1;
+    var B = py - y1;
+    var C = x2 - x1;
+    var D = y2 - y1;
+    var dot = A * C + B * D;
+    var len_sq = C * C + D * D;
+    var param = len_sq !== 0 ? dot / len_sq : -1;
+    var xx, yy;
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+    var dx = px - xx;
+    var dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy) * 111320; // Convert degrees to meters
+  }
+  
+  // ===== INTERACTIVE ELEVATION PROFILE =====
+  var mapsElevationData = null;
+  
+  async function _loadElevationProfile(trailKey) {
+    var trail = BWK_TRAILS[trailKey];
+    if (!trail || !trail.points) return;
+    
+    var el = document.getElementById('elevProfileInteractive');
+    if (!el) return;
+    
+    el.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:24px">⏳</div><div>Memuat profil elevasi...</div></div>';
+    
+    try {
+      // Use Open-Meteo Elevation API for real DEM data
+      var points = trail.points.map(function(p) {
+        return p.join(',');
+      }).join(';');
+      
+      var url = 'https://api.open-meteo.com/v1/elevation?latitude=' + points + '&elevation_model=srtm';
+      var r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      
+      var data = await r.json();
+      mapsElevationData = data.elevation || [];
+      
+      // Draw profile using canvas
+      _drawElevationProfile(mapsElevationData, trail);
+    } catch(e) {
+      // Fallback to estimated elevation
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:#ff9800">⚠️ Gagal memuat data elevasi real. Menggunakan estimasi.</div>';
+      _drawElevationProfile([], trail);
+    }
+  }
+  
+  function _drawElevationProfile(elevationData, trail) {
+    var el = document.getElementById('elevProfileInteractive');
+    if (!el) return;
+    
+    if (elevationData.length === 0) {
+      // Use estimated elevation based on distance
+      elevationData = trail.points.map(function(p, i) {
+        var progress = i / (trail.points.length - 1);
+        return Math.round(1273 + progress * trail.elevation_gain);
+      });
+    }
+    
+    var width = el.offsetWidth || 400;
+    var height = 150;
+    var padding = 30;
+    
+    var minEl = Math.min.apply(null, elevationData) - 50;
+    var maxEl = Math.max.apply(null, elevationData) + 50;
+    
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext('2d');
+    
+    // Background gradient
+    var grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, 'rgba(8, 179, 111, 0.3)');
+    grad.addColorStop(1, 'rgba(43, 111, 255, 0.1)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    
+    elevationData.forEach(function(el, i) {
+      var x = padding + (i / (elevationData.length - 1)) * (width - 2 * padding);
+      var y = height - padding - ((el - minEl) / (maxEl - minEl)) * (height - 2 * padding);
+      ctx.lineTo(x, y);
+    });
+    
+    ctx.lineTo(width - padding, height - padding);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw line
+    ctx.strokeStyle = '#2b6fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    elevationData.forEach(function(el, i) {
+      var x = padding + (i / (elevationData.length - 1)) * (width - 2 * padding);
+      var y = height - padding - ((el - minEl) / (maxEl - minEl)) * (height - 2 * padding);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    
+    // Draw labels
+    ctx.fillStyle = '#8fa8d6';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    
+    // Y-axis labels
+    for (var i = 0; i <= 4; i++) {
+      var elVal = Math.round(minEl + (i / 4) * (maxEl - minEl));
+      var y = height - padding - (i / 4) * (height - 2 * padding);
+      ctx.fillText(elVal + 'm', padding - 5, y + 4);
+    }
+    
+    // X-axis labels (trail points)
+    ctx.textAlign = 'center';
+    trail.points.forEach(function(p, i) {
+      if (i % 2 === 0 || i === trail.points.length - 1) {
+        var x = padding + (i / (trail.points.length - 1)) * (width - 2 * padding);
+        ctx.fillText(i + 1, x, height - 10);
+      }
+    });
+    
+    el.innerHTML = '';
+    el.appendChild(canvas);
+    
+    // Add trail info
+    var info = document.createElement('div');
+    info.style.cssText = 'display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#69758a';
+    info.innerHTML = '<span>📍 Start: ' + elevationData[0] + 'm</span><span>🏔️ End: ' + elevationData[elevationData.length - 1] + 'm</span><span>📈 Gain: +' + trail.elevation_gain + 'm</span>';
+    el.appendChild(info);
+  }
   
   // ===== BACKUP / EXPORT =====
   window.exportBackup = function() {
@@ -4319,6 +4616,80 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     document.getElementById('hikingTracker').style.display = 'none';
     toast('Tracker dihentikan', 'ok');
   };
+  
+  // ===== BEARING NAVIGATION =====
+  var mapsBearingLine = null;
+  var mapsBearingArrow = null;
+  var mapsBearingText = null;
+  
+  function _calculateBearing(fromLat, fromLng, toLat, toLng) {
+    var dLng = (toLng - fromLng) * Math.PI / 180;
+    var y = Math.sin(dLng) * Math.cos(toLat * Math.PI / 180);
+    var x = Math.cos(fromLat * Math.PI / 180) * Math.sin(toLat * Math.PI / 180) -
+            Math.sin(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) * Math.cos(dLng);
+    var brng = Math.atan2(y, x) * 180 / Math.PI;
+    return (brng + 360) % 360;
+  }
+  
+  function _updateBearing(lat, lng) {
+    var nextCp = hikingCheckpoints[hikingCheckpoint];
+    if (!nextCp) return;
+    
+    var bearing = _calculateBearing(lat, lng, nextCp.lat, nextCp.lng);
+    var dist = mapsMap.distance(L.latLng(lat, lng), L.latLng(nextCp.lat, nextCp.lng));
+    var distKm = (dist / 1000).toFixed(2);
+    
+    // Remove old bearing elements
+    if (mapsBearingLine) mapsMap.removeLayer(mapsBearingLine);
+    if (mapsBearingArrow) mapsMap.removeLayer(mapsBearingArrow);
+    if (mapsBearingText) mapsMap.removeLayer(mapsBearingText);
+    
+    // Calculate bearing point (200m ahead in bearing direction)
+    var bearingRad = bearing * Math.PI / 180;
+    var earthRadius = 6371000;
+    var bearingDist = 200; // meters
+    var lat2 = lat + (bearingDist / earthRadius) * Math.cos(bearingRad);
+    var lng2 = lng + (bearingDist / earthRadius) * Math.sin(bearingRad) / Math.cos(lat * Math.PI / 180);
+    
+    // Draw bearing line to checkpoint
+    mapsBearingLine = L.polyline([[lat, lng], [nextCp.lat, nextCp.lng]], {
+      color: '#ffd45b',
+      weight: 3,
+      dashArray: '10, 5',
+      opacity: 0.8
+    }).addTo(mapsMap)._bwkCustom = true;
+    
+    // Add bearing arrow at midpoint
+    var midLat = (lat + nextCp.lat) / 2;
+    var midLng = (lng + nextCp.lng) / 2;
+    var arrowIcon = L.divIcon({
+      className: 'bwk-bearing-arrow',
+      html: '<div style="font-size:24px;transform:rotate(' + bearing + 'deg);line-height:1;text-shadow:0 0 4px rgba(0,0,0,0.5)">⬆</div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    mapsBearingArrow = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(mapsMap)._bwkCustom = true;
+    
+    // Add distance text
+    var textIcon = L.divIcon({
+      className: 'bwk-bearing-text',
+      html: '<div style="background:rgba(0,0,0,0.7);color:#ffd45b;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap">' + 
+            (dist < 1000 ? Math.round(dist) + ' m' : distKm + ' km') + '</div>',
+      iconSize: [60, 20],
+      iconAnchor: [30, 10]
+    });
+    mapsBearingText = L.marker([lat, lng], { icon: textIcon }).addTo(mapsMap)._bwkCustom = true;
+    
+    // Update hiking status with bearing info
+    var statusEl = document.getElementById('hikingStatus');
+    if (statusEl) {
+      var dirs = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
+      var dirIdx = Math.round(bearing / 45) % 8;
+      statusEl.innerHTML = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + 
+                           ' · ' + distKm + ' km ke ' + nextCp.name + 
+                           ' · 🧭 ' + dirs[dirIdx] + ' (' + Math.round(bearing) + '°)';
+    }
+  }
   
   // ===== BAWAKARAENG TRAIL DATA =====
   function _loadBWKData() {
@@ -5526,8 +5897,83 @@ html.dark .maps-legend-symbol.location {
 })();
 </script>
 
-</body>
-</html>
+/* MAPS Panel Styles */
+.maps-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.maps-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  min-height: 64px;
+  font-family: inherit;
+}
+
+.maps-btn:active {
+  transform: scale(0.95);
+}
+
+.maps-btn-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.maps-btn-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* Button Variants */
+.maps-btn-gps {
+  background: linear-gradient(135deg, #2b6fff, #1d4ed8);
+  color: #fff;
+}
+.maps-btn-gps:active {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
+.maps-btn-record {
+  background: linear-gradient(135deg, #ff2d55, #dc2626);
+  color: #fff;
+}
+.maps-btn-record:active {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.maps-btn-measure {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+.maps-btn-alarm {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+}
+.maps-btn-alarm:active {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+
+.maps-btn-alarm.bwk-active {
+  background: linear-gradient(135deg, #ff2d55, #dc2626);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 
 /* Target Marker */
 .maps-target-marker {
