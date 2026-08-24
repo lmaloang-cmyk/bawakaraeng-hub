@@ -6910,16 +6910,21 @@ async function startTrackingSession() {
       _tkSessions = [d.session];
       _tkCurrentSessionId = d.session.id;
       renderTrackingList();
-      // Also fetch share token for the share modal
-      var shareToken = d.token || '';
-      openActiveTrackingModal({ ...d.session, share_token: shareToken });
-      // Fetch full share URL if not included
-      if (!shareToken) {
-        fetch('/api/tracking?act=share&id=' + d.session.id, { headers: _tkHeaders() }).then(r => r.json()).then(sd => {
-          if (sd.ok && sd.share_url) {
-            openActiveTrackingModal({ ...d.session, share_url: sd.share_url });
-          }
-        }).catch(function(){});
+      // API act=create sudah mengembalikan token + share_url sekaligus
+      var shareUrl = d.share_url || '';
+      openActiveTrackingModal(Object.assign({}, d.session, { share_token: d.token || '', share_url: shareUrl }));
+      // Kalau token gagal dibuat saat create, coba sekali lagi lewat act=share
+      if (!shareUrl) {
+        fetch('/api/tracking?act=share&id=' + d.session.id, { headers: _tkHeaders() })
+          .then(function(r) { return r.json(); })
+          .then(function(sd) {
+            if (sd && sd.ok && sd.share_url) {
+              openActiveTrackingModal(Object.assign({}, d.session, { share_token: sd.token || '', share_url: sd.share_url }));
+            } else {
+              _tkShareError(d.session, (sd && sd.error) || 'Server tidak mengembalikan tautan');
+            }
+          })
+          .catch(function() { _tkShareError(d.session, 'Koneksi gagal saat membuat tautan'); });
       }
     } else {
       showAlert('tkAlert', 'error', d.error || 'Gagal membuat sesi');
@@ -6982,45 +6987,195 @@ async function viewTracking(sessionId) {
 }
 
 async function generateShareToken(sessionId) {
+  // act=share hanya mengembalikan token + url, data sesi diambil dari daftar lokal
+  var known = _tkSessions.filter(function(s) { return s.id === sessionId; })[0] || { id: sessionId, name: 'Pelacakan Keluarga' };
   try {
     var r = await fetch('/api/tracking?act=share&id=' + sessionId, { headers: _tkHeaders() });
     var d = await r.json();
-    if (d.ok) {
-      openActiveTrackingModal({ ...d.session, share_token: d.share_token, share_url: d.share_url });
+    if (d.ok && d.share_url) {
+      openActiveTrackingModal(Object.assign({}, known, { share_token: d.token || '', share_url: d.share_url }));
     } else {
-      showAlert('tkActiveAlert', 'error', d.error || 'Gagal generate token');
+      _tkShareError(known, d.error || 'Link share gagal dibuat');
     }
   } catch (e) {
-    showAlert('tkActiveAlert', 'error', 'Koneksi gagal');
+    _tkShareError(known, 'Koneksi gagal');
   }
 }
 
+/* ===== BAGIKAN SESI — PINTU ANGIN RCS.CBS ===== */
+var TK_BRAND = 'PINTU ANGIN RCS.CBS';
+var _tkShareSession = {};
+
+function _tkShareError(session, msg) {
+  openActiveTrackingModal(Object.assign({}, session || {}, { share_url: '', share_error: msg }));
+}
+
+function _tkExpiryText(session) {
+  if (!session || !session.expires_at) return '—';
+  var t = new Date(session.expires_at);
+  if (isNaN(t.getTime())) return '—';
+  try {
+    return t.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (e) {
+    return t.toLocaleString('id-ID');
+  }
+}
+
+// Pesan siap kirim ke WhatsApp (format bold WhatsApp memakai *)
+function _tkShareMessage(session) {
+  var s = session || {};
+  return '🏔️ *' + TK_BRAND + '*\n' +
+    '📍 _Pelacakan Keluarga_\n' +
+    '━━━━━━━━━━━━━━━\n\n' +
+    'Sesi: *' + (s.name || 'Pelacakan Keluarga') + '*\n' +
+    (s.note ? 'Catatan: ' + s.note + '\n' : '') +
+    '\nPantau lokasi saya secara langsung di tautan ini:\n' +
+    (s.share_url || '') + '\n\n' +
+    '⏳ Berlaku sampai ' + _tkExpiryText(s) + '\n' +
+    '🔒 Hanya yang memegang tautan ini bisa melihat.';
+}
+
 function openActiveTrackingModal(session) {
+  _tkShareSession = session || {};
+  if (_tkShareSession.id) _tkCurrentSessionId = _tkShareSession.id;
+
   document.getElementById('tkActiveModal').style.display = 'flex';
   document.getElementById('tkActiveAlert').className = 'tk-alert';
   document.getElementById('tkActiveAlert').textContent = '';
 
-  var content = document.getElementById('tkActiveContent');
-  content.innerHTML = '<p style="margin-bottom:12px"><b>Sesi: ' + escHtml(session.name) + '</b></p>' +
-    '<p style="margin-bottom:8px;font-size:13px;color:var(--sub)">Bagikan link ini kepada keluargamu:</p>' +
-    '<input type="text" readonly value="' + escHtml(session.share_url) + '" id="tkShareInput" onclick="this.select()">' +
-    '<button onclick="copyShareLink()" style="margin-top:8px;padding:8px 16px;border-radius:8px;background:#08b96f;color:#fff;border:none;font-size:13px;font-weight:600">Salin Link</button>' +
-    '<p style="margin-top:16px;font-size:13px;color:var(--sub)">Berakhir: ' + new Date(session.expires_at).toLocaleString('id-ID') + '</p>';
+  var url = _tkShareSession.share_url ? String(_tkShareSession.share_url) : '';
+  var name = escHtml(_tkShareSession.name || 'Pelacakan Keluarga');
+  var btn = 'padding:10px 12px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px';
+
+  var brand =
+    '<div style="display:flex;align-items:center;gap:11px;padding:13px 14px;border-radius:14px;' +
+    'background:linear-gradient(135deg,#052a1f 0%,#0a3550 100%);border:1px solid rgba(8,185,111,.32)">' +
+      '<div style="font-size:24px;line-height:1">🏔️</div>' +
+      '<div style="min-width:0;line-height:1.25">' +
+        '<div style="font-size:14px;font-weight:800;letter-spacing:.16em;color:#08b96f">PINTU ANGIN</div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:.3em;color:#8fa6ba">RCS.CBS</div>' +
+      '</div>' +
+      '<div style="margin-left:auto;font-size:10px;font-weight:800;padding:4px 9px;border-radius:99px;' +
+      'background:rgba(8,185,111,.16);color:#08b96f;border:1px solid rgba(8,185,111,.4);white-space:nowrap">● LIVE</div>' +
+    '</div>';
+
+  var head =
+    '<div style="margin:14px 0 12px">' +
+      '<div style="font-size:11px;letter-spacing:.08em;color:var(--sub);font-weight:700">SESI PELACAKAN</div>' +
+      '<div style="font-size:17px;font-weight:800;margin-top:2px">' + name + '</div>' +
+    '</div>';
+
+  var body;
+  if (url) {
+    body =
+      '<div style="font-size:12px;color:var(--sub);margin-bottom:6px">Bagikan tautan ini kepada keluargamu</div>' +
+      '<input type="text" readonly value="' + escHtml(url) + '" id="tkShareInput" onclick="this.select()" ' +
+      'style="width:100%;box-sizing:border-box;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">' +
+        '<button id="tkCopyBtn" onclick="copyShareLink()" style="' + btn + ';background:#08b96f;color:#fff">📋 Salin Link</button>' +
+        '<button onclick="tkShareWhatsApp()" style="' + btn + ';background:#25d366;color:#062f22">💬 WhatsApp</button>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:' + (navigator.share ? '1fr 1fr' : '1fr') + ';gap:8px;margin-top:8px">' +
+        '<button id="tkCopyMsgBtn" onclick="tkCopyShareMessage()" style="' + btn + ';background:var(--canvas);color:var(--ink);border:1px solid var(--line)">📝 Salin Pesan</button>' +
+        (navigator.share
+          ? '<button onclick="tkShareNative()" style="' + btn + ';background:var(--canvas);color:var(--ink);border:1px solid var(--line)">📤 Bagikan…</button>'
+          : '') +
+      '</div>';
+  } else {
+    body =
+      '<div style="padding:12px 13px;border-radius:12px;background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.35)">' +
+        '<div style="font-size:13px;font-weight:700;color:#e5484d;margin-bottom:4px">⚠️ Link belum bisa dibuat</div>' +
+        '<div style="font-size:12px;color:var(--sub);line-height:1.5">' +
+          escHtml(_tkShareSession.share_error || 'Server belum mengembalikan tautan share.') +
+          ' Pelacakan tetap berjalan dan posisimu tetap tersimpan.' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="tkRetryShare()" style="' + btn + ';background:#08b96f;color:#fff;width:100%;margin-top:10px">🔄 Coba Buat Link Lagi</button>';
+  }
+
+  var foot =
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--sub)">' +
+      '<span>⏳ Berakhir ' + escHtml(_tkExpiryText(_tkShareSession)) + '</span>' +
+      '<span>🔒 Hanya pemegang tautan</span>' +
+    '</div>';
+
+  document.getElementById('tkActiveContent').innerHTML = brand + head + body + foot;
 }
 
 function closeActiveTrackingModal() {
   document.getElementById('tkActiveModal').style.display = 'none';
 }
 
-function copyShareLink() {
-  var input = document.getElementById('tkShareInput');
-  if (input) {
-    input.select();
-    navigator.clipboard.writeText(input.value).then(function() {
-      var btn = input.nextElementSibling;
-      if (btn) { btn.textContent = '✓ Tersalin!'; setTimeout(function(){ btn.textContent = 'Salin Link'; }, 2000); }
-    });
+function _tkFlashBtn(id, label) {
+  var b = document.getElementById(id);
+  if (!b) return;
+  var old = b.innerHTML;
+  b.innerHTML = label;
+  setTimeout(function() { b.innerHTML = old; }, 2000);
+}
+
+function _tkCopy(text, btnId, label) {
+  function done() {
+    _tkFlashBtn(btnId, label);
+    if (window.toast) window.toast('Tersalin!', 'success');
   }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function() { _tkCopyFallback(text, done); });
+      return;
+    }
+  } catch (e) {}
+  _tkCopyFallback(text, done);
+}
+
+// Fallback untuk browser lama / konteks non-HTTPS
+function _tkCopyFallback(text, done) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    done();
+  } catch (e) {
+    if (window.toast) window.toast('Gagal menyalin, salin manual dari kotak tautan', 'error');
+  }
+}
+
+function copyShareLink() {
+  var url = _tkShareSession.share_url || '';
+  if (!url) return;
+  _tkCopy(url, 'tkCopyBtn', '✓ Tersalin!');
+}
+
+function tkCopyShareMessage() {
+  if (!_tkShareSession.share_url) return;
+  _tkCopy(_tkShareMessage(_tkShareSession), 'tkCopyMsgBtn', '✓ Tersalin!');
+}
+
+function tkShareWhatsApp() {
+  if (!_tkShareSession.share_url) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(_tkShareMessage(_tkShareSession)), '_blank');
+}
+
+async function tkShareNative() {
+  if (!navigator.share || !_tkShareSession.share_url) return;
+  try {
+    await navigator.share({
+      title: TK_BRAND + ' — Pelacakan Keluarga',
+      text: _tkShareMessage(_tkShareSession),
+      url: _tkShareSession.share_url
+    });
+  } catch (e) { /* dibatalkan pengguna */ }
+}
+
+function tkRetryShare() {
+  var id = _tkShareSession.id || _tkCurrentSessionId;
+  if (id) generateShareToken(id);
 }
 
 async function stopActiveSession() {
