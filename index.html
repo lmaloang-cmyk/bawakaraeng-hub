@@ -1125,6 +1125,120 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         <li><b>🔔 Alarm</b> akan berbunyi jika Anda keluar jalur >50m</li>
       </ol>
       <p style="font-size:11px;color:#69758a;margin-top:8px">Tip: Ketuk <b>🥾 Tracker</b> → pilih checkpoint → mulai navigasi. Klik tombol check-in saat tiba di pos!</p>
+      
+      <!-- Panduan Lengkap - Tab Navigation -->
+      <div style="margin-top:14px;border-top:1px solid rgba(43,111,255,.15);padding-top:14px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <button onclick="showMapsGuideTab('peta')" id="tabPeta" class="guide-tab active">🗺️ Peta</button>
+          <button onclick="showMapsGuideTab('hiking')" id="tabHiking" class="guide-tab">🥾 Hiking</button>
+          <button onclick="showMapsGuideTab('offline')" id="tabOffline" class="guide-tab">📥 Offline</button>
+          <button onclick="showMapsGuideTab('darurat')" id="tabDarurat" class="guide-tab">🆘 Darurat</button>
+        </div>
+        
+        <!-- Tab: Panduan Peta -->
+        <div id="guidePeta" class="guide-tab-content">
+          <div style="background:rgba(43,111,255,.06);padding:10px;border-radius:8px;margin-bottom:8px">
+            <b style="color:#78e1ad">🗺️ Navigasi Peta Jalur</b>
+            <ul style="margin:6px 0 0 16px;padding:0;font-size:12px;line-height:1.7;color:#8fa8d6">
+              <li><b>Zoom:</b> Pinch atau scroll untuk zoom in/out</li>
+              <li><b>Layer:</b> Pilih OSM/Topo/GSat di panel kontrol</li>
+              <li><b>Layer Offline:</b> Toggle "Mode Offline" untuk menyimpan tile</li>
+              <li><b>Posisi:</b> Ketuk GPS untuk center ke lokasi Anda</li>
+              <li><b>Jalur:</b> Klik marker checkpoint untuk detail</li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Tab: Panduan Hiking -->
+        <div id="guideHiking" class="guide-tab-content" style="display:none">
+          <div style="background:rgba(8,179,111,.06);padding:10px;border-radius:8px;margin-bottom:8px">
+            <b style="color:#78e1ad">🥾 Checkpoint & Check-in</b>
+            <ul style="margin:6px 0 0 16px;padding:0;font-size:12px;line-height:1.7;color:#8fa8d6">
+              <li><b>Multi-checkpoint:</b> 20 titik di 3 jalur berbeda</li>
+              <li><b>Start:</b> Ketuk 🥾 Tracker → pilih jalur → mulai</li>
+              <li><b>Check-in:</b> Ketuk tombol ✓ saat tiba di checkpoint</li>
+              <li><b>Notifikasi:</b> GPS akurat ±10m diperlukan untuk check-in</li>
+              <li><b>Lencana:</b> Selesaikan 3 checkpoint = lencana khusus</li>
+              <li><b>Badge:</b> Semua checkpoint selesai = badge "Petualang"</li>
+            </ul>
+          </div>
+          <div style="background:rgba(43,111,255,.06);padding:10px;border-radius:8px">
+            <b style="color:#78e1ad">🎯 Sistem Checkpoint Otomatis</b>
+            <p style="font-size:12px;color:#8fa8d6;margin:6px 0 0;line-height:1.6">
+              Sistem mendeteksi kedatangan Anda secara otomatis saat GPS cukup akurat. 
+              Tombol check-in akan aktif jika Anda berada dalam radius 10 meter dari checkpoint.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Tab: Panduan Offline -->
+        <div id="guideOffline" class="guide-tab-content" style="display:none">
+          <div style="background:rgba(255,152,0,.06);padding:10px;border-radius:8px;margin-bottom:8px">
+            <b style="color:#ff9800">📥 Mode Offline Pendakian</b>
+            <ul style="margin:6px 0 0 16px;padding:0;font-size:12px;line-height:1.7;color:#8fa8d6">
+              <li><b>Aktifkan:</b> Toggle "Mode Offline" di panel kontrol</li>
+              <li><b>Download:</b> Pilih level zoom (5-12) untuk area Bawakaraeng</li>
+              <li><b>Tile tersimpan:</b> Cached di browser (localStorage)</li>
+              <li><b>Update:</b> Jalur bisa diperbarui saat online nanti</li>
+              <li><b>Cek status:</b> Status offline muncul di bawah peta</li>
+            </ul>
+          </div>
+          <div style="background:rgba(8,179,111,.06);padding:10px;border-radius:8px">
+            <b style="color:#78e1ad">📊 Download Area</b>
+            <p style="font-size:12px;color:#8fa8d6;margin:6px 0 0;line-height:1.6">
+              Download seluruh tile peta untuk area Bawakaraeng. 
+              Zoom lebih tinggi = lebih detail tapi ukuran lebih besar.
+              Rekomendasi: Zoom 10-11 untuk keseimbangan detail & ukuran.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Tab: Panduan Darurat -->
+        <div id="guideDarurat" class="guide-tab-content" style="display:none">
+          <div style="background:rgba(255,45,85,.06);padding:10px;border-radius:8px;margin-bottom:8px">
+            <b style="color:#ff2d55">🆘 Prosedur Darurat - Tersesat</b>
+            <ol style="margin:6px 0 0 16px;padding:0;font-size:12px;line-height:1.8;color:#8fa8d6">
+              <li><b>Stop & Tenang</b> - Jangan panik, tetap di tempat</li>
+              <li><b>CEK</b> - Cek kondisi diri, cuaca, persediaan</li>
+              <li><b>SHOUT</b> - Berteriak 3x, gunakan peluit</li>
+              <li><b>MAKE SIGNALS</b> - Buat tanda visual (apung, batu, cabang)</li>
+              <li><b>USE SOS</b> - Tekan tombol merah SOS di panel</li>
+              <li><b>WAIT</b> - Tetap di tempat sampai bantuan datang</li>
+            </ol>
+          </div>
+          <div style="background:rgba(255,45,85,.08);padding:10px;border-radius:8px;margin-bottom:8px">
+            <b style="color:#ff2d55">📞 Kontak Darurat</b>
+            <div style="margin-top:8px">
+              <a href="https://wa.me/6281234567890?text=🆘%20DARURAT%20Gunung%20Bawakaraeng!%20Saya%20butuh%20bantuan." 
+                 target="_blank" rel="noopener" 
+                 style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(37,211,102,.15);border-radius:8px;text-decoration:none;color:#25d366;margin-bottom:6px">
+                <span style="font-size:20px">💬</span>
+                <div>
+                  <div style="font-weight:600">WhatsApp RCS.CBS</div>
+                  <div style="font-size:11px;opacity:0.8">+62 812-3456-7890</div>
+                </div>
+              </a>
+              <a href="tel:+6281234567890" 
+                 style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(43,111,255,.15);border-radius:8px;text-decoration:none;color:#2b6fff">
+                <span style="font-size:20px">📞</span>
+                <div>
+                  <div style="font-weight:600">Telepon RCS.CBS</div>
+                  <div style="font-size:11px;opacity:0.8">+62 812-3456-7890</div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div style="background:rgba(255,152,0,.06);padding:10px;border-radius:8px">
+            <b style="color:#ff9800">⚠️ Tanda Bahaya</b>
+            <ul style="margin:6px 0 0 16px;padding:0;font-size:12px;line-height:1.7;color:#8fa8d6">
+              <li>Hipotermia: menggigil, bicara pelo</li>
+              <li>Dehidrasi: pusing, urine pekat</li>
+              <li>Altitude sickness: mual, sesak</li>
+              <li>Luka serius: pendarahan, patah tulang</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Toggle Guide Button (muncul saat panduan tertutup) -->
@@ -3083,6 +3197,17 @@ btns+='<button class="sos-share copy" onclick="sosCopy(&#39;'+coordTxt+'&#39;)">
 if(offlineQ>0){btns+='<button class="sos-share retry" onclick="if(window._sosTryOfflineSend){window._sosTryOfflineSend();}else{alert(&#39;Fitur belum tersedia&#39;);}">\ud83d\udce1 Kirim SOS Offline Sekarang</button>';}
 if(!hasLoc){btns+='<button class="sos-share retry" onclick="sosSent()">\ud83d\udd04 Coba aktifkan GPS lagi</button>';}
 s.innerHTML=head+'<div class="sos-actions">'+btns+'</div>';}
+// === Panduan Map Tabs ===
+function showMapsGuideTab(tab) {
+  var tabs = ['peta', 'hiking', 'offline', 'darurat'];
+  tabs.forEach(function(t) {
+    var el = document.getElementById('guide' + t.charAt(0).toUpperCase() + t.slice(1));
+    var btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+}
+
 function sosQuickWA(){
   var open=function(lat,lng){var hasLoc=(lat!=null&&lng!=null);var coord=hasLoc?(Number(lat).toFixed(5)+', '+Number(lng).toFixed(5)):'belum tersedia';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='🆘 SOS! Saya butuh bantuan darurat di jalur pendakian Gunung Bawakaraeng. Lokasi saya: '+coord+(maps?' '+maps:'')+'. Mohon segera kirim bantuan.';var wa='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent(msg);try{window.open(wa,'_blank','noopener');}catch(e){location.href=wa;}};
   if(!navigator.geolocation){toast('GPS tidak tersedia. Pesan akan dikirim tanpa koordinat','err');open(null,null);return;}
@@ -5997,6 +6122,73 @@ html.dark .maps-legend-symbol.location {
   background: rgba(8, 179, 111, 0.12);
   border-color: rgba(8, 179, 111, 0.3);
   color: #08b96f;
+}
+
+/* Panduan Map Tabs */
+.guide-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(43,111,255,.3);
+  background: rgba(43,111,255,.1);
+  color: #8fa8d6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.guide-tab:hover {
+  background: rgba(43,111,255,.2);
+  color: #fff;
+}
+.guide-tab.active {
+  background: rgba(43,111,255,.25);
+  color: #2b6fff;
+  border-color: rgba(43,111,255,.5);
+}
+.guide-tab-content {
+  animation: guideTabFade 0.3s ease;
+}
+@keyframes guideTabFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sos-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.sos-share:hover {
+  background: rgba(255,255,255,.15);
+  transform: translateY(-1px);
+}
+.sos-share.sms { background: rgba(0,150,136,.2); border-color: rgba(0,150,136,.4); }
+.sos-share.map { background: rgba(43,111,255,.2); border-color: rgba(43,111,255,.4); }
+.sos-share.copy { background: rgba(156,39,176,.2); border-color: rgba(156,39,176,.4); }
+.sos-share.retry { background: rgba(255,152,0,.2); border-color: rgba(255,152,0,.4); }
+
+@media (max-width: 480px) {
+  .guide-tab {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  .sos-share {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }
 </style>
 
