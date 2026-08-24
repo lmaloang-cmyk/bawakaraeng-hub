@@ -20,11 +20,10 @@ function sync(){
   if(!c){console.log('[HIKE] Supabase client not available, keeping offline queue');return;}
   c.auth.getUser().then(function(u){
     if(!(u&&u.data&&u.data.user))throw 0;
-    return c.from('hike_checkins').insert(q.map(function(x){return {position:x.pos,altitude:x.alt,checked_in_at:x.at,user_id:u.data.user.id}})).catch(function(err){
-      console.error('[HIKE] Insert failed:', err.message);
-      throw err;
-    });
-  }).then(function(){
+    var rows=q.map(function(x){return {position:x.pos,altitude:x.alt,checked_in_at:x.at,user_id:u.data.user.id}});
+    return c.from('hike_checkins').insert(rows);
+  }).then(function(data,error){
+    if(error)throw error;
     put(QKEY,[]);
     render();
     console.log('[HIKE] Check-ins synced successfully');
