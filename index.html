@@ -1357,7 +1357,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         {pos:'Pos 5',pct:'49.9%',status:'warning',icon:'⚠️',label:'Sumber air terakhir (TERKONFIRMASI)'},
         {pos:'Setelah Pos 5',pct:'50-100%',status:'danger',icon:'🚫',label:'TIDAK ADA sumber air terkonfirmasi'}
       ];
-      el.innerHTML=points.map(function(p,i)=>{
+      el.innerHTML=points.map((p)=>{
         var badgeClass=p.status;
         var badgeText=p.status==='good'?'AMAN':(p.status==='warning'?'WASPADA':'KRITIS');
         return '<div class="air-point">\
@@ -1374,7 +1374,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     function renderSafetyList(){
       var el=document.getElementById('safetyList');
       if(!el)return;
-      el.innerHTML=safetyData.map(function(s)=>{
+      el.innerHTML=safetyData.map((s)=>{
         return '<div class="safety-card '+s.type+'">\
           <div class="safety-header">\
             <div class="safety-icon '+s.type+'">'+s.icon+'</div>\
@@ -1388,7 +1388,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     function renderGearSelector(){
       var el=document.getElementById('gearSelector');
       if(!el)return;
-      el.innerHTML=segmenData.map(function(s,i)=>{
+      el.innerHTML=segmenData.map((s,i)=>{
         return '<button class="gear-btn" onclick="selectGear(\''+s.id+'\')" id="gear-'+s.id+'">'+(i+1)+' '+s.name.split('→')[0].trim()+'</button>';
       }).join('');
       // Default select first
@@ -1408,9 +1408,9 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       if(!g)return;
       el.innerHTML='<b style="font-size:14px;color:var(--ink)">'+g.name+'</b>\
         <div style="margin-top:10px"><b style="font-size:12px;color:#ff2d55">ESSENTIAL:</b>\
-        <ul class="gear-list">'+g.essential.map(function(item)=>'<li><span class="gear-check">✓</span>'+item+'</li>').join('')+'</ul></div>\
+        <ul class="gear-list">'+g.essential.map((item)=>'<li><span class="gear-check">✓</span>'+item+'</li>').join('')+'</ul></div>\
         <div style="margin-top:10px"><b style="font-size:12px;color:var(--sub)">OPTIONAL:</b>\
-        <ul class="gear-list">'+g.optional.map(function(item)=>'<li><span class="gear-check" style="border-color:var(--line);color:var(--line)"></span>'+item+'</li>').join('')+'</ul></div>';
+        <ul class="gear-list">'+g.optional.map((item)=>'<li><span class="gear-check" style="border-color:var(--line);color:var(--line)"></span>'+item+'</li>').join('')+'</ul></div>';
     }
     
     function switchAnalysisTab(tab){
