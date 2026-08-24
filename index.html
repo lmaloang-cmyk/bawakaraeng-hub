@@ -4618,6 +4618,9 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
     }
   }
   
+  // Expose to global scope for inline handlers
+  window._loadElevationProfile = _loadElevationProfile;
+  
   function _drawElevationProfile(elevationData, trail, trailData) {
     console.log('[DRAW] elevationData:', elevationData);
     console.log('[DRAW] trail:', trail.name);
