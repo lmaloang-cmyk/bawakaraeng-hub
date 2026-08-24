@@ -11,6 +11,7 @@
  *   GET  /api/tracking?act=share&id=UUID   — Generate token shareable
  *
  * Viewer memakai header X-Session-Token: <token> atau query ?token=<token>
+ * Aksi status/latest/history TIDAK memerlukan login — cukup share token sah.
  */
 
 import {
@@ -38,7 +39,17 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: 'Payload terlalu besar' });
   }
 
-  const user = await requireUser(req, res, false);
+  // Aksi penonton: keluarga membuka link share TANPA login Google.
+  // requireUser() langsung mengirim 401 begitu dipanggil, jadi ia tidak boleh
+  // dijalankan untuk aksi ini — kalau tidak, respons sudah terkirim sebelum
+  // pemeriksaan share token sempat berjalan.
+  const VIEWER_ACTS = new Set(['status', 'latest', 'history']);
+
+  let user = null;
+  if (!VIEWER_ACTS.has(act)) {
+    user = await requireUser(req, res, false);
+    if (!user) return; // requireUser sudah membalas 401/403/503
+  }
 
   // --- CREATE SESSION ---
   if (act === 'create') {
@@ -106,12 +117,21 @@ export default async function handler(req, res) {
 // ===========================================================================
 // HELPERS (shared)
 // ===========================================================================
-function appOrigin() {
-  return String(process.env.APP_ORIGIN || 'https://pintu-angin.vercel.app').replace(/\/$/, '');
+function appOrigin(req) {
+  const configured = String(process.env.APP_ORIGIN || '').trim().replace(/\/$/, '');
+  if (configured) return configured;
+
+  // Tanpa APP_ORIGIN, pakai host permintaan ini — jangan pernah menebak domain
+  // lain, karena link share bisa menunjuk deployment yang salah.
+  const proto = String(req?.headers?.['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const host = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').split(',')[0].trim();
+  if (host) return `${proto}://${host}`;
+
+  return 'https://www.pintuangin.my.id';
 }
 
-function shareUrlFor(sessionId, token) {
-  return `${appOrigin()}/tracker.html?session=${sessionId}&token=${token}`;
+function shareUrlFor(req, sessionId, token) {
+  return `${appOrigin(req)}/tracker.html?session=${sessionId}&token=${token}`;
 }
 
 // ===========================================================================
@@ -190,7 +210,7 @@ async function createSession(req, res, user) {
         position_count: session.position_count || 0
       },
       token: tokenOk ? shareToken : '',
-      share_url: tokenOk ? shareUrlFor(session.id, shareToken) : ''
+      share_url: tokenOk ? shareUrlFor(req, session.id, shareToken) : ''
     });
   } catch (e) {
     console.error('[tracking] create error:', e?.message);
@@ -710,8 +730,8 @@ async function generateShare(req, res, user) {
     return res.json({
       ok: true,
       token,
-      share_url: shareUrlFor(sessionId, token),
-      short_url: `${appOrigin()}/t/${sessionId}`
+      share_url: shareUrlFor(req, sessionId, token),
+      short_url: `${appOrigin(req)}/t/${sessionId}`
     });
   } catch (e) {
     return res.status(502).json({ error: 'Gagal membuat token share' });
