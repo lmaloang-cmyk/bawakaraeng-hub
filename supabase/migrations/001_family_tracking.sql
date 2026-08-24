@@ -1,5 +1,14 @@
 -- Family Tracking Tables (Idempotent)
 -- Run this in Supabase SQL Editor
+--
+-- CATATAN PENTING
+-- "create table if not exists" hanya melewati tabel yang sudah ada; perintah itu
+-- TIDAK menambahkan kolom yang hilang. Database yang sebelumnya dibuat dengan
+-- varian SQL lain (SETUP_TRACKING.sql dkk) karena itu bisa kekurangan kolom
+-- seperti tracking_sessions.updated_at, dan trigger update_position_count() di
+-- bawah akan menggagalkan SETIAP insert posisi dengan error 42703.
+-- Karena itu setiap create table diikuti blok "alter table ... add column if not
+-- exists" agar migrasi ini aman dijalankan pada database baru maupun lama.
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -17,11 +26,26 @@ create table if not exists tracking_sessions (
   last_lng double precision,
   last_seen timestamptz,
   position_count integer not null default 0,
-  cancelled_by text,
+  cancelled_by uuid,
   cancelled_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- 1b. Susulkan kolom yang hilang pada tabel lama.
+--     updated_at adalah kolom yang dipakai trigger update_position_count().
+alter table tracking_sessions add column if not exists name           text        not null default 'Pelacakan Keluarga';
+alter table tracking_sessions add column if not exists note           text        default '';
+alter table tracking_sessions add column if not exists device_name    text        default '';
+alter table tracking_sessions add column if not exists active         boolean     not null default true;
+alter table tracking_sessions add column if not exists last_lat       double precision;
+alter table tracking_sessions add column if not exists last_lng       double precision;
+alter table tracking_sessions add column if not exists last_seen      timestamptz;
+alter table tracking_sessions add column if not exists position_count integer     not null default 0;
+alter table tracking_sessions add column if not exists cancelled_by   uuid;
+alter table tracking_sessions add column if not exists cancelled_at   timestamptz;
+alter table tracking_sessions add column if not exists created_at     timestamptz not null default now();
+alter table tracking_sessions add column if not exists updated_at     timestamptz not null default now();
 
 -- Indexes for tracking_sessions
 create index if not exists idx_tracking_sessions_created_by on tracking_sessions(created_by);
@@ -42,6 +66,15 @@ create table if not exists tracking_positions (
   sent_at timestamptz not null default now()
 );
 
+-- 2b. Susulkan kolom yang hilang pada tabel lama.
+--     Pada database lama accuracy_m/altitude_m bisa bertipe integer; itu tetap
+--     berfungsi karena Postgres membulatkan nilai pecahan saat insert.
+alter table tracking_positions add column if not exists accuracy_m  double precision;
+alter table tracking_positions add column if not exists altitude_m  double precision;
+alter table tracking_positions add column if not exists battery_pct integer;
+alter table tracking_positions add column if not exists client_id   text;
+alter table tracking_positions add column if not exists sent_at     timestamptz not null default now();
+
 -- Indexes for tracking_positions
 create index if not exists idx_tracking_positions_session on tracking_positions(session_id);
 create index if not exists idx_tracking_positions_sent_at on tracking_positions(sent_at desc);
@@ -56,6 +89,32 @@ create table if not exists tracking_share_tokens (
   created_at timestamptz not null default now(),
   unique(session_id, token)
 );
+
+-- 3b. Susulkan kolom yang hilang pada tabel lama.
+alter table tracking_share_tokens add column if not exists token      text;
+alter table tracking_share_tokens add column if not exists expires_at timestamptz;
+alter table tracking_share_tokens add column if not exists created_at timestamptz not null default now();
+
+-- 3c. api/tracking.js melakukan upsert dengan Prefer: resolution=merge-duplicates,
+--     yang mensyaratkan unique/primary key pada (session_id, token). Tanpa itu
+--     PostgREST menolak dengan 42P10 dan token share gagal dibuat.
+do $$
+declare
+  has_unique boolean;
+begin
+  select exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'tracking_share_tokens'::regclass
+      and contype in ('p', 'u')
+      and pg_get_constraintdef(oid) ilike '%(session_id, token)%'
+  ) into has_unique;
+
+  if not has_unique then
+    alter table tracking_share_tokens
+      add constraint tracking_share_tokens_session_token_key unique (session_id, token);
+  end if;
+end $$;
 
 -- Index for tracking_share_tokens
 create index if not exists idx_tracking_share_tokens_token on tracking_share_tokens(token);
