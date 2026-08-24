@@ -3727,7 +3727,7 @@ var SB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
 var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
 var ROLE_MAP={'songkranveo@gmail.com':'Admin','songkrangveo@gmail.com':'Admin','upik.zulkiflie@gmail.com':'Admin'};
 var _sb=null;
-function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
+function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{suppressGetSessionFromURLWarning:true}});}}catch(e){}return _sb;}
 function _sbUser(){var c=_sbClient();if(!c)return Promise.resolve(null);return c.auth.getUser().then(function(r){return (r&&r.data)?r.data.user:null;}).catch(function(){return null;});}
 function sbInsert(table,row){var allowed={reports:1,simaksi:1,jurnal:1};var c=_sbClient();if(!c||!allowed[table]||!row||typeof row!=='object')return Promise.resolve({ok:false});return _sbUser().then(function(u){if(!u)return {ok:false};var clean=Object.assign({},row);clean.user_id=u.id;clean.user_email=(u.email||'').slice(0,254);if(!clean.user_name){clean.user_name=((u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||clean.user_email||'Pengguna').slice(0,80);}return c.from(table).insert(clean).then(function(res){return {ok:!res.error,error:res.error};});}).catch(function(e){return {ok:false,error:e};});}
 window.sbInsert=sbInsert;
