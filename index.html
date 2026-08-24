@@ -5797,6 +5797,23 @@ html.dark .maps-legend-symbol.location {
 .cuaca-alert.warning { background: rgba(255,152,0,.15); color: #ff9800; border: 1px solid rgba(255,152,0,.3); }
 .cuaca-alert.danger { background: rgba(255,45,85,.15); color: #ff2d55; border: 1px solid rgba(255,45,85,.3); }
 .cuaca-alert.ok { background: rgba(8,179,111,.15); color: #08b96f; border: 1px solid rgba(8,179,111,.3); }
+
+/* GPS Status Panel */
+#gpsStatus {
+  background: rgba(43, 111, 255, 0.1);
+  border: 1px solid rgba(43, 111, 255, 0.3);
+}
+
+#gpsWarning {
+  background: rgba(255, 45, 85, 0.12);
+  border: 1px solid rgba(255, 45, 85, 0.3);
+}
+
+#gpsWarning.warning-good {
+  background: rgba(8, 179, 111, 0.12);
+  border-color: rgba(8, 179, 111, 0.3);
+  color: #08b96f;
+}
 </style>
 
 <script>
@@ -5880,25 +5897,6 @@ html.dark .maps-legend-symbol.location {
       html += '<div class="cuaca-source">Sumber: BMKG + Open-Meteo · Diperbarui '+now.toLocaleString('id-ID')+'</div>';
       el.innerHTML = html;
       cuacaDone = true;
-    } catch(e) {
-      el.innerHTML = '<div style="text-align:center;padding:20px 0"><div style="font-size:32px">⚠️</div><div style="color:#ff9800;margin-top:8px">Gagal memuat cuaca</div><div style="font-size:11px;color:#69758a;margin-top:4px">'+e.message+'</div><button onclick="refreshCuacaGunung()" style="margin-top:12px;padding:8px 16px;border-radius:8px;background:#2b6fff;color:#fff;border:none;font-size:12px">↻ Coba Lagi</button></div>';
-    }
-  };
-
-  // Auto-load saat tab MAPS dibuka
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      if (typeof initMaps === 'function' || document.getElementById('mapsMap')) {
-        refreshCuacaGunung();
-      }
-    }, 2000);
-  });
-  window.addEventListener('online', function() { cuacaDone = false; refreshCuacaGunung(); });
-})();
-</script>
-
-<style>
-/* GPS Status Panel */
 #gpsStatus {
   background: rgba(43, 111, 255, 0.1);
   border: 1px solid rgba(43, 111, 255, 0.3);
