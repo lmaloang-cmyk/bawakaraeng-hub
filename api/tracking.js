@@ -8,10 +8,9 @@
  *   GET  /api/tracking?act=status&id=UUID  — Status sesi (owner + token viewer)
  *   GET  /api/tracking?act=latest&id=UUID  — Posisi terakhir (owner + token viewer)
  *   GET  /api/tracking?act=history&id=UUID — Riwayat posisi (owner + token viewer)
- *   GET  /api/tracking?act=share?id=UUID   — Generate token shareable
+ *   GET  /api/tracking?act=share&id=UUID   — Generate token shareable
  *
- * Token viewer menggunakan header: Authorization: Bearer <token>
- * Dan header tambahan: X-Session-Token: <token>
+ * Viewer memakai header X-Session-Token: <token> atau query ?token=<token>
  */
 
 import {
@@ -105,6 +104,17 @@ export default async function handler(req, res) {
 }
 
 // ===========================================================================
+// HELPERS (shared)
+// ===========================================================================
+function appOrigin() {
+  return String(process.env.APP_ORIGIN || 'https://pintu-angin.vercel.app').replace(/\/$/, '');
+}
+
+function shareUrlFor(sessionId, token) {
+  return `${appOrigin()}/tracker.html?session=${sessionId}&token=${token}`;
+}
+
+// ===========================================================================
 // CREATE SESSION
 // ===========================================================================
 async function createSession(req, res, user) {
@@ -123,83 +133,67 @@ async function createSession(req, res, user) {
   };
 
   try {
-    const r = await rest('tracking_sessions', payload);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
+    // Prefer: return=representation wajib, kalau tidak PostgREST balas body kosong
+    const r = await rest('tracking_sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
 
-    if (!Array.isArray(data) || !data[0]) {
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      console.error('[tracking] create session failed:', r.status, detail);
       return res.status(502).json({ error: 'Gagal membuat sesi' });
     }
 
-    const session = data[0];
+    const data = await r.json().catch(() => null);
+    const session = Array.isArray(data) ? data[0] : data;
 
-    // Generate share token
-    const tokenR = await rest('tracking_share_tokens', {
-      session_id: session.id,
-      token: generateToken(),
-      expires_at: session.expires_at
-    });
-
-    let shareToken = '';
-    if (tokenR.ok) {
-      const td = await tokenR.json();
-      // Upsert: ambil token dari response atau generate baru
-      shareToken = td?.token || generateToken();
-      if (!td?.token) {
-        // Insert manually via PostgREST with upsert
-        try {
-          const upsertR = await fetch(
-            `${process.env.SUPABASE_URL}/rest/v1/tracking_share_tokens?on_conflict=session_id,token`,
-            {
-              method: 'POST',
-              headers: {
-                'apikey': process.env.SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-              },
-              body: JSON.stringify({
-                session_id: session.id,
-                token: shareToken,
-                expires_at: session.expires_at
-              })
-            }
-          );
-          if (!upsertR.ok) shareToken = '';
-        } catch (e) { shareToken = ''; }
-      }
+    if (!session || !session.id) {
+      return res.status(502).json({ error: 'Gagal membuat sesi' });
     }
 
-    // Also get session with token via RPC
-    const rpcR = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tracking_sessions?select=id,name,note,device_name,expires_at,last_lat,last_lng,last_seen,position_count,active&id=eq.${session.id}`,
-      {
-        headers: {
-          'apikey': process.env.SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
-        }
-      }
-    );
-    const sessionData = await rpcR.json();
-    const s = Array.isArray(sessionData) ? sessionData[0] : null;
+    // Generate share token (satu kali, tidak perlu roundtrip tambahan)
+    const shareToken = generateToken();
+    const tokenR = await rest('tracking_share_tokens', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal,resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        session_id: session.id,
+        token: shareToken,
+        expires_at: session.expires_at
+      })
+    });
+
+    if (!tokenR.ok) {
+      const detail = await tokenR.text().catch(() => '');
+      console.error('[tracking] share token failed:', tokenR.status, detail);
+    }
+
+    const tokenOk = tokenR.ok;
 
     return res.json({
       ok: true,
       session: {
-        id: s?.id || session.id,
-        name: s?.name || name,
-        note: s?.note || note,
-        device_name: s?.device_name || deviceName,
-        expires_at: s?.expires_at || session.expires_at,
-        active: s?.active ?? true,
-        last_lat: s?.last_lat,
-        last_lng: s?.last_lng,
-        last_seen: s?.last_seen,
-        position_count: s?.position_count || 0
+        id: session.id,
+        name: session.name || payload.name,
+        note: session.note ?? payload.note,
+        device_name: session.device_name ?? payload.device_name,
+        expires_at: session.expires_at || payload.expires_at,
+        active: session.active ?? true,
+        last_lat: session.last_lat ?? null,
+        last_lng: session.last_lng ?? null,
+        last_seen: session.last_seen ?? null,
+        position_count: session.position_count || 0
       },
-      token: shareToken
+      token: tokenOk ? shareToken : '',
+      share_url: tokenOk ? shareUrlFor(session.id, shareToken) : ''
     });
   } catch (e) {
+    console.error('[tracking] create error:', e?.message);
     return res.status(502).json({ error: 'Gagal menghubungi server', detail: e?.message });
   }
 }
@@ -298,18 +292,26 @@ async function sendPosition(req, res, user) {
       lng,
       accuracy_m: isFinite(accuracy) ? accuracy : null,
       altitude_m: isFinite(altitude) ? altitude : null,
-      battery_pct: isFinite(batteryPct) ? Math.max(0, Math.min(100, batteryPct)) : null,
+      battery_pct: isFinite(batteryPct) ? Math.max(0, Math.min(100, Math.round(batteryPct))) : null,
       sent_at: new Date().toISOString(),
       client_id: clientId || null
     };
 
-    const posR = await rest('tracking_positions', posPayload);
-    if (!posR.ok && posR.status !== 201) {
-      console.error('[tracking] pos save failed:', posR.status);
+    const posR = await rest('tracking_positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(posPayload)
+    });
+
+    // Jangan balas ok:true kalau posisi tidak tersimpan (klien perlu antre ulang)
+    if (!posR.ok) {
+      const detail = await posR.text().catch(() => '');
+      console.error('[tracking] pos save failed:', posR.status, detail);
+      return res.status(502).json({ error: 'Gagal menyimpan posisi' });
     }
 
-    // Update session last position
-    const updateR = await fetch(
+    // Update session last position (fallback kalau trigger DB belum terpasang)
+    await fetch(
       `${process.env.SUPABASE_URL}/rest/v1/tracking_sessions?id=eq.${sessionId}`,
       {
         method: 'PATCH',
@@ -325,7 +327,7 @@ async function sendPosition(req, res, user) {
           last_seen: new Date().toISOString()
         })
       }
-    );
+    ).catch(() => {});
 
     return res.json({ ok: true });
   } catch (e) {
@@ -342,7 +344,6 @@ async function getSessionStatus(req, res) {
     return res.status(400).json({ error: 'ID sesi tidak valid' });
   }
 
-  const authHeader = bearerToken(req);
   const sessionToken = req.headers?.['x-session-token'] || req.query?.token || '';
   const user = await verifySupabaseUser(req);
 
@@ -379,7 +380,8 @@ async function getSessionStatus(req, res) {
       isTokenValid = Array.isArray(tokenData) && tokenData.length > 0;
     }
 
-    if (!isOwner && !isTokenValid && !user) {
+    // Login saja tidak cukup: harus owner atau punya share token yang valid
+    if (!isOwner && !isTokenValid) {
       return res.status(403).json({ error: 'Akses ditolak' });
     }
 
@@ -686,33 +688,30 @@ async function generateShare(req, res, user) {
     const token = generateToken();
 
     // Upsert token
-    await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tracking_share_tokens?on_conflict=session_id,token`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': process.env.SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          token,
-          expires_at: ownerData[0].expires_at
-        })
-      }
-    );
+    const upsertR = await rest('tracking_share_tokens', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal,resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        token,
+        expires_at: ownerData[0].expires_at
+      })
+    });
 
-    // Build share URL
-    const baseUrl = process.env.APP_ORIGIN || 'https://pintu-angin.vercel.app';
-    const shareUrl = `${baseUrl}/tracker.html?session=${sessionId}&token=${token}`;
+    if (!upsertR.ok) {
+      const detail = await upsertR.text().catch(() => '');
+      console.error('[tracking] share upsert failed:', upsertR.status, detail);
+      return res.status(502).json({ error: 'Gagal membuat token share' });
+    }
 
     return res.json({
       ok: true,
       token,
-      share_url: shareUrl,
-      short_url: `${baseUrl}/t/${sessionId}`
+      share_url: shareUrlFor(sessionId, token),
+      short_url: `${appOrigin()}/t/${sessionId}`
     });
   } catch (e) {
     return res.status(502).json({ error: 'Gagal membuat token share' });
