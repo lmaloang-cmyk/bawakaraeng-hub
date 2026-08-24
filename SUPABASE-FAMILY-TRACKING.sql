@@ -119,9 +119,10 @@ create table if not exists public.family_tracking_positions (
 create index if not exists ftp_session_created_idx
   on public.family_tracking_positions (session_id, created_at desc);
 
-create index if not exists ftp_created_ttl_idx
-  on public.family_tracking_positions (created_at)
-  where created_at < now() - interval '25 hours';
+-- CATATAN: tidak perlu index TTL dengan now() karena sudah di-handle
+-- oleh trigger cleanup_old_positions() yang dijalankan tiap insert.
+-- Partial index dengan now() tidak bisa di-Supabase/PostgreSQL
+-- karena now() adalah fungsi STABLE, bukan IMMUTABLE.
 
 -- RLS: tidak perlu policy publik. Posisi hanya bisa ditulis oleh API server
 -- menggunakan service role key. Pengecekan session owner dilakukan di aplikasi.
