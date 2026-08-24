@@ -65,6 +65,12 @@
 
   function toast(m, t) { try { if (window.toast) window.toast(m, t || 'ok'); } catch (e) {} }
 
+  function shareUrlFor(sessionId, shareToken) {
+    if (!sessionId || !shareToken) return '';
+    return window.location.origin + '/tracker.html?session=' +
+      encodeURIComponent(sessionId) + '&token=' + encodeURIComponent(shareToken);
+  }
+
   // ---------------------------------------------------------------- storage
   function openDb() {
     if (_dbFailed) return Promise.reject(new Error('idb-unavailable'));
@@ -113,16 +119,25 @@
   }
 
   function dbClear(sessionId) {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       openDb().then(function (db) {
         var tx = db.transaction(DB_STORE, 'readwrite');
         var store = tx.objectStore(DB_STORE);
-        var req = sessionId
-          ? store.index('sessionId').deleteAll(IDBKeyRange.only(sessionId))
-          : store.clear();
-        req.onsuccess = function () { resolve(); };
-        req.onerror = function () { resolve(); };
-      }).catch(resolve);
+        if (!sessionId) {
+          store.clear();
+        } else {
+          // IDBIndex tidak punya deleteAll() — hapus lewat cursor
+          var req = store.index('sessionId').openCursor(IDBKeyRange.only(sessionId));
+          req.onsuccess = function () {
+            var cursor = req.result;
+            if (!cursor) return;
+            cursor.delete();
+            cursor.continue();
+          };
+        }
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      }).catch(function () { resolve(); });
     });
   }
 
@@ -192,14 +207,21 @@
         .then(function (r) {
           if (!r.ok || !r.data.ok) throw new Error(r.data?.error || 'Gagal membuat sesi');
           var s = r.data.session;
+          var shareToken = r.data.token || '';
           _currentSession = s;
+          // Simpan token di sesi aktif supaya tombol Bagikan langsung bisa dipakai
+          _currentSession._shareToken = shareToken;
           _lastSentPos = null;
           _lastSentAt = 0;
-          saveState({ sessionId: s.id, token: r.data.token || '', name: s.name, startedAt: now() });
-          emit('started', { session: s, token: r.data.token });
+          saveState({ sessionId: s.id, token: shareToken, name: s.name, startedAt: now() });
+          emit('started', { session: s, token: shareToken });
           startWatching();
           toast('📍 Pelacakan dimulai — ' + s.name, 'ok');
-          return { id: s.id, token: r.data.token, share_url: (r.data.share_url || '') };
+          return {
+            id: s.id,
+            token: shareToken,
+            share_url: r.data.share_url || shareUrlFor(s.id, shareToken)
+          };
         })
         .catch(function (e) {
           toast('Gagal memulai: ' + (e.message || 'unknown'), 'err');
@@ -229,13 +251,12 @@
 
     /** Bagikan session ke WhatsApp atau salin link */
     share: function (sessionId, shareToken) {
-      var s = sessionId || _currentSession?.id;
-      var t = shareToken || (_currentSession?._shareToken);
+      var state = loadState();
+      var s = sessionId || _currentSession?.id || state?.sessionId;
+      var t = shareToken || _currentSession?._shareToken || state?.token;
       if (!s || !t) { toast('Belum ada sesi aktif', 'err'); return; }
 
-      var baseUrl = window.location.origin;
-      var shareUrl = baseUrl + '/tracker.html?session=' + s + '&token=' + t;
-      var state = loadState();
+      var shareUrl = shareUrlFor(s, t);
       var sessName = state?.name || 'Pelacakan';
 
       var msg = '*📍 Lokasi Saya — Pintu Angin*\n\n' +
@@ -274,7 +295,8 @@
     },
 
     getStatus: function () {
-      return apiGet('status', { id: _currentSession?.id })
+      if (!_currentSession || !_currentSession.id) return Promise.resolve(null);
+      return apiGet('status', { id: _currentSession.id })
         .then(function (r) {
           if (r.ok && r.data.ok) return r.data.session;
           return null;
@@ -283,7 +305,8 @@
     },
 
     getPositions: function () {
-      return apiGet('history', { id: _currentSession?.id, hours: 24, limit: 200 })
+      if (!_currentSession || !_currentSession.id) return Promise.resolve([]);
+      return apiGet('history', { id: _currentSession.id, hours: 24, limit: 200 })
         .then(function (r) {
           if (r.ok && r.data.ok) return r.data.positions || [];
           return [];
@@ -341,42 +364,39 @@
     if (!_currentSession || !_currentSession.id) return;
 
     // Throttle: max 1 pos per 15 detik
-    var now = Date.now();
-    if (now - _lastSentAt < 15000) return;
+    var ts = Date.now();
+    if (ts - _lastSentAt < 15000) return;
+    _lastSentAt = ts;
 
-    var payload = {
-      session_id: _currentSession.id,
-      lat: lat,
-      lng: lng,
-      accuracy: accuracy,
-      battery_pct: _getBattery(),
-      client_id: getClientId()
-    };
+    var sessionId = _currentSession.id;
 
-    _lastSentPos = payload;
-    _lastSentAt = now;
+    // Battery API async — harus ditunggu, kalau tidak nilainya jadi Promise
+    getBattery().then(function (battery) {
+      var payload = {
+        session_id: sessionId,
+        lat: lat,
+        lng: lng,
+        accuracy: accuracy,
+        battery_pct: battery,
+        client_id: getClientId()
+      };
+      _lastSentPos = payload;
 
-    // Try online first
-    fetch(API + '?act=positions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (typeof bwkUser === 'function' ? '' : '')
-      },
-      body: JSON.stringify(payload)
-    }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (d) {
-      if (d.ok) {
-        // Clear queue for this session
-        if (_db) dbClear(_currentSession.id);
+      // apiPost menyertakan access token Supabase yang asli
+      return apiPost('positions', payload).then(function (r) {
+        if (!r.ok || !r.data || !r.data.ok) {
+          queuePosition(payload);
+          emit('position_failed', { error: r.data?.error || 'unknown' });
+          return;
+        }
+        dbClear(sessionId).catch(function () {});
         emit('position_sent', { lat: lat, lng: lng });
-      } else {
+        if (loadQueue().length > 0) setTimeout(flushQueue, 1000);
+      }).catch(function (e) {
         queuePosition(payload);
-      }
+        console.error('[tracking] send failed:', e);
+      });
     }).catch(function (e) {
-      queuePosition(payload);
       console.error('[tracking] send failed:', e);
     });
   }
@@ -400,39 +420,33 @@
 
   function flushQueue() {
     var q = loadQueue();
-    if (!q.length || !_currentSession) return;
+    if (!q.length || !_currentSession || !_currentSession.id) return;
 
     // Send oldest first
-    var sessionPayload = {
+    var item = q[0];
+    apiPost('positions', {
       session_id: _currentSession.id,
-      lat: q[0].lat,
-      lng: q[0].lng,
-      accuracy: q[0].accuracy,
-      battery_pct: q[0].battery_pct,
-      client_id: q[0].client_id
-    };
-
-    fetch(API + '?act=positions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sessionPayload)
-    }).then(function (r) { return r.json(); })
-    .then(function (d) {
-      if (d.ok) {
-        q.shift();
-        saveQueue(q);
-        if (q.length > 0) setTimeout(flushQueue, 2000);
-      }
-    })
-    .catch(function () { /* will retry on next flush */ });
+      lat: item.lat,
+      lng: item.lng,
+      accuracy: item.accuracy,
+      battery_pct: item.battery_pct,
+      client_id: item.client_id
+    }).then(function (r) {
+      if (!r.ok || !r.data || !r.data.ok) return;
+      var cur = loadQueue();
+      cur.shift();
+      saveQueue(cur);
+      emit('queue_flushed', { remaining: cur.length });
+      if (cur.length > 0) setTimeout(flushQueue, 2000);
+    }).catch(function () { /* will retry on next flush */ });
   }
 
   // ---------------------------------------------------------------- helpers
-  function _getBattery() {
+  function getBattery() {
     try {
-      if (navigator.getBattery) {
+      if (typeof navigator.getBattery === 'function') {
         return navigator.getBattery().then(function (b) {
-          return Math.round((b.level || 0) * 100);
+          return b && typeof b.level === 'number' ? Math.round(b.level * 100) : null;
         }).catch(function () { return null; });
       }
     } catch (e) {}
