@@ -14,20 +14,28 @@ function sync(){
   if(_syncing)return;
   _syncing=true;
   if(!navigator.onLine){_syncing=false;return;}
-  var q=get(QKEY,[]);if(!q.length){_syncing=false;return;}
+  var q=get(QKEY,[]);
+  if(!q.length){_syncing=false;return;}
+  // Clone queue sebelum clear agar bisa rollback jika gagal
+  var snapshot=JSON.parse(JSON.stringify(q));
+  // Clear queue SEKARANG juga agar tidak double-sync
+  put(QKEY,[]);
+  render();
   var c=null;
   try{if(typeof _sbClient==='function')c=_sbClient();}catch(e){}
-  if(!c){_syncing=false;return;}
+  if(!c){put(QKEY,snapshot);_syncing=false;return;}
   c.auth.getUser().then(function(u){
     if(!(u&&u.data&&u.data.user))throw new Error('Not authenticated');
-    var rows=q.map(function(x){return {position:x.pos,altitude:x.alt,checked_in_at:x.at,user_id:u.data.user.id}});
+    var rows=snapshot.map(function(x){return {position:x.pos,altitude:x.alt,checked_in_at:x.at,user_id:u.data.user.id}});
     return c.from('hike_checkins').insert(rows);
   }).then(function(data,error){
-    if(error)throw error;
-    put(QKEY,[]);
-    render();
+    if(error){
+      // Rollback jika gagal
+      put(QKEY,snapshot);
+      throw error;
+    }
   }).catch(function(err){
-    console.warn('[HIKE] Sync failed:',err?err.message:'unknown error');
+    console.warn('[HIKE] Sync failed, queue restored:',err?err.message:'unknown error');
   }).finally(function(){_syncing=false;})
 }
 window.hikeOfflineGuide=function(){var html='<h2>📴 Mode Offline Pendakian</h2><p>Data berikut tetap tersedia di perangkat: peta jalur, nomor SOS, checklist, dan panduan tersesat di perangkat.</p><div class="sknotice warn"><b>Jika tersesat:</b><br>Berhenti, hemat baterai, tetap di jalur terakhir yang dikenal, aktifkan SOS saat ada sinyal, dan jangan berpindah sendiri tanpa arah.</div><div class="sknotice ok"><b>Nomor SOS</b><br>Gunakan tombol SOS aplikasi untuk mengirim koordinat GPS saat sinyal tersedia.</div>';document.getElementById('sheetBody').innerHTML=html;openSheet()}
