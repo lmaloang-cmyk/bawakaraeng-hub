@@ -2,7 +2,9 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/.well-known/assetlinks.json", "destination": "/assetlinks.json" },
-    { "source": "/t/:id", "destination": "/tracker.html" }
+    { "source": "/t/:id", "destination": "/tracker.html" },
+    { "source": "/favicon.ico", "destination": "/icon-192.png" },
+    { "source": "/apple-touch-icon.png", "destination": "/icon-192.png" }
   ],
   "headers": [
     {
