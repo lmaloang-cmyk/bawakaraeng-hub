@@ -70,19 +70,19 @@ alter table tracking_share_tokens enable row level security;
 -- Policies for tracking_sessions
 create policy "Users can view own sessions"
   on tracking_sessions for select
-  using (auth.uid()::text = created_by);
+  using (auth.uid() = created_by::uuid);
 
 create policy "Users can insert own sessions"
   on tracking_sessions for insert
-  with check (auth.uid()::text = created_by);
+  with check (auth.uid() = created_by::uuid);
 
 create policy "Users can update own active sessions"
   on tracking_sessions for update
-  using (auth.uid()::text = created_by and active = true);
+  using (auth.uid() = created_by::uuid and active = true);
 
 create policy "Users can cancel own sessions"
   on tracking_sessions for update
-  using (auth.uid()::text = created_by);
+  using (auth.uid() = created_by::uuid);
 
 -- Policies for tracking_positions
 create policy "Session owners can view positions"
@@ -90,7 +90,7 @@ create policy "Session owners can view positions"
   using (exists (
     select 1 from tracking_sessions
     where tracking_sessions.id = tracking_positions.session_id
-    and tracking_sessions.created_by = auth.uid()::text
+    and tracking_sessions.created_by::uuid = auth.uid()
     and tracking_sessions.active = true
   ));
 
@@ -99,7 +99,7 @@ create policy "Session owners can insert positions"
   with check (exists (
     select 1 from tracking_sessions
     where tracking_sessions.id = tracking_positions.session_id
-    and tracking_sessions.created_by = auth.uid()::text
+    and tracking_sessions.created_by::uuid = auth.uid()
     and tracking_sessions.active = true
   ));
 
