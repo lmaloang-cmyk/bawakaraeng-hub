@@ -1467,8 +1467,10 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
             <option value="kanre_apia">🌲 Kanre Apia</option>
           </select>
         </div>
-        <div id="elevProfileInteractive" style="height:180px;background:rgba(0,0,0,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8fa8d6;font-size:13px">
-          Pilih jalur untuk melihat profil elevasi
+        <div id="elevProfileInteractive" style="background:rgba(0,0,0,0.2);border-radius:8px;min-height:120px;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8fa8d6;font-size:13px;padding:10px">
+            Pilih jalur untuk melihat profil elevasi
+          </div>
         </div>
       </div>
       
@@ -4562,77 +4564,89 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
       });
     }
     
-    var width = el.offsetWidth || 400;
-    var height = 150;
-    var padding = 30;
+    // Get container dimensions for responsive SVG
+    var containerWidth = el.offsetWidth || 400;
+    var containerHeight = 180;
+    var padding = { top: 15, right: 40, bottom: 30, left: 50 };
+    var graphWidth = containerWidth - padding.left - padding.right;
+    var graphHeight = containerHeight - padding.top - padding.bottom;
     
     var minEl = Math.min.apply(null, elevationData) - 50;
     var maxEl = Math.max.apply(null, elevationData) + 50;
+    var elRange = maxEl - minEl || 1;
     
-    var canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    var ctx = canvas.getContext('2d');
-    
-    // Background gradient
-    var grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, 'rgba(8, 179, 111, 0.3)');
-    grad.addColorStop(1, 'rgba(43, 111, 255, 0.1)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(padding, height - padding);
-    
-    elevationData.forEach(function(el, i) {
-      var x = padding + (i / (elevationData.length - 1)) * (width - 2 * padding);
-      var y = height - padding - ((el - minEl) / (maxEl - minEl)) * (height - 2 * padding);
-      ctx.lineTo(x, y);
+    // Calculate points
+    var pts = elevationData.map(function(e, i) {
+      var x = padding.left + (i / (elevationData.length - 1)) * graphWidth;
+      var y = padding.top + graphHeight - ((e - minEl) / elRange) * graphHeight;
+      return { x: x, y: y, el: e };
     });
     
-    ctx.lineTo(width - padding, height - padding);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Draw line
-    ctx.strokeStyle = '#2b6fff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    elevationData.forEach(function(el, i) {
-      var x = padding + (i / (elevationData.length - 1)) * (width - 2 * padding);
-      var y = height - padding - ((el - minEl) / (maxEl - minEl)) * (height - 2 * padding);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    
-    // Draw labels
-    ctx.fillStyle = '#8fa8d6';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'right';
+    // Build SVG path
+    var linePath = 'M' + pts.map(function(p) { return p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' L');
+    var areaPath = linePath + ' L' + pts[pts.length-1].x.toFixed(1) + ',' + (padding.top + graphHeight).toFixed(1) + ' L' + pts[0].x.toFixed(1) + ',' + (padding.top + graphHeight).toFixed(1) + ' Z';
     
     // Y-axis labels
+    var yLabels = '';
     for (var i = 0; i <= 4; i++) {
-      var elVal = Math.round(minEl + (i / 4) * (maxEl - minEl));
-      var y = height - padding - (i / 4) * (height - 2 * padding);
-      ctx.fillText(elVal + 'm', padding - 5, y + 4);
+      var val = Math.round(minEl + (i / 4) * elRange);
+      var y = padding.top + graphHeight - (i / 4) * graphHeight;
+      yLabels += '<text x="' + (padding.left - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="#8fa8d6" font-size="11" font-family="sans-serif">' + val + 'm</text>';
     }
     
-    // X-axis labels (trail points)
-    ctx.textAlign = 'center';
-    trail.points.forEach(function(p, i) {
-      if (i % 2 === 0 || i === trail.points.length - 1) {
-        var x = padding + (i / (trail.points.length - 1)) * (width - 2 * padding);
-        ctx.fillText(i + 1, x, height - 10);
+    // X-axis labels (checkpoint numbers)
+    var xLabels = '';
+    var step = Math.max(1, Math.floor(pts.length / 6));
+    pts.forEach(function(p, i) {
+      if (i % step === 0 || i === pts.length - 1) {
+        xLabels += '<text x="' + p.x.toFixed(1) + '" y="' + (padding.top + graphHeight + 18) + '" text-anchor="middle" fill="#8fa8d6" font-size="10" font-family="sans-serif">P' + (i + 1) + '</text>';
       }
     });
     
-    el.innerHTML = '';
-    el.appendChild(canvas);
+    // Checkpoint markers
+    var markers = '';
+    pts.forEach(function(p, i) {
+      var color = p.el > maxEl - 100 ? '#ff2d55' : (p.el > maxEl - 200 ? '#ff9800' : '#08b96f');
+      markers += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="' + color + '" stroke="#fff" stroke-width="1.5"><title>P' + (i+1) + ': ' + p.el + 'm</title></circle>';
+    });
     
-    // Add trail info
-    var info = document.createElement('div');
-    info.style.cssText = 'display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#69758a';
-    info.innerHTML = '<span>📍 Start: ' + elevationData[0] + 'm</span><span>🏔️ End: ' + elevationData[elevationData.length - 1] + 'm</span><span>📈 Gain: +' + trail.elevation_gain + 'm</span>';
-    el.appendChild(info);
+    // Max elevation marker
+    var maxPt = pts.reduce(function(a, b) { return a.el > b.el ? a : b; });
+    var maxLabel = '<text x="' + maxPt.x.toFixed(1) + '" y="' + (maxPt.y - 10) + '" text-anchor="middle" fill="#ff2d55" font-size="11" font-weight="bold" font-family="sans-serif">▲ ' + maxPt.el + 'm</text>';
+    
+    // SVG with viewBox for responsiveness
+    var svg = '<svg viewBox="0 0 ' + containerWidth + ' ' + containerHeight + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;min-height:120px;display:block" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#2b6fff" stop-opacity="0.4"/>' +
+          '<stop offset="100%" stop-color="#08b96f" stop-opacity="0.1"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      // Background grid lines
+      '<line x1="' + padding.left + '" y1="' + (padding.top + graphHeight) + '" x2="' + (padding.left + graphWidth) + '" y2="' + (padding.top + graphHeight) + '" stroke="#8fa8d6" stroke-width="1" opacity="0.3"/>' +
+      '<line x1="' + padding.left + '" y1="' + padding.top + '" x2="' + padding.left + '" y2="' + (padding.top + graphHeight) + '" stroke="#8fa8d6" stroke-width="1" opacity="0.3"/>' +
+      // Area fill
+      '<path d="' + areaPath + '" fill="url(#elevGrad)"/>' +
+      // Line
+      '<path d="' + linePath + '" fill="none" stroke="#2b6fff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      // Markers
+      markers +
+      // Max label
+      maxLabel +
+      // Y-axis labels
+      yLabels +
+      // X-axis labels
+      xLabels +
+    '</svg>';
+    
+    // Info bar
+    var info = '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#69758a;padding:0 4px;flex-wrap:wrap;gap:4px">' +
+      '<span>📍 Start: ' + elevationData[0] + 'm</span>' +
+      '<span>🏔️ End: ' + elevationData[elevationData.length - 1] + 'm</span>' +
+      '<span>📈 Gain: +' + trail.elevation_gain + 'm</span>' +
+    '</div>';
+    
+    el.innerHTML = svg + info;
   }
   
   // ===== BACKUP / EXPORT =====
@@ -6124,6 +6138,21 @@ html.dark .maps-legend-symbol.location {
   color: #08b96f;
 }
 
+/* Responsive Elevation Profile - Always fit */
+#elevProfilePanel {
+  overflow: hidden;
+}
+#elevProfileInteractive {
+  min-height: 140px;
+  width: 100%;
+}
+#elevProfileInteractive svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 220px;
+}
+
 /* Panduan Map Tabs */
 .guide-tab {
   padding: 6px 12px;
@@ -6188,6 +6217,16 @@ html.dark .maps-legend-symbol.location {
   .sos-share {
     font-size: 12px;
     padding: 8px 12px;
+  }
+  
+  /* Responsive Elevation Profile */
+  #elevProfileInteractive {
+    min-height: 140px !important;
+  }
+  #elevProfileInteractive svg {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
   }
 }
 </style>
