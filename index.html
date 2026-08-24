@@ -5680,6 +5680,67 @@ html.dark .maps-legend-symbol.location {
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
   }
+
+  .maps-btn {
+    padding: 10px 6px;
+    min-height: 56px;
+    border-radius: 12px;
+  }
+
+  .maps-btn-icon {
+    font-size: 18px;
+  }
+
+  .maps-btn-label {
+    font-size: 10px;
+  }
+
+  /* Optimize map container on mobile */
+  #mapsMap {
+    height: 300px !important;
+  }
+
+  /* Better spacing for mobile panel */
+  #mapsPanel {
+    padding: 0;
+  }
+
+  /* Compact search box */
+  #mapSearch {
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Stack trail buttons vertically on small screens */
+  #mapsTrailList button {
+    width: 100% !important;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .maps-controls {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .maps-btn {
+    padding: 8px 4px;
+    min-height: 50px;
+  }
+
+  .maps-btn-icon {
+    font-size: 16px;
+  }
+
+  .maps-btn-label {
+    font-size: 9px;
+  }
+
+  #mapsMap {
+    height: 250px !important;
+  }
+}
   
   .maps-btn {
     padding: 10px 6px;
