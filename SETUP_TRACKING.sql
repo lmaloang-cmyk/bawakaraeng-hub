@@ -61,10 +61,10 @@ create table if not exists tracking_share_tokens (
   unique(session_id, token)
 );
 
--- Indexes
+-- Indexes (no partial index with now() — that function is STABLE, not IMMUTABLE)
 create index if not exists idx_tracking_share_tokens_token on tracking_share_tokens(token);
 create index if not exists idx_tracking_share_tokens_session on tracking_share_tokens(session_id);
-create index if not exists idx_tracking_share_tokens_expires on tracking_share_tokens(expires_at) where expires_at > now();
+create index if not exists idx_tracking_share_tokens_expires on tracking_share_tokens(expires_at);
 
 -- Row Level Security (RLS)
 alter table tracking_sessions enable row level security;
