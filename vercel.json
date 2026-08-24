@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/.well-known/assetlinks.json", "destination": "/assetlinks.json" }
+    { "source": "/.well-known/assetlinks.json", "destination": "/assetlinks.json" },
+    { "source": "/t/:id", "destination": "/tracker.html" }
   ],
   "headers": [
     {
@@ -21,6 +22,7 @@
     "api/push-subscribe.js": { "maxDuration": 15 },
     "api/bmkg.js":         { "maxDuration": 15 },
     "api/hotspot.js":      { "maxDuration": 15 },
-    "api/species-search.js": { "maxDuration": 10 }
+    "api/species-search.js": { "maxDuration": 10 },
+    "api/tracking.js":     { "maxDuration": 15 }
   }
 }

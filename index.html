@@ -1037,6 +1037,12 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         <div class="feed" id="feed"></div><button class="reports-more" onclick="openAllReports()">📋 Lihat semua laporan <span>→</span></button>
       </section>
     </div>
+
+    <!-- PELACAKAN KELUARGA -->
+    <section class="home-tools tracking-section" id="trackingSection" style="display:none">
+      <div class="home-section-title compact"><div><span class="eyebrow">PELACAKAN</span><h3>Keluarga di Gunung 🧭</h3></div><button class="text-action" onclick="openTrackingModal()">+ Mulai Sesi</button></div>
+      <div id="trackingList" class="tracking-list"></div>
+    </section>
   </section>
 
   <!-- EKSPLOR -->
@@ -6758,6 +6764,274 @@ html.dark .maps-legend-symbol.location {
   });
   window.addEventListener('online', function() { cuacaDone = false; refreshCuacaGunung(); });
 })();
+</script>
+
+<!-- ===== PELACAKAN KELUARGA ===== -->
+<style>
+.tracking-section{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.tracking-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tracking-card{background:var(--canvas);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px}
+.tracking-card .tc-status{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tracking-card .tc-status.online{background:rgba(8,179,111,.15)}
+.tracking-card .tc-status.offline{background:rgba(255,152,0,.15)}
+.tracking-card .tc-info{flex:1;min-width:0}
+.tracking-card .tc-info b{display:block;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tracking-card .tc-info small{font-size:11px;color:var(--sub)}
+.tracking-card .tc-actions{display:flex;gap:6px;flex-shrink:0}
+.tracking-card .tc-actions button{padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:11px;font-weight:600;cursor:pointer}
+.tracking-card .tc-actions button.primary{background:#08b96f;color:#fff;border-color:#08b96f}
+.tracking-empty{text-align:center;padding:20px;color:var(--sub);font-size:13px}
+.tk-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.tk-modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.tk-modal h3{margin:0 0 16px;font-size:18px;font-weight:800}
+.tk-modal label.fld{margin-bottom:12px}
+.tk-modal input,.tk-modal select,.tk-modal textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--canvas);color:var(--ink);font-size:14px}
+.tk-modal .tk-actions{display:flex;gap:10px;margin-top:16px}
+.tk-modal .tk-actions button{flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer}
+.tk-modal .tk-actions .tk-cancel{background:var(--line);color:var(--ink)}
+.tk-modal .tk-actions .tk-submit{background:#08b96f;color:#fff}
+.tk-duration{display:flex;gap:8px;margin-top:8px}
+.tk-duration button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--canvas);font-size:12px;font-weight:600;cursor:pointer}
+.tk-duration button.on{background:#08b96f;color:#fff;border-color:#08b96f}
+.tk-alert{padding:10px 12px;border-radius:10px;font-size:12px;margin-bottom:12px;display:none}
+.tk-alert.error{background:#fdeaea;color:#c0341d;display:block}
+.tk-alert.success{background:#e9f9f0;color:#08843f;display:block}
+</style>
+
+<div id="tkModal" class="tk-modal-bg" style="display:none" onclick="if(event.target===this)closeTrackingModal()">
+  <div class="tk-modal">
+    <h3>🧭 Mulai Pelacakan Keluarga</h3>
+    <div id="tkAlert" class="tk-alert"></div>
+    <label class="fld">Nama Sesi</label>
+    <input id="tkName" type="text" placeholder="Contoh: Keluargaku di Gunung" maxlength="60">
+    <label class="fld">Catatan (Opsional)</label>
+    <textarea id="tkNote" rows="2" maxlength="200" placeholder="Catatan untuk keluarga..."></textarea>
+    <label class="fld">Durasi Sesi</label>
+    <div class="tk-duration" id="tkDuration">
+      <button onclick="setTkDuration(2)" data-hours="2">2 jam</button>
+      <button onclick="setTkDuration(4)" data-hours="4" class="on">4 jam</button>
+      <button onclick="setTkDuration(8)" data-hours="8">8 jam</button>
+      <button onclick="setTkDuration(12)" data-hours="12">12 jam</button>
+    </div>
+    <div class="tk-actions">
+      <button class="tk-cancel" onclick="closeTrackingModal()">Batal</button>
+      <button class="tk-submit" onclick="startTrackingSession()">Mulai Sesi</button>
+    </div>
+  </div>
+</div>
+
+<div id="tkActiveModal" class="tk-modal-bg" style="display:none" onclick="if(event.target===this)closeActiveTrackingModal()">
+  <div class="tk-modal">
+    <h3>📤 Bagikan Sesi</h3>
+    <div id="tkActiveAlert" class="tk-alert"></div>
+    <div id="tkActiveContent" style="margin-bottom:16px"></div>
+    <div class="tk-actions">
+      <button class="tk-cancel" onclick="closeActiveTrackingModal()">Tutup</button>
+      <button class="tk-submit" onclick="stopActiveSession()">Hentikan Sesi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== PELACAKAN KELUARGA ===== */
+var _tkSessions = [];
+var _tkCurrentSessionId = null;
+var _tkDuration = 4;
+
+function setTkDuration(h) {
+  _tkDuration = h;
+  document.querySelectorAll('#tkDuration button').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.hours) === h);
+  });
+}
+
+function openTrackingModal() {
+  document.getElementById('tkModal').style.display = 'flex';
+  document.getElementById('tkAlert').className = 'tk-alert';
+  document.getElementById('tkAlert').textContent = '';
+}
+
+function closeTrackingModal() {
+  document.getElementById('tkModal').style.display = 'none';
+}
+
+function showAlert(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'tk-alert ' + type;
+  el.textContent = msg;
+}
+
+async function startTrackingSession() {
+  var name = document.getElementById('tkName').value.trim();
+  var note = document.getElementById('tkNote').value.trim();
+  if (!name) { showAlert('tkAlert', 'error', 'Nama sesi wajib diisi'); return; }
+
+  try {
+    var r = await fetch('/api/tracking?act=create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ name: name, note: note, expiry_hours: _tkDuration })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      closeTrackingModal();
+      _tkSessions = [d.session];
+      _tkCurrentSessionId = d.session.id;
+      renderTrackingList();
+      // Also fetch share token for the share modal
+      var shareToken = d.token || '';
+      openActiveTrackingModal({ ...d.session, share_token: shareToken });
+      // Fetch full share URL if not included
+      if (!shareToken) {
+        fetch('/api/tracking?act=share&id=' + d.session.id).then(r => r.json()).then(sd => {
+          if (sd.ok && sd.share_url) {
+            openActiveTrackingModal({ ...d.session, share_url: sd.share_url });
+          }
+        }).catch(function(){});
+      }
+    } else {
+      showAlert('tkAlert', 'error', d.error || 'Gagal membuat sesi');
+    }
+  } catch (e) {
+    showAlert('tkAlert', 'error', 'Koneksi gagal');
+  }
+}
+
+function renderTrackingList() {
+  var el = document.getElementById('trackingList');
+  var sec = document.getElementById('trackingSection');
+  if (!_tkSessions.length) {
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  el.innerHTML = _tkSessions.map(function(s) {
+    var isActive = s.active && new Date(s.expires_at) > new Date();
+    var minsAgo = s.last_seen ? Math.round((Date.now() - new Date(s.last_seen).getTime()) / 60000) : '—';
+    return '<div class="tracking-card">' +
+      '<div class="tc-status ' + (isActive ? 'online' : 'offline') + '">' + (isActive ? '🟢' : '⚪') + '</div>' +
+      '<div class="tc-info">' +
+        '<b>' + escHtml(s.name) + '</b>' +
+        '<small>' + (isActive ? 'Aktif • ' + minsAgo + ' menit lalu' : 'Selesai') + '</small>' +
+      '</div>' +
+      '<div class="tc-actions">' +
+        '<button onclick="viewTracking(\'' + s.id + '\')">👁️</button>' +
+        '<button class="primary" onclick="shareTracking(\'' + s.id + '\')">📤</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function shareTracking(sessionId) {
+  _tkCurrentSessionId = sessionId;
+  generateShareToken(sessionId);
+}
+
+async function viewTracking(sessionId) {
+  // Need token to open tracker — reuse share endpoint
+  try {
+    var r = await fetch('/api/tracking?act=share&id=' + sessionId);
+    var d = await r.json();
+    if (d.ok && d.share_url) {
+      window.open(d.share_url, '_blank');
+    } else {
+      // Fallback: open without token (will likely fail auth)
+      window.open('/t/' + sessionId, '_blank');
+    }
+  } catch (e) {
+    window.open('/t/' + sessionId, '_blank');
+  }
+}
+
+async function generateShareToken(sessionId) {
+  try {
+    var r = await fetch('/api/tracking?act=share&id=' + sessionId);
+    var d = await r.json();
+    if (d.ok) {
+      openActiveTrackingModal({ ...d.session, share_token: d.share_token, share_url: d.share_url });
+    } else {
+      showAlert('tkActiveAlert', 'error', d.error || 'Gagal generate token');
+    }
+  } catch (e) {
+    showAlert('tkActiveAlert', 'error', 'Koneksi gagal');
+  }
+}
+
+function openActiveTrackingModal(session) {
+  document.getElementById('tkActiveModal').style.display = 'flex';
+  document.getElementById('tkActiveAlert').className = 'tk-alert';
+  document.getElementById('tkActiveAlert').textContent = '';
+
+  var content = document.getElementById('tkActiveContent');
+  content.innerHTML = '<p style="margin-bottom:12px"><b>Sesi: ' + escHtml(session.name) + '</b></p>' +
+    '<p style="margin-bottom:8px;font-size:13px;color:var(--sub)">Bagikan link ini kepada keluargamu:</p>' +
+    '<input type="text" readonly value="' + escHtml(session.share_url) + '" id="tkShareInput" onclick="this.select()">' +
+    '<button onclick="copyShareLink()" style="margin-top:8px;padding:8px 16px;border-radius:8px;background:#08b96f;color:#fff;border:none;font-size:13px;font-weight:600">Salin Link</button>' +
+    '<p style="margin-top:16px;font-size:13px;color:var(--sub)">Berakhir: ' + new Date(session.expires_at).toLocaleString('id-ID') + '</p>';
+}
+
+function closeActiveTrackingModal() {
+  document.getElementById('tkActiveModal').style.display = 'none';
+}
+
+function copyShareLink() {
+  var input = document.getElementById('tkShareInput');
+  if (input) {
+    input.select();
+    navigator.clipboard.writeText(input.value).then(function() {
+      var btn = input.nextElementSibling;
+      if (btn) { btn.textContent = '✓ Tersalin!'; setTimeout(function(){ btn.textContent = 'Salin Link'; }, 2000); }
+    });
+  }
+}
+
+async function stopActiveSession() {
+  if (!_tkCurrentSessionId) return;
+  try {
+    var r = await fetch('/api/tracking?act=stop', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ session_id: _tkCurrentSessionId })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      _tkSessions = _tkSessions.filter(function(s) { return s.id !== _tkCurrentSessionId; });
+      _tkCurrentSessionId = null;
+      closeActiveTrackingModal();
+      renderTrackingList();
+    } else {
+      showAlert('tkActiveAlert', 'error', d.error || 'Gagal menghentikan sesi');
+    }
+  } catch (e) {
+    showAlert('tkActiveAlert', 'error', 'Koneksi gagal');
+  }
+}
+
+// Load sessions on init
+window.addEventListener('load', function() {
+  loadTrackingSessions();
+});
+
+async function loadTrackingSessions() {
+  try {
+    var r = await fetch('/api/tracking?act=list');
+    var d = await r.json();
+    if (d.ok) {
+      _tkSessions = d.sessions || [];
+      renderTrackingList();
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
 </script>
 
 
