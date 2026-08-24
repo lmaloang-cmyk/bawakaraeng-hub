@@ -607,11 +607,12 @@
         }
 
         // Fit bounds to show all positions
+        map.invalidateSize();
         if (positions.length > 0 || lastPosition) {
           const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
           if (lastPosition) bounds.extend([lastPosition.lat, lastPosition.lng]);
-          if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, { padding: [60, 60] });
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
           }
         }
       }
