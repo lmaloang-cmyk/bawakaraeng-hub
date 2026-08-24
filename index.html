@@ -1097,6 +1097,351 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     </div>
     <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
     <div class="trailwrap" id="jalurTrails"></div>
+    
+    <!-- ANALISIS JALUR PENDAKIAN -->
+    <div class="sh" style="margin-top:18px"><span class="bar" style="background:linear-gradient(90deg,#ff9838,#ff2d6f)"></span><h3>📊 Analisis Jalur Pendakian</h3></div>
+    
+    <div id="trailAnalysisPanel" style="margin-top:12px">
+      <!-- Tab Navigation -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+        <button onclick="switchAnalysisTab('segmen')" id="tabSegmen" class="analysis-tab active" style="flex:1">📍 Segmen</button>
+        <button onclick="switchAnalysisTab('air')" id="tabAir" class="analysis-tab" style="flex:1">💧 Air</button>
+        <button onclick="switchAnalysisTab('safety')" id="tabSafety" class="analysis-tab" style="flex:1">🛡️ Keselamatan</button>
+        <button onclick="switchAnalysisTab('peralatan')" id="tabPeralatan" class="analysis-tab" style="flex:1">🎒 Peralatan</button>
+      </div>
+      
+      <!-- Tab: Segmen -->
+      <div id="analysisSegmen" class="analysis-tab-content">
+        <div class="segmen-summary" style="background:linear-gradient(135deg,rgba(43,111,255,.1),rgba(8,179,111,.1));border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid rgba(43,111,255,.15)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+            <div><b style="color:#2b6fff;font-size:18px" id="totalDist">10.2</b><small style="display:block;font-size:11px;color:var(--sub)">km Total</small></div>
+            <div><b style="color:#08b96f;font-size:18px" id="totalGain">1,316</b><small style="display:block;font-size:11px;color:var(--sub)">m Elevasi</small></div>
+            <div><b style="color:#ff9838;font-size:18px" id="totalTime">10-14</b><small style="display:block;font-size:11px;color:var(--sub)">jam estimasi</small></div>
+            <div><b style="color:#ff2d55;font-size:18px" id="riskLevel">SEDANG</b><small style="display:block;font-size:11px;color:var(--sub)">tingkat risiko</small></div>
+          </div>
+        </div>
+        
+        <div id="segmenList" style="display:flex;flex-direction:column;gap:10px"></div>
+        
+        <div class="jhint" style="margin-top:12px">💡 Ketuk segmen untuk melihat detail: difficulty, estimasi waktu, dan catatan penting.</div>
+      </div>
+      
+      <!-- Tab: Air -->
+      <div id="analysisAir" class="analysis-tab-content" style="display:none">
+        <div class="air-overview" style="background:rgba(43,111,255,.08);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid rgba(43,111,255,.15)">
+          <b style="color:#2b6fff;font-size:14px">📊 Ringkasan Ketersediaan Air</b>
+          <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div style="text-align:center;padding:10px;background:rgba(8,179,111,.1);border-radius:10px">
+              <b style="color:#08b96f;font-size:20px" id="waterPoints">2</b>
+              <small style="display:block;font-size:11px;color:var(--sub)">Titik Air</small>
+            </div>
+            <div style="text-align:center;padding:10px;background:rgba(255,152,0,.1);border-radius:10px">
+              <b style="color:#ff9838;font-size:20px" id="waterRisk">Pos 5</b>
+              <small style="display:block;font-size:11px;color:var(--sub)">Titik Terakhir</small>
+            </div>
+            <div style="text-align:center;padding:10px;background:rgba(255,45,85,.1);border-radius:10px">
+              <b style="color:#ff2d55;font-size:20px" id="waterGap">65%</b>
+              <small style="display:block;font-size:11px;color:var(--sub)">Gap Kritis</small>
+            </div>
+          </div>
+        </div>
+        
+        <div id="airTimeline" style="position:relative;padding-left:20px;margin:12px 0"></div>
+        
+        <div class="jhint" style="margin-top:12px">⚠️ <b>WAJIB:</b> Isi air penuh di Pos 5 sebelum melanjutkan ke puncak. Sumber air setelah Pos 5 tidak terkonfirmasi.</div>
+      </div>
+      
+      <!-- Tab: Safety -->
+      <div id="analysisSafety" class="analysis-tab-content" style="display:none">
+        <div class="safety-header" style="background:rgba(255,45,85,.08);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid rgba(255,45,85,.15)">
+          <b style="color:#ff2d55;font-size:14px">🛡️ Analisis Resiko Jalur</b>
+          <div style="margin-top:10px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden">
+            <div id="riskBar" style="height:100%;width:65%;background:linear-gradient(90deg,#08b96f,#ff9838,#ff2d55);border-radius:4px"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--sub)">
+            <span>Ringan</span><span>Sedang</span><span>Berbahaya</span>
+          </div>
+        </div>
+        
+        <div id="safetyList" style="display:flex;flex-direction:column;gap:10px"></div>
+        
+        <div class="sknotice warn" style="margin-top:12px">
+          <b>⚠️ Zona Bahaya Dikenali:</b>
+          <ul style="margin:8px 0 0 18px;padding:0;line-height:1.8">
+            <li><b>Pos 3:</b> Padang rumput luas, kabut tebal sering menyelimuti</li>
+            <li><b>Pos 5:</b> Titik air terakhir - wajib isi persediaan</li>
+            <li><b>Pos 8-9:</b> Vegetasi menipis, angin kencang, trek curam</li>
+            <li><b>Puncak:</b> Cuaca berubah cepat, suhu bisa di bawah 5°C</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Tab: Peralatan -->
+      <div id="analysisPeralatan" class="analysis-tab-content" style="display:none">
+        <div class="gear-intro" style="background:rgba(8,179,111,.08);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid rgba(8,179,111,.15)">
+          <b style="color:#08b96f;font-size:14px">🎒 Rekomendasi Peralatan per Segmen</b>
+          <p style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6">Peralatan yang dibutuhkan bervariasi sesuai segmen. Pilih segmen untuk melihat checklist lengkap.</p>
+        </div>
+        
+        <div id="gearSelector" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px"></div>
+        
+        <div id="gearDetail" style="background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line)"></div>
+      </div>
+    </div>
+    
+    <style>
+      .analysis-tab{padding:10px 16px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--sub);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+      .analysis-tab.active{border-color:var(--brand);background:linear-gradient(135deg,rgba(47,138,112,.1),rgba(38,112,90,.1));color:var(--brand)}
+      .analysis-tab:hover{border-color:var(--brand2)}
+      .segmen-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--line);box-shadow:var(--shadow);cursor:pointer;transition:all .2s}
+      .segmen-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+      .segmen-card.expanded{border-color:var(--brand)}
+      .segmen-header{display:flex;align-items:center;gap:12px}
+      .segmen-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0}
+      .segmen-info{flex:1}
+      .segmen-info b{display:block;font-size:14px;font-weight:800}
+      .segmen-info small{font-size:12px;color:var(--sub)}
+      .segmen-stats{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+      .segmen-stat{padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700}
+      .segmen-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+      .segmen-card.expanded .segmen-detail{display:block}
+      .segmen-detail p{font-size:13px;color:var(--sub);line-height:1.6;margin:0 0 8px}
+      .segmen-detail ul{margin:0 0 8px 18px;padding:0;font-size:12px;color:var(--sub);line-height:1.7}
+      .segmen-arrow{font-size:18px;color:var(--sub);transition:transform .2s}
+      .segmen-card.expanded .segmen-arrow{transform:rotate(180deg)}
+      
+      .air-point{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--line)}
+      .air-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+      .air-icon.good{background:rgba(8,179,111,.15)}
+      .air-icon.warning{background:rgba(255,152,0,.15)}
+      .air-icon.danger{background:rgba(255,45,85,.15)}
+      .air-info{flex:1}
+      .air-info b{display:block;font-size:13px}
+      .air-info small{font-size:11px;color:var(--sub)}
+      .air-badge{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700}
+      .air-badge.good{background:#e9f9f0;color:#08843f}
+      .air-badge.warning{background:#fff2df;color:#d5803b}
+      .air-badge.danger{background:#fdeaea;color:#c0341d}
+      
+      .safety-card{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line);margin-bottom:10px}
+      .safety-card.critical{border-left:4px solid #ff2d55}
+      .safety-card.warning{border-left:4px solid #ff9838}
+      .safety-card.info{border-left:4px solid #2b6fff}
+      .safety-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+      .safety-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+      .safety-icon.critical{background:rgba(255,45,85,.15)}
+      .safety-icon.warning{background:rgba(255,152,0,.15)}
+      .safety-icon.info{background:rgba(43,111,255,.15)}
+      .safety-body{font-size:13px;color:var(--sub);line-height:1.6}
+      .safety-body b{color:var(--ink)}
+      
+      .gear-btn{padding:8px 16px;border:2px solid var(--line);border-radius:10px;background:var(--card);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+      .gear-btn.active{border-color:var(--brand);background:linear-gradient(135deg,rgba(47,138,112,.1),rgba(38,112,90,.1));color:var(--brand)}
+      .gear-list{margin:0;padding:0;list-style:none}
+      .gear-list li{padding:8px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:13px}
+      .gear-list li:last-child{border-bottom:none}
+      .gear-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--brand)}
+      .gear-list li.taken .gear-check{background:var(--brand);border-color:var(--brand);color:#fff}
+    </style>
+    
+    <script>
+    /* === ANALISIS JALUR PENDAKIAN === */
+    var segmenData=[
+      {id:'s1',name:'Lembanna → Pos 0',start:'0%',end:'12.6%',dist:'1.29 km',gain:'166 m',time:'1-1.5 jam',diff:'Ringan',color:'#08b96f',icon:'🥾',
+       note:'Jalur landai melewati hutan pinus. Cocok untuk pemanasan otot.',
+       tips:['Bawa air secukupnya','Perhatikan penanda jalur','Siapkan kamera untuk pemandangan'],
+       risk:'Risiko rendah - jalur jelas dan terreno landai'},
+      {id:'s2',name:'Pos 0 → Pos 1',start:'12.6%',end:'15.6%',dist:'0.31 km',gain:'39 m',time:'20-30 menit',diff:'Ringan',color:'#08b96f',icon:'🌲',
+       note:'Jalur mulai memasuki hutan lebat. Ada percabangan menuju Lembah Ramma.',
+       tips:['Waspada jalan licin saat hujan','Ikuti penanda "Puncak Bawakaraeng"','Jangan belok ke Lembah Ramma kecuali tujuan'],
+       risk:'Risiko rendah - tapi waspadai percabangan jalur'},
+      {id:'s3',name:'Pos 1 → Pos 2',start:'15.6%',end:'22.5%',dist:'0.71 km',gain:'91 m',time:'40-50 menit',diff:'Sedang',color:'#ff9838',icon:'💧',
+       note:'Tanjakan menengah menuju sumber air pertama. Area cocok untuk berkemah.',
+       tips:['ISI AIR di Pos 2','Istirahat sejenak','Cek persediaan makanan'],
+       risk:'Risiko sedang - tanjakan cukup terjal, pastikan hidrasi'},
+      {id:'s4',name:'Pos 2 → Pintu Rimba',start:'22.5%',end:'28.8%',dist:'0.64 km',gain:'83 m',time:'35-45 menit',diff:'Sedang',color:'#ff9838',icon:'🚪',
+       note:'Masuk hutan lebat, jalur mulai curam. Suhu menurun drastis.',
+       tips:['Pakai jaket tebal','Hati-hati akar pohon yang slip','Bawa senter cadangan'],
+       risk:'Risiko sedang - medan hutan lebat, visibility rendah'},
+      {id:'s5',name:'Pintu Rimba → Pos 3',start:'28.8%',end:'33.1%',dist:'0.44 km',gain:'57 m',time:'25-35 menit',diff:'Sedang',color:'#ff9838',icon:'🌿',
+       note:'Keluar dari hutan, masuk area padang rumput. Kabut tebal sering menyelimuti.',
+       tips:['Waspadai kabut - pakai kompas/GPS','Hindari berjalan sendiri','Simpan air secukupnya'],
+       risk:'Risiko tinggi - kabut tebal mengurangi visibility, mudah tersesat'},
+      {id:'s6',name:'Pos 3 → Pos 5',start:'33.1%',end:'49.9%',dist:'1.71 km',gain:'220 m',time:'1.5-2 jam',diff:'Berat',color:'#ff2d55',icon:'⚠️',
+       note:'Zona kritis! Tanjakan terjal melewati batu-batu besar. Ini adalah segmen paling menantang.',
+       tips:['ISI AIR di Pos 5 (SUMBER TERAKHIR)','Bawa air minimal 3 liter','Periksa kondisi fisik sebelum lanjut','Jika lelah, pertimbangkan turun'],
+       risk:'Risiko tinggi - tanjakan terjal, sumber air terakhir, cuaca tidak predictable'},
+      {id:'s7',name:'Pos 5 → Memorial',start:'49.9%',end:'54.4%',dist:'0.46 km',gain:'60 m',time:'25-35 menit',diff:'Berat',color:'#ff2d55',icon:'🪦',
+       note:'Melalui area berbatu dengan angin kencang. Monument peringatan untuk pendaki yang gugur.',
+       tips:['Lindungi mata dari debu/angin','Hemat energi','Terus mantra Pos 5 untuk air emergency'],
+       risk:'Risiko tinggi - angin kencang, terrain berbatu, isolated area'},
+      {id:'s8',name:'Memorial → Pos 8',start:'54.4%',end:'70.3%',dist:'1.62 km',gain:'210 m',time:'1.5-2 jam',diff:'Berat',color:'#ff2d55',icon:'🪨',
+       note:'Jalur melalui zona alpine dengan vegetasi minimal. Exposed to wind dan suhu dingin.',
+       tips:['Pakai windbreaker','Lapis pakaian (layering)','Jaga komunikasi dengan teman','Waspadai tanda hipotermia'],
+       risk:'Risiko tinggi - exposed terrain, suhu dingin, komunikasi terbatas'},
+      {id:'s9',name:'Pos 8 → Pos 9',start:'70.3%',end:'83.3%',dist:'1.33 km',gain:'170 m',time:'1-1.5 jam',diff:'Sangat Berat',color:'#c0341d',icon:'⛰️',
+       note:'Perpotongan jalur Sinjai. Trek tebing curam menuju puncak. Jalur paling teknis.',
+       tips:['Gunakan sarung tangan','Konsentrasi penuh pada step','Jangan terburu-buru','Siap darurat turun'],
+       risk:'Risiko sangat tinggi - tebing curam, terpapar, teknis tinggi'},
+      {id:'s10',name:'Pos 9 → Puncak',start:'83.3%',end:'100%',dist:'1.51 km',gain:'220 m',time:'1-1.5 jam',diff:'Sangat Berat',color:'#c0341d',icon:'🏔️',
+       note:'Segmen terakhir menuju puncak 2.830 mdpl. Cuaca bisa berubah drastis.',
+       tips:['Cek ramalan cuaca sebelum berangkat','Bawa extra clothing','Photograph summit! 📸','Rayakan dengan aman - jangan terlalu excited sampai dehidrasi'],
+       risk:'Risiko sangat tinggi - altitude, cuaca ektrim, jarak terakhir yang melelahkan'}
+    ];
+    
+    var safetyData=[
+      {type:'critical',icon:'🔥',title:'Zona Tanpa Sinyal',desc:'Dari Pos 1 hingga Puncak, sinyal HP sangat lemah atau tidak ada. <b>Pastikan download peta offline</b> sebelum naik.'},
+      {type:'critical',icon:'💧',title:'Gap Air 65%',desc:'Dari Pos 5 (49.9%) hingga Puncak (100%), TIDAK ADA sumber air terkonfirmasi. <b>Wajib bawa 3+ liter air dari Pos 5.</b>'},
+      {type:'warning',icon:'🌫️',title:'Kabut Tebal Pos 3',desc:'Area padang rumput Pos 3 sering tertutup kabut tebal. Visibility bisa < 5 meter. Gunakan kompas/GPS.'},
+      {type:'warning',icon:'💨',title:'Angin Kencang Pos 8-9',desc:'Zona exposed dengan angin kencang. Suhu terasa 5-10°C lebih dingin dari actual. Pakai windbreaker.'},
+      {type:'warning',icon:'🧗',title:'Teknis Pos 9',desc:'Tebing curam dengan batu longsor. Gunakan sarung tangan dan konsentrasi penuh. Jangan walking sambil chat.'},
+      {type:'info',icon:'📻',title:'Radio Komunikasi',desc:'Rekomendasi membawa walkie-talkie untuk grup. Channel umum: CH16 (darurat).'},
+      {type:'info',icon:'⏰',title:'Waktu Teraman',desc:'Mulai pendakian jam 04.00-05.00 pagi. Target summit sebelum jam 12.00 untuk hindari badai afternoon.'},
+      {type:'info',icon:'🚑',title:'Evakuasi',desc:'Titik evakuasi terdekat: Pos 2 (ambulance akses). Kontak RC: 0812-xxxx-xxxx'}
+    ];
+    
+    var gearData={
+      s1:{name:'Lembanna → Pos 0',essential:['Air 1 liter','Helm pendakian','Sepatu trekking','Ponsel + powerbank'],optional:['Camera','Snack ringan','Sunscreen']},
+      s2:{name:'Pos 0 → Pos 1',essential:['Air 1 liter','Compass/GPS','First aid kit','Senter headlamp'],optional:['Bird guide book','Field notebook']},
+      s3:{name:'Pos 1 → Pos 2',essential:['Air 2 liter','Snack energi','Jacket tipis','Rain poncho'],optional:['Tenda emergency','Spectacles UV']},
+      s4:{name:'Pos 2 → Pintu Rimba',essential:['Air 2 liter','Jacket hangat','Senter cadangan','Extra socks'],optional:['Bug spray','Trekking poles']},
+      s5:{name:'Pintu Rimba → Pos 3',essential:['Air 2 liter','GPS/camera','Windbreaker','Hand sanitizer'],optional:['Thermos warm drink','Glow stick']},
+      s6:{name:'Pos 3 → Pos 5',essential:['Air 3+ liter','High-calorie food','Emergency blanket','Whistle'],optional:['Electrolyte powder','Salt tablets']},
+      s7:{name:'Pos 5 → Memorial',essential:['Air 3 liter','Energy bars','Thermal layer','Lip balm'],optional:['Hot drink thermos','Hand warmer']},
+      s8:{name:'Memorial → Pos 8',essential:['Windbreaker','Thermal hat','Gloves','Extra layers'],optional:['Solar charger','Insulated bottle']},
+      s9:{name:'Pos 8 → Pos 9',essential:['Gloves','Harness (opsional)','First aid advanced','Emergency contact card'],optional:['Ascender device','Carabiners']},
+      s10:{name:'Pos 9 → Puncak',essential:['Full gear','Emergency signals','Satellite phone (opsional)','High-energy food'],optional:['Summit certificate','Polarized sunglasses']}
+    };
+    
+    function renderSegmenList(){
+      var el=document.getElementById('segmenList');
+      if(!el)return;
+      el.innerHTML=segmenData.map(function(s,i){
+        var diffClass=s.diff.includes('Berat')?'danger':(s.diff==='Sedang'?'warning':'good');
+        return '<div class="segmen-card" onclick="toggleSegmen(\''+s.id+'\')" id="segmen-'+s.id+'">\
+          <div class="segmen-header">\
+            <div class="segmen-num" style="background:'+s.color+'">'+(i+1)+'</div>\
+            <div class="segmen-info">\
+              <b>'+s.name+'</b>\
+              <small>'+s.dist+' · '+s.gain+' · '+s.time+'</small>\
+              <div class="segmen-stats">\
+                <span class="segmen-stat" style="background:'+s.color+'22;color:'+s.color+'">'+s.diff+'</span>\
+                <span class="segmen-stat" style="background:rgba(43,111,255,.1);color:#2b6fff">'+s.start+'-'+s.end+'</span>\
+              </div>\
+            </div>\
+            <span class="segmen-arrow">▼</span>\
+          </div>\
+          <div class="segmen-detail">\
+            <p>'+s.note+'</p>\
+            <b style="font-size:12px;color:var(--ink)">💡 Tips:</b>\
+            <ul>'+s.tips.map(function(t){return '<li>'+t+'</li>';}).join('')+'</ul>\
+            <b style="font-size:12px;color:var(--ink)">⚠️ Risiko:</b>\
+            <p style="margin-top:4px;font-size:12px;color:'+(s.diff.includes('Berat')?'#ff2d55':'#ff9838')+'">'+s.risk+'</p>\
+          </div>\
+        </div>';
+      }).join('');
+    }
+    
+    function toggleSegmen(id){
+      var card=document.getElementById('segmen-'+id);
+      if(!card)return;
+      card.classList.toggle('expanded');
+    }
+    
+    function renderAirTimeline(){
+      var el=document.getElementById('airTimeline');
+      if(!el)return;
+      var points=[
+        {pos:'Lembanna',pct:'0%',status:'good',icon:'💧',label:'Basecamp - Air PDAM'},
+        {pos:'Pos 2',pct:'22.5%',status:'good',icon:'💧',label:'Sumber air permanen'},
+        {pos:'Pos 5',pct:'49.9%',status:'warning',icon:'⚠️',label:'Sumber air terakhir (TERKONFIRMASI)'},
+        {pos:'Setelah Pos 5',pct:'50-100%',status:'danger',icon:'🚫',label:'TIDAK ADA sumber air terkonfirmasi'}
+      ];
+      el.innerHTML=points.map(function(p,i)=>{
+        var badgeClass=p.status;
+        var badgeText=p.status==='good'?'AMAN':(p.status==='warning'?'WASPADA':'KRITIS');
+        return '<div class="air-point">\
+          <div class="air-icon '+p.status+'">'+p.icon+'</div>\
+          <div class="air-info">\
+            <b>'+p.pos+'</b>\
+            <small>'+p.label+' · '+p.pct+'</small>\
+          </div>\
+          <span class="air-badge '+badgeClass+'">'+badgeText+'</span>\
+        </div>';
+      }).join('');
+    }
+    
+    function renderSafetyList(){
+      var el=document.getElementById('safetyList');
+      if(!el)return;
+      el.innerHTML=safetyData.map(function(s)=>{
+        return '<div class="safety-card '+s.type+'">\
+          <div class="safety-header">\
+            <div class="safety-icon '+s.type+'">'+s.icon+'</div>\
+            <b style="font-size:14px">'+s.title+'</b>\
+          </div>\
+          <div class="safety-body">'+s.desc+'</div>\
+        </div>';
+      }).join('');
+    }
+    
+    function renderGearSelector(){
+      var el=document.getElementById('gearSelector');
+      if(!el)return;
+      el.innerHTML=segmenData.map(function(s,i)=>{
+        return '<button class="gear-btn" onclick="selectGear(\''+s.id+'\')" id="gear-'+s.id+'">'+(i+1)+' '+s.name.split('→')[0].trim()+'</button>';
+      }).join('');
+      // Default select first
+      selectGear(segmenData[0].id);
+    }
+    
+    function selectGear(id){
+      // Update buttons
+      document.querySelectorAll('.gear-btn').forEach(function(btn){btn.classList.remove('active');});
+      var btn=document.getElementById('gear-'+id);
+      if(btn)btn.classList.add('active');
+      
+      // Update detail
+      var el=document.getElementById('gearDetail');
+      if(!el)return;
+      var g=gearData[id];
+      if(!g)return;
+      el.innerHTML='<b style="font-size:14px;color:var(--ink)">'+g.name+'</b>\
+        <div style="margin-top:10px"><b style="font-size:12px;color:#ff2d55">ESSENTIAL:</b>\
+        <ul class="gear-list">'+g.essential.map(function(item)=>'<li><span class="gear-check">✓</span>'+item+'</li>').join('')+'</ul></div>\
+        <div style="margin-top:10px"><b style="font-size:12px;color:var(--sub)">OPTIONAL:</b>\
+        <ul class="gear-list">'+g.optional.map(function(item)=>'<li><span class="gear-check" style="border-color:var(--line);color:var(--line)"></span>'+item+'</li>').join('')+'</ul></div>';
+    }
+    
+    function switchAnalysisTab(tab){
+      // Hide all
+      ['segmen','air','safety','peralatan'].forEach(function(t){
+        var el=document.getElementById('analysis'+t.charAt(0).toUpperCase()+t.slice(1));
+        if(el)el.style.display='none';
+        var btn=document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
+        if(btn)btn.classList.remove('active');
+      });
+      // Show selected
+      var content=document.getElementById('analysis'+tab.charAt(0).toUpperCase()+tab.slice(1));
+      if(content)content.style.display='block';
+      var activeBtn=document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+      if(activeBtn)activeBtn.classList.add('active');
+    }
+    
+    function initTrailAnalysis(){
+      renderSegmenList();
+      renderAirTimeline();
+      renderSafetyList();
+      renderGearSelector();
+    }
+    
+    // Initialize when DOM ready
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',initTrailAnalysis);
+    }else{
+      initTrailAnalysis();
+    }
+    </script>
   </section>
 
   <!-- MAPS PINTU ANGIN -->
