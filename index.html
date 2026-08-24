@@ -4547,17 +4547,25 @@ function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah 
   var mapsElevationData = null;
   
   async function _loadElevationProfile(trailKey) {
+    console.log('[ELEV] Loading profile for:', trailKey);
+    
     var trail = BWK_TRAILS[trailKey];
-    if (!trail) return;
+    if (!trail) {
+      console.error('[ELEV] Trail not found:', trailKey);
+      return;
+    }
     
     // Use checkpoints data from BWK_TRAILS (defined early)
     var trailData = BWK_TRAILS.checkpoints && BWK_TRAILS.checkpoints[trailKey];
+    console.log('[ELEV] Trail data:', trailData);
+    
     if (!trailData) {
       // Fallback to points without elevation
       trailData = trail.points.map(function(p, i) {
         var progress = i / (trail.points.length - 1);
         return { name: 'P' + (i+1), el: Math.round(1273 + progress * trail.elevation_gain) };
       });
+      console.log('[ELEV] Using fallback trail data:', trailData);
     }
     
     var el = document.getElementById('elevProfileInteractive');
