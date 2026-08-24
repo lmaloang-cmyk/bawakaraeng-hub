@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover" />
   <title>Pelacakan Keluarga — Pintu Angin</title>
   <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
   <meta name="theme-color" content="#10243D" />
   <meta name="description" content="Lihat lokasi pendaki secara realtime di Gunung Bawakaraeng." />
   <style>
@@ -296,7 +298,7 @@
           .setView([-5.29, 119.92], 14);
 
       // OSM tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         maxZoom: 18
       }).addTo(map);
@@ -308,7 +310,7 @@
         pane: 'overlayPane'
       });
       // Add layer switcher
-      var baseMaps = { 'Peta': map.layers[0], 'Satelit': satellite };
+      var baseMaps = { 'Peta': osm, 'Satelit': satellite };
       L.control.layers(baseMaps).addTo(map);
       }
 
