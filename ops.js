@@ -333,7 +333,7 @@
       var bt=(x.battery_pct!=null)?('<small>\uD83D\uDD0B baterai '+esc(Math.round(Number(x.battery_pct)))+'%</small>'):'';
       // Sanitasi ID untuk data-id: hanya alphanumeric + dash/underscore
       var safeId=String(x.id||'').replace(/[^a-zA-Z0-9_\-]/g,'');
-      return '<div class="ops-card danger"><div><b>\uD83C\uDD98 '+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>\uD83D\uDCCD '+esc(Number(x.lat).toFixed(5))+', '+esc(Number(x.lng).toFixed(5))+'</small>'+pc+ac+bt+'</div><a href="'+esc(map)+'" target="_blank" rel="noopener">\uD83D\uDDFA\ufe0f Peta</a><div style="display:flex;gap:6px;margin-left:8px"><button class="btn-ops-resolve" data-id="'+safeId+'">\u2705 Tangani</button><button class="btn-ops-delete" data-id="'+safeId+'">\uD83D\uDDD1\uFE0F</button></div></div>';
+      return '<div class="ops-card danger"><div><b>'+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>'+esc(Number(x.lat).toFixed(5))+', '+esc(Number(x.lng).toFixed(5))+'</small>'+pc+ac+bt+'</div><a href="'+esc(map)+'" target="_blank" rel="noopener">🗺️ Peta</a><div style="display:flex;gap:6px;margin-left:8px"><button onclick="opsResolve(\''+safeId+'\')">✅ Tangani</button><button onclick="opsDelete(\''+safeId+'\')">🗑️</button></div></div>';
     }).join(''):'<div class="aempty">\u2705 Tidak ada SOS aktif.</div>';
     var hist=sos.filter(function(x){return x.status!=='active';}).slice(0,8).map(function(x){return '<li>'+esc(x.name||'Pendaki')+' \u00b7 '+esc(x.status||'resolved')+' \u00b7 '+new Date(x.created_at).toLocaleString('id-ID')+'</li>';}).join('')||'<li>Belum ada riwayat.</li>';
     var check=checks.slice(0,12).map(function(x){
