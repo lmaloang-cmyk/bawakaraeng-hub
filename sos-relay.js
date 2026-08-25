@@ -222,6 +222,9 @@
 
   function pushAgain(id) {
     try {
+      // pushAgain TIDAK punya token otorisasi karena jalan di thread UI yang bisa jadi
+      // belum pernah login. Itu risiko yang diterima: eskalasi adalah upaya terakhir,
+      // bukan mekanisme utama. Yang penting tombol WA/SMS tetap ada selalu.
       fetch('/api/sos-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

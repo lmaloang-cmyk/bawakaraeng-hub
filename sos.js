@@ -180,8 +180,8 @@
   function _mySigs(){try{return JSON.parse(localStorage.getItem('bwkMySos')||'[]');}catch(e){return [];}}
   function _addMySig(s){try{var a=_mySigs();a.push(s);localStorage.setItem('bwkMySos',JSON.stringify(a.slice(-20)));}catch(e){}}
   // Daftar client_id (dibuat oleh sos-outbox.js sebelum server memberi id).
-  function _myClientIds(){try{return JSON.parse(localStorage.getItem('bwkMyClientIds')||'[]');}catch(e){return [];}}
-  window._sosMarkMineClient=function(cid){try{if(!cid)return;var a=_myClientIds();if(a.map(String).indexOf(String(cid))<0){a.push(String(cid));localStorage.setItem('bwkMyClientIds',JSON.stringify(a.slice(-50)));}}catch(e){}};
+  function _myClientIds(){try{var a=JSON.parse(localStorage.getItem('bwkMyClientIds')||'[]');return Array.isArray(a)?a:[];}catch(e){console.warn('[sos] bwkMyClientIds korup — reset ke []');localStorage.setItem('bwkMyClientIds','[]');return [];}}
+  window._sosMarkMineClient=function(cid){try{if(!cid)return;var a=_myClientIds();if(a.map(String).indexOf(String(cid))<0){a.push(String(cid));localStorage.setItem('bwkMyClientIds',JSON.stringify(a.slice(-50)));}else{console.warn('[sos] client_id duplikat:',cid);}}catch(e){console.error('[sos] _sosMarkMineClient gagal:',e);}};
 
   window._sosMarkMine=function(id,lat,lng,name){_addMyId(id);if(lat!=null&&lng!=null)_addMySig({t:Date.now(),name:(name||'Pendaki'),lat:+lat,lng:+lng});if(id!=null){_myAlerts[id]=1;_seen[id]=1;}};
 

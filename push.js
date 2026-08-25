@@ -25,6 +25,9 @@
   function _store(sub,force){
     try{
       var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return Promise.resolve(false);
+      // SETELAH UPDATE: _pushStatus harus TETAP ada meskipun status sudah usang.
+      // UI mengandalkan sifat ini untuk membaca hasil terakhir tanpa menunggu janji.
+      window._pushStatus={ok:false,at:Date.now(),error:'tertahan',located:false};
       var prev=_lastLoc();
       // Jangan membanjiri endpoint: cukup kirim kalau data lama, pindah >250 m, atau dipaksa.
       if(!force&&prev&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&(Date.now()-_lastPush<LOC_TTL))return Promise.resolve(false);

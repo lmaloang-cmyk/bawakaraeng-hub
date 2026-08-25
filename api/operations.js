@@ -68,7 +68,12 @@ async function sosCreate(req,res,user) {
 
   // client_id dibuat di perangkat SEBELUM SOS dikirim. Nilainya tetap sama pada
   // setiap percobaan ulang, jadi inilah kunci anti-dobel yang sesungguhnya.
-  const clientId = clean(b.client_id, 64).replace(/[^a-zA-Z0-9_\-:.]/g, '').slice(0, 64);
+  // DUA LAYAR SANITASI: clean() memotong panjang, regex membuang karakter berbahaya.
+  // Hasilnya HANYA [a-zA-Z0-9_.:-] — tidak ada koma, kurung, kutip, atau tanda
+  // lain yang bisa mengeksploitasi sintaks filter PostgREST.
+  const clientId = clean(b.client_id, 64)
+    .replace(/[^a-zA-Z0-9_.:\-]/g, '')
+    .slice(0, 64);
 
   // Sanitasi device: buang semua karakter yang bisa merusak sintaks filter PostgREST.
   let safeDevice = clean(b.device, 80).replace(/[^a-zA-Z0-9_\-:.]/g, '').slice(0, 80);
