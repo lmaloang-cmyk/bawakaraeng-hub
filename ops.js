@@ -206,7 +206,11 @@
     api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){
       localStorage.removeItem(ACTIVE_KEY);_stopWaves();
       try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
-      showActiveSos();toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
+      // Remove the active SOS banner immediately
+      var activeEl=document.getElementById('mySosActive');if(activeEl)activeEl.remove();
+      toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
+      // Refresh admin panel if open
+      try{if(typeof opsDashboard==='function')opsDashboard();}catch(e){}
     }).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');});
   };
 

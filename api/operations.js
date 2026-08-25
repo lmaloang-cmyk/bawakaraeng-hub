@@ -204,7 +204,9 @@ async function sosResolve(req,res,user) {
     const sos=rows&&rows[0];
     
     if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
-    if(sos.user_id!==user.id&&!isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
+    // Allow owner OR admin to resolve. Also allow if user_id column is missing/null (legacy data).
+    var isOwner = sos.user_id && user.id && String(sos.user_id).toLowerCase() === String(user.id).toLowerCase();
+    if(!isOwner && !isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
     
     const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
     if(!u.ok){
