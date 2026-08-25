@@ -7794,6 +7794,192 @@ document.addEventListener('visibilitychange', function() {
 
   console.log('[tracking] pelapor kode HTTP aktif');
 })();
+// ===== PENGATUR ANTREAN & KUOTA KIRIM POSISI =====
+// Tempel PALING BAWAH di index.html, di bawah semua blok sebelumnya.
+// Blok ini menggantikan peran blok pelapor kode HTTP (tkkode) dan menambah:
+//  - penjaga kuota 5 kiriman/menit + jeda minimum 11 detik
+//  - jeda dingin 70 detik begitu server membalas 429
+//  - pembuangan SELURUH titik milik sesi yang ditolak 404 dalam sekali jalan
+//  - kuras antrean 1 titik per siklus supaya posisi baru tetap dapat kuota
+(function () {
+  if (window.__tkAntreFix) return;
+  window.__tkAntreFix = true;
+
+  var KEY = (typeof TK_QUEUE_KEY === 'string') ? TK_QUEUE_KEY : 'bwkTrackingQueueInline';
+  var MAKS_PER_MENIT = 5;
+  var JEDA_MIN_MS = 11000;
+  var DINGIN_MS = 70000;
+  var UMUR_MAKS_MS = 4 * 3600 * 1000;
+
+  var riwayat = [];
+  var dinginSampai = 0;
+  var sesiMati = {};
+
+  function baca() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
+  }
+  function tulis(l) {
+    try { localStorage.setItem(KEY, JSON.stringify(l.slice(-50))); } catch (e) {}
+  }
+  function jam(t) {
+    var d = t ? new Date(t) : new Date();
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  function chip() {
+    var d = document.getElementById('tkStatusChip');
+    if (d) return d;
+    d = document.createElement('div');
+    d.id = 'tkStatusChip';
+    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:14px;' +
+      'z-index:9998;max-width:92vw;padding:9px 15px;border-radius:18px;' +
+      'font:600 12px/1.35 system-ui,-apple-system,sans-serif;color:#fff;' +
+      'background:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none;' +
+      'text-align:center;pointer-events:none;';
+    document.body.appendChild(d);
+    return d;
+  }
+  function stat(txt, jenis) {
+    var d = chip();
+    if (!txt) { d.style.display = 'none'; return; }
+    d.textContent = txt;
+    d.style.background = (jenis === 'bad') ? '#b91c1c' : (jenis === 'warn' ? '#b45309' : '#065f46');
+    d.style.display = 'block';
+  }
+  function pendek(t) {
+    if (!t) return '';
+    try { var o = JSON.parse(t); if (o && o.error) return String(o.error); } catch (e) {}
+    return String(t).slice(0, 90);
+  }
+
+  // Buang titik yang tidak mungkin diterima lagi: sesi sudah mati, atau terlalu tua.
+  function bersihkan(q) {
+    var now = Date.now();
+    var sebelum = q.length;
+    var sisa = q.filter(function (p) {
+      if (!p || !p.session_id) return false;
+      if (sesiMati[p.session_id]) return false;
+      if (!p._tkQ) { p._tkQ = now; return true; }
+      return (now - p._tkQ) < UMUR_MAKS_MS;
+    });
+    if (sisa.length !== sebelum) {
+      console.log('[tracking] antrean dibersihkan:', sebelum, '->', sisa.length);
+    }
+    return sisa;
+  }
+
+  function buangSesi(sid) {
+    var q = baca();
+    var sisa = q.filter(function (p) { return !p || p.session_id !== sid; });
+    var dibuang = q.length - sisa.length;
+    tulis(sisa);
+    if (dibuang > 0) {
+      console.warn('[tracking] sesi', sid, 'mati, membuang', dibuang, 'titik antrean');
+      stat('Sesi lama berakhir, ' + dibuang + ' titik antrean dibuang', 'warn');
+    }
+    return dibuang;
+  }
+
+  // Stempel waktu saat titik masuk antrean, supaya umurnya bisa dinilai.
+  var pushAsli = window._tkQueuePush;
+  window._tkQueuePush = function (payload) {
+    if (payload && !payload._tkQ) payload._tkQ = Date.now();
+    if (typeof pushAsli === 'function') return pushAsli(payload);
+    var q = baca(); q.push(payload); tulis(q);
+  };
+
+  window._tkPost = async function (payload) {
+    var sid = payload && payload.session_id ? String(payload.session_id) : '';
+    var pendekSid = sid ? sid.slice(0, 8) : '?';
+    var now = Date.now();
+
+    if (sid && sesiMati[sid]) return 'gone';
+
+    if (now < dinginSampai) {
+      var sisaDetik = Math.ceil((dinginSampai - now) / 1000);
+      stat('Menunggu kuota server, ' + sisaDetik + ' detik lagi', 'warn');
+      return 'retry';
+    }
+
+    riwayat = riwayat.filter(function (t) { return now - t < 60000; });
+    if (riwayat.length >= MAKS_PER_MENIT) {
+      stat('Kuota kirim penuh, titik diantre', 'warn');
+      return 'retry';
+    }
+    if (riwayat.length && (now - riwayat[riwayat.length - 1]) < JEDA_MIN_MS) {
+      return 'retry';
+    }
+
+    var url = '/api/tracking?act=positions';
+    var body = JSON.stringify(payload);
+    var r = null;
+    riwayat.push(now);
+
+    try {
+      r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+    } catch (e) {
+      stat('Jaringan gagal, titik diantre', 'bad');
+      return 'retry';
+    }
+
+    if (r.status === 401 && typeof _tkRefreshToken === 'function') {
+      try { await _tkRefreshToken(true); } catch (e) {}
+      try {
+        r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+      } catch (e) { return 'retry'; }
+    }
+
+    if (r.status === 429) {
+      dinginSampai = Date.now() + DINGIN_MS;
+      stat('Kuota server penuh, jeda 70 detik', 'warn');
+      console.warn('[tracking] 429, jeda sampai', jam(dinginSampai));
+      return 'retry';
+    }
+
+    if (r.status === 404) {
+      if (sid) { sesiMati[sid] = true; buangSesi(sid); }
+      else stat('HTTP 404 sesi ' + pendekSid + ' tidak ada di server', 'bad');
+      return 'gone';
+    }
+
+    if (!r.ok) {
+      var teks = '';
+      try { teks = await r.text(); } catch (e) {}
+      stat('Gagal kirim: HTTP ' + r.status + ' - ' + pendek(teks), 'bad');
+      console.warn('[tracking] kirim gagal:', r.status, teks);
+      return 'retry';
+    }
+
+    var d = null;
+    try { d = await r.json(); } catch (e) {}
+    if (d && d.ok) {
+      var sisaQ = baca().length;
+      var akur = (payload && payload.accuracy) ? ' akurasi ' + Math.round(payload.accuracy) + ' m' : '';
+      stat('Terkirim ' + jam() + akur + (sisaQ ? ' - antrean ' + sisaQ : ''), 'ok');
+      return 'ok';
+    }
+
+    stat('Server menolak: ' + pendek(JSON.stringify(d)), 'bad');
+    return 'retry';
+  };
+
+  // Satu tunggakan per siklus: posisi langsung tetap kebagian kuota.
+  window._tkFlushQueue = async function () {
+    var q = bersihkan(baca());
+    if (!q.length) { tulis(q); return; }
+    var out = 'retry';
+    try { out = await window._tkPost(q[0]); } catch (e) { out = 'retry'; }
+    if (out === 'ok' || out === 'gone') q.shift();
+    tulis(bersihkan(q));
+  };
+
+  setInterval(function () {
+    try { window._tkFlushQueue(); } catch (e) {}
+  }, 20000);
+
+  tulis(bersihkan(baca()));
+  console.log('[tracking] pengatur antrean aktif, tunggakan:', baca().length);
+})();
 
 </script>
 
