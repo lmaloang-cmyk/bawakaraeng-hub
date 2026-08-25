@@ -379,6 +379,27 @@
         return Math.round(kmh * 10) / 10;
       }
 
+      // ===== KECEPATAN DARI RIWAYAT =====
+      // Cari pasangan titik terbaru yang selisih waktunya layak. Nol km/j
+      // adalah jawaban sah: pendaki sedang tidak bergerak.
+      function _tkSpeedFromHist(list) {
+        if (!list || list.length < 2) return null;
+        var newest = list[0];
+        var t0 = new Date(newest.sent_at || newest.at).getTime();
+        if (!isFinite(t0)) return null;
+        for (var i = 1; i < list.length && i < 25; i++) {
+          var prev = list[i];
+          var t = new Date(prev.sent_at || prev.at).getTime();
+          if (!isFinite(t)) continue;
+          var dt = (t0 - t) / 1000;
+          if (dt < 8) continue;
+          if (dt > 1200) break;
+          var kmh = _tkSpeedKmh(prev, newest);
+          if (kmh != null) return kmh;
+        }
+        return null;
+      }
+
       // ===== TAMPILKAN KEGAGALAN (tidak lagi diam-diam) =====
       function _tkFail(msg) {
         var badge = document.getElementById('statusBadge');
@@ -939,9 +960,11 @@
           // jadi selisih waktunya nol. Kecepatan dihitung dari riwayat:
           // positions[0] terbaru, positions[1] sebelumnya.
           let spd = (pos.speed != null) ? pos.speed : null;
-          if (spd == null && positions.length > 1) spd = _tkSpeedKmh(positions[1], positions[0]);
-          if (spd == null) spd = _tkSpeedKmh(lastPosition, pos);
-          speed.textContent = spd ? `${spd} km/j` : '—';
+          if (spd == null) spd = _tkSpeedFromHist(positions);
+          if (spd == null && lastPosition) spd = _tkSpeedKmh(lastPosition, pos);
+          if (spd == null) { speed.textContent = '—'; speed.className = 'value'; }
+          else if (spd < 0.5) { speed.textContent = '0 km/j'; speed.className = 'value'; }
+          else { speed.textContent = spd + ' km/j'; speed.className = 'value good'; }
         }
       }
 
