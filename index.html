@@ -7562,112 +7562,140 @@ document.addEventListener('visibilitychange', function() {
   } catch (e) {}
   console.log('[tracking] perbaikan token aktif');
 })();
-// ===== PERBAIKAN TOKEN PELACAKAN (supabase-js v2, token selalu segar) =====
+// ===== PELACAKAN TAHAN LATAR BELAKANG + STATUS TERLIHAT (HP) =====
 (function () {
-  if (window.__tkAuthFix) return;
-  window.__tkAuthFix = true;
+  if (window.__tkPhoneFix) return;
+  window.__tkPhoneFix = true;
 
-  var _tkTok = '';
-  var _tkTokExp = 0;
-  var _tkWarnAt = 0;
+  var _wake = null;
+  var _chipEl = null;
+  var _suksesAt = 0;
 
-  function _tkDecodeExp(t) {
+  function jam(t) {
+    var d = t ? new Date(t) : new Date();
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  function chip() {
+    if (_chipEl) return _chipEl;
+    var d = document.createElement('div');
+    d.id = 'tkStatusChip';
+    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:14px;' +
+      'z-index:9998;max-width:92vw;padding:9px 15px;border-radius:999px;' +
+      'font:600 12px/1.35 system-ui,-apple-system,sans-serif;color:#fff;' +
+      'background:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none;' +
+      'text-align:center;pointer-events:none;';
+    document.body.appendChild(d);
+    _chipEl = d;
+    return d;
+  }
+
+  function stat(txt, jenis) {
+    var d = chip();
+    if (!txt) { d.style.display = 'none'; return; }
+    d.textContent = txt;
+    d.style.background = (jenis === 'bad') ? '#b91c1c' : (jenis === 'warn' ? '#b45309' : '#065f46');
+    d.style.display = 'block';
+  }
+
+  // --- Jaga layar tetap menyala selama sesi aktif ---
+  function ambilWake() {
     try {
-      var b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      var p = JSON.parse(atob(b));
-      return (p && p.exp) ? p.exp * 1000 : 0;
-    } catch (e) { return 0; }
-  }
-
-  function _tkLegacyToken() {
-    try {
-      var keys = Object.keys(localStorage);
-      for (var i = 0; i < keys.length; i++) {
-        if (keys[i].indexOf('sb-') === 0 && keys[i].indexOf('-auth-token') > -1) {
-          var d = JSON.parse(localStorage.getItem(keys[i]));
-          if (d && d.access_token) return d.access_token;
-          if (d && d.currentSession && d.currentSession.access_token) return d.currentSession.access_token;
-        }
-      }
-    } catch (e) {}
-    return '';
-  }
-
-  async function _tkRefreshToken(paksa) {
-    try {
-      var c = (typeof _sbClient === 'function') ? _sbClient() : null;
-      if (!c || !c.auth) return '';
-      if (paksa && c.auth.refreshSession) {
-        try { await c.auth.refreshSession(); } catch (e) {}
-      }
-      if (c.auth.getSession) {
-        var r = await c.auth.getSession();
-        var s = r && r.data && r.data.session;
-        if (s && s.access_token) {
-          _tkTok = s.access_token;
-          _tkTokExp = _tkDecodeExp(s.access_token);
-          return _tkTok;
-        }
-      }
-    } catch (e) {}
-    return '';
-  }
-  window._tkRefreshToken = _tkRefreshToken;
-
-  window._tkAuthToken = function () {
-    return _tkTok || _tkLegacyToken();
-  };
-
-  window._tkHeaders = function () {
-    var h = { 'Content-Type': 'application/json' };
-    if (_tkTok && _tkTokExp && Date.now() > _tkTokExp - 120000) _tkRefreshToken(true);
-    var t = _tkTok || _tkLegacyToken();
-    if (t) h['Authorization'] = 'Bearer ' + t;
-    return h;
-  };
-
-  function _tkWarnLogin() {
-    var now = Date.now();
-    if (now - _tkWarnAt < 300000) return;
-    _tkWarnAt = now;
-    console.warn('[tracking] token ditolak server, perlu login ulang');
-    if (typeof window.toast === 'function') {
-      window.toast('Sesi login berakhir. Masuk lagi dengan Google agar pelacakan lanjut.', 'err');
-    }
-  }
-
-  window._tkPost = async function (payload) {
-    var url = '/api/tracking?act=positions';
-    var body = JSON.stringify(payload);
-    var r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
-    if (r.status === 404) return 'gone';
-    if (r.status === 401) {
-      await _tkRefreshToken(true);
-      r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
-      if (r.status === 401) { _tkWarnLogin(); return 'retry'; }
-    }
-    if (!r.ok) return 'retry';
-    var d = await r.json().catch(function () { return null; });
-    return (d && d.ok) ? 'ok' : 'retry';
-  };
-
-  _tkRefreshToken(false);
-  setInterval(function () { _tkRefreshToken(false); }, 240000);
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') _tkRefreshToken(false);
-  });
-  try {
-    var c0 = (typeof _sbClient === 'function') ? _sbClient() : null;
-    if (c0 && c0.auth && c0.auth.onAuthStateChange) {
-      c0.auth.onAuthStateChange(function (_e, s) {
-        if (s && s.access_token) {
-          _tkTok = s.access_token;
-          _tkTokExp = _tkDecodeExp(s.access_token);
-        }
+      if (!('wakeLock' in navigator) || _wake) return;
+      if (document.visibilityState !== 'visible') return;
+      navigator.wakeLock.request('screen').then(function (w) {
+        _wake = w;
+        w.addEventListener('release', function () { _wake = null; });
+        console.log('[tracking] layar dijaga menyala selama pelacakan');
+      }).catch(function (e) {
+        console.warn('[tracking] wake lock gagal:', e && e.message);
       });
+    } catch (e) {}
+  }
+
+  function lepasWake() {
+    try { if (_wake) { _wake.release(); _wake = null; } } catch (e) {}
+  }
+
+  // --- Jangan biarkan latar belakang membunuh perekam ---
+  var _origStop = window._tkStopWatching;
+  if (typeof _origStop === 'function') {
+    window._tkStopWatching = function (alasan) {
+      if (alasan !== 'paksa' && document.visibilityState === 'hidden') {
+        console.log('[tracking] permintaan berhenti dari latar diabaikan, perekam dipertahankan');
+        return;
+      }
+      lepasWake();
+      stat('');
+      return _origStop.apply(null, arguments);
+    };
+  }
+
+  // --- Pilih sesi yang benar: yang baru kamu mulai, bukan yang pertama di daftar ---
+  function sesiAktif() {
+    try {
+      if (typeof _tkSessions === 'undefined' || !_tkSessions || !_tkSessions.length) return null;
+      var kandidat = _tkSessions.filter(function (s) {
+        return s && s.active && s.expires_at && new Date(s.expires_at) > new Date();
+      });
+      if (!kandidat.length) return null;
+      if (typeof _tkCurrentSessionId !== 'undefined' && _tkCurrentSessionId) {
+        for (var i = 0; i < kandidat.length; i++) {
+          if (kandidat[i].id === _tkCurrentSessionId) return kandidat[i];
+        }
+      }
+      kandidat.sort(function (a, b) {
+        return new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime();
+      });
+      return kandidat[0];
+    } catch (e) { return null; }
+  }
+
+  // --- Nyalakan ulang perekam yang mati ---
+  function jagaPerekam() {
+    var s = sesiAktif();
+    if (!s) { lepasWake(); stat(''); return; }
+    var hidup = (typeof _tkWatchActive !== 'undefined') && _tkWatchActive;
+    if (!hidup && typeof _tkStartWatching === 'function') {
+      console.log('[tracking] perekam dinyalakan ulang untuk sesi:', s.id);
+      _tkStartWatching(s.id);
     }
-  } catch (e) {}
-  console.log('[tracking] perbaikan token aktif');
+    ambilWake();
+    if (!_suksesAt) {
+      stat('Pelacakan menyala, menunggu titik GPS pertama', 'warn');
+    } else if (Date.now() - _suksesAt > 180000) {
+      stat('Belum ada kiriman baru sejak ' + jam(_suksesAt), 'warn');
+    }
+  }
+
+  // --- Laporkan hasil kiriman ke layar pengirim ---
+  var _origPost = window._tkPost;
+  if (typeof _origPost === 'function') {
+    window._tkPost = function (payload) {
+      return Promise.resolve(_origPost(payload)).then(function (hasil) {
+        if (hasil === 'ok') {
+          _suksesAt = Date.now();
+          var akur = (payload && payload.accuracy) ? ', akurasi ' + Math.round(payload.accuracy) + ' m' : '';
+          stat('Posisi terkirim ' + jam() + akur, 'ok');
+        } else if (hasil === 'gone') {
+          stat('Sesi sudah berakhir di server', 'bad');
+        } else {
+          stat('Gagal kirim posisi, diantre untuk dicoba lagi', 'warn');
+        }
+        return hasil;
+      }).catch(function (e) {
+        stat('Gagal kirim posisi: ' + ((e && e.message) || 'jaringan'), 'bad');
+        throw e;
+      });
+    };
+  }
+
+  setInterval(jagaPerekam, 20000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') jagaPerekam();
+  });
+  setTimeout(jagaPerekam, 3000);
+  console.log('[tracking] perbaikan latar belakang HP aktif');
 })();
 
 </script>
