@@ -7697,6 +7697,103 @@ document.addEventListener('visibilitychange', function() {
   setTimeout(jagaPerekam, 3000);
   console.log('[tracking] perbaikan latar belakang HP aktif');
 })();
+// ===== PELAPOR KODE HTTP PENGIRIMAN POSISI =====
+// Tempel PALING BAWAH, setelah blok token dan blok HP, supaya versi ini yang menang.
+(function () {
+  if (window.__tkPostKode) return;
+  window.__tkPostKode = true;
+
+  function jam() {
+    var d = new Date();
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  function chip() {
+    var d = document.getElementById('tkStatusChip');
+    if (d) return d;
+    d = document.createElement('div');
+    d.id = 'tkStatusChip';
+    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:14px;' +
+      'z-index:9998;max-width:92vw;padding:9px 15px;border-radius:18px;' +
+      'font:600 12px/1.35 system-ui,-apple-system,sans-serif;color:#fff;' +
+      'background:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none;' +
+      'text-align:center;pointer-events:none;';
+    document.body.appendChild(d);
+    return d;
+  }
+
+  function stat(txt, jenis) {
+    var d = chip();
+    if (!txt) { d.style.display = 'none'; return; }
+    d.textContent = txt;
+    d.style.background = (jenis === 'bad') ? '#b91c1c' : (jenis === 'warn' ? '#b45309' : '#065f46');
+    d.style.display = 'block';
+  }
+
+  function pendek(t) {
+    if (!t) return '';
+    try {
+      var o = JSON.parse(t);
+      if (o && o.error) return String(o.error);
+    } catch (e) {}
+    return String(t).slice(0, 90);
+  }
+
+  window._tkPost = async function (payload) {
+    var url = '/api/tracking?act=positions';
+    var body = JSON.stringify(payload);
+    var sesi = payload && payload.session_id ? String(payload.session_id).slice(0, 8) : '?';
+    var r = null;
+
+    try {
+      r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+    } catch (e) {
+      stat('Jaringan gagal: ' + ((e && e.message) || 'tidak diketahui'), 'bad');
+      console.warn('[tracking] jaringan gagal:', e);
+      return 'retry';
+    }
+
+    if (r.status === 401 && typeof _tkRefreshToken === 'function') {
+      console.warn('[tracking] 401, token disegarkan lalu dicoba ulang');
+      try { await _tkRefreshToken(true); } catch (e) {}
+      try {
+        r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+      } catch (e) {
+        stat('Jaringan gagal saat coba ulang', 'bad');
+        return 'retry';
+      }
+    }
+
+    if (r.status === 404) {
+      stat('HTTP 404 sesi ' + sesi + ' tidak ada di server', 'bad');
+      console.warn('[tracking] 404 untuk sesi', payload && payload.session_id);
+      return 'gone';
+    }
+
+    if (!r.ok) {
+      var teks = '';
+      try { teks = await r.text(); } catch (e) {}
+      var pesan = 'HTTP ' + r.status + ' - ' + pendek(teks);
+      stat('Gagal kirim: ' + pesan, 'bad');
+      console.warn('[tracking] kirim gagal:', r.status, teks);
+      return 'retry';
+    }
+
+    var d = null;
+    try { d = await r.json(); } catch (e) {}
+    if (d && d.ok) {
+      var akur = (payload && payload.accuracy) ? ' akurasi ' + Math.round(payload.accuracy) + ' m' : '';
+      stat('Terkirim ' + jam() + ' sesi ' + sesi + akur, 'ok');
+      return 'ok';
+    }
+
+    stat('Server menolak: ' + pendek(JSON.stringify(d)), 'bad');
+    console.warn('[tracking] server menolak:', d);
+    return 'retry';
+  };
+
+  console.log('[tracking] pelapor kode HTTP aktif');
+})();
 
 </script>
 
