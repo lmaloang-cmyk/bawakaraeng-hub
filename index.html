@@ -7434,7 +7434,27 @@ renderTrackingList = function() {
     _tkStopWatching();
   }
 };
-
+// ==== LANJUTKAN PELACAKAN SETELAH HALAMAN KEMBALI TERLIHAT ====
+// Di HP, pagehide berbunyi saat halaman masuk latar belakang lalu mematikan
+// perekam GPS. Blok ini menyalakannya kembali begitu halaman terlihat lagi.
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    if (typeof _tkWatchActive !== 'undefined' && _tkWatchActive) {
+      if (typeof _tkFlushQueue === 'function') _tkFlushQueue();
+      return;
+    }
+    var list = (typeof _tkSessions !== 'undefined' && _tkSessions) ? _tkSessions : [];
+    var s = list.filter(function(x) { return x && x.active; })[0];
+    if (s && typeof _tkStartWatching === 'function') {
+      _tkStartWatching(s.id);
+      if (typeof _tkFlushQueue === 'function') _tkFlushQueue();
+      console.log('[tracking] perekam dinyalakan ulang untuk sesi:', s.id);
+    }
+  } catch (e) {
+    console.warn('[tracking] gagal menyalakan ulang perekam:', e);
+  }
+});
 </script>
 
 
