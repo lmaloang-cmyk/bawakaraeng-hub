@@ -459,15 +459,69 @@
 
         _tkAddRecenter();
 
-        // Ukur ulang setelah layout selesai; tanpa ini tile hanya mengisi sebagian kotak
-        setTimeout(function () { if (map) map.invalidateSize(); }, 60);
-        setTimeout(function () { if (map) map.invalidateSize(); }, 450);
-        window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
-        if (window.ResizeObserver) {
-          try {
-            new ResizeObserver(function () { if (map) map.invalidateSize(); })
-              .observe(document.getElementById('map'));
-          } catch (e) {}
+        _tkWatchSize();
+      }
+
+      // ===== JAGA UKURAN PETA =====
+      // Leaflet mengukur kotak peta sekali saat dibuat. Kalau layout masih
+      // bergerak (animasi .view, font baru dimuat, browser di-zoom, layar
+      // diputar), ukuran itu jadi basi dan tile hanya mengisi sebagiannya.
+      var _tkLastSize = '';
+
+      function _tkFixSize() {
+        if (!map) return;
+        var el = document.getElementById('map');
+        if (!el) return;
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+        var key = el.clientWidth + 'x' + el.clientHeight;
+        if (key === _tkLastSize) return;
+        _tkLastSize = key;
+        // invalidateSize tidak meminta ulang tile yang gagal saat ukuran masih
+        // basi, jadi setiap lapisan digambar ulang. Hanya ketika ukuran berubah,
+        // supaya server tile tidak dibanjiri permintaan.
+        map.eachLayer(function (l) {
+          if (l && typeof l.redraw === 'function') l.redraw();
+        });
+      }
+
+      function _tkWatchSize() {
+        var el = document.getElementById('map');
+
+        if (window.requestAnimationFrame) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { _tkFixSize(); });
+          });
+        }
+        [0, 120, 400, 1000, 2200].forEach(function (ms) {
+          setTimeout(function () { _tkFixSize(); }, ms);
+        });
+
+        var t = null;
+        function nudge() {
+          clearTimeout(t);
+          t = setTimeout(function () { _tkFixSize(); }, 150);
+        }
+
+        window.addEventListener('resize', nudge);
+        window.addEventListener('orientationchange', nudge);
+        window.addEventListener('pageshow', nudge);
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) nudge();
+        });
+
+        // Animasi fade pada .view selesai: ukuran final baru diketahui
+        if (el && el.closest) {
+          var view = el.closest('.view');
+          if (view) view.addEventListener('animationend', function () { _tkFixSize(); });
+        }
+
+        // Font kustom mengubah tinggi kartu di sekitar peta
+        if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+          document.fonts.ready.then(function () { _tkFixSize(); }).catch(function () {});
+        }
+
+        if (window.ResizeObserver && el) {
+          try { new ResizeObserver(nudge).observe(el); } catch (e) {}
         }
       }
 
@@ -594,6 +648,20 @@
           }
           updateSessionStatus();
 
+          // Riwayat lebih dulu: jumlah titik dan kecepatan harus dihitung
+          // dari data siklus ini, bukan siklus sebelumnya.
+          let hist = [];
+          try {
+            const histRes = await fetch(`${API}?act=history&id=${SESSION_ID}&token=${TOKEN}&limit=100&hours=4`);
+            const histData = await histRes.json();
+            if (histData.ok && Array.isArray(histData.positions) && histData.positions.length) {
+              hist = histData.positions;
+              positions = hist;
+            }
+          } catch (e) {
+            console.error('[TRACKER] gagal memuat riwayat:', e);
+          }
+
           // Get last position
           const posRes = await fetch(`${API}?act=latest&id=${SESSION_ID}&token=${TOKEN}`);
           const posData = await posRes.json();
@@ -609,13 +677,9 @@
             lastPosition = posData.position;
           }
 
-          // Get history for polyline
-          const histRes = await fetch(`${API}?act=history&id=${SESSION_ID}&token=${TOKEN}&limit=100&hours=4`);
-          const histData = await histRes.json();
-
-          if (histData.ok && histData.positions && histData.positions.length > 1) {
+          if (hist.length > 1) {
             try {
-              updatePolyline(histData.positions);
+              updatePolyline(hist);
             } catch (e) {
               console.error('[TRACKER] gagal menggambar jejak:', e);
             }
@@ -717,7 +781,7 @@
           }
         }
 
-        map.invalidateSize();
+        _tkFixSize();
 
         // Hanya ikuti kalau keluarga belum menggeser peta sendiri
         if (_tkFollow) {
@@ -786,7 +850,7 @@
         }
 
         if (accuracy) {
-          const acc = pos.accuracy;
+          const acc = _tkAcc(pos);
           accuracy.textContent = acc ? `±${acc}m` : '—';
           accuracy.className = 'value ' + (acc ? (acc < 20 ? 'good' : acc < 50 ? 'warn' : 'bad') : '');
         }
@@ -796,7 +860,7 @@
         }
 
         if (battery) {
-          const b = pos.battery;
+          const b = _tkBat(pos);
           battery.textContent = b != null ? `${b}%` : '—';
           battery.className = 'value ' + (b != null ? (b > 50 ? 'good' : b > 20 ? 'warn' : 'bad') : '');
         }
@@ -809,7 +873,12 @@
         }
 
         if (speed) {
-          const spd = (pos.speed != null) ? pos.speed : _tkSpeedKmh(lastPosition, pos);
+          // act=latest mengirim titik yang sama sampai ada titik baru,
+          // jadi selisih waktunya nol. Kecepatan dihitung dari riwayat:
+          // positions[0] terbaru, positions[1] sebelumnya.
+          let spd = (pos.speed != null) ? pos.speed : null;
+          if (spd == null && positions.length > 1) spd = _tkSpeedKmh(positions[1], positions[0]);
+          if (spd == null) spd = _tkSpeedKmh(lastPosition, pos);
           speed.textContent = spd ? `${spd} km/j` : '—';
         }
       }
