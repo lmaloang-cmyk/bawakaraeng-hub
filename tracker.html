@@ -18,6 +18,7 @@
       --g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);
       --g-green:linear-gradient(135deg,#2af598,#08b96f);
       --g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);
+      --g-amber:linear-gradient(135deg,#fbbf24,#f59e0b);
       --shadow:0 4px 14px rgba(30,40,90,.08);
       --shadow-lg:0 10px 30px rgba(30,40,90,.14);
       --radius:22px;
@@ -161,7 +162,51 @@
       position:relative; border-radius:18px; overflow:hidden;
       box-shadow:var(--shadow-lg); margin-bottom:14px;
     }
-    #map { width:100%; height:320px; background:#1a1a2e; }
+    #map {
+      width:100%; height:min(62vh,520px); min-height:300px;
+      background:#e9e5df;
+    }
+    .leaflet-container { font-family:var(--font); background:#e9e5df; }
+    .leaflet-container .leaflet-control-attribution {
+      background:rgba(255,255,255,.82); font-size:10px; color:var(--sub);
+      padding:2px 8px; border-radius:8px 0 0 0;
+    }
+    .leaflet-popup-content-wrapper { border-radius:14px; box-shadow:var(--shadow-lg); }
+    .leaflet-popup-content { margin:10px 14px; font-size:13px; line-height:1.6; }
+    .leaflet-control-layers, .leaflet-bar {
+      border:none !important; border-radius:12px !important; box-shadow:var(--shadow) !important;
+    }
+    .leaflet-control-layers-expanded { padding:10px 14px 10px 10px; font-size:13px; }
+
+    /* Titik hidup: denyut halus supaya terlihat bergerak, bukan gambar mati */
+    .tk-dot { position:relative; width:24px; height:24px; }
+    .tk-dot i {
+      position:absolute; inset:0; border-radius:50%;
+      background:linear-gradient(135deg,#2b6fff,#5e9dff);
+      border:3px solid #fff; box-shadow:0 4px 14px rgba(43,111,255,.45);
+    }
+    .tk-dot b {
+      position:absolute; inset:-11px; border-radius:50%;
+      background:rgba(43,111,255,.25);
+      animation:tkPing 2.2s cubic-bezier(.2,.7,.4,1) infinite;
+    }
+    @keyframes tkPing {
+      0% { transform:scale(.45); opacity:.85 }
+      70% { opacity:0 }
+      100% { transform:scale(1.65); opacity:0 }
+    }
+    /* Data basi lebih dari 15 menit: denyut berhenti, warna meredup */
+    .tk-stale .tk-dot i { background:linear-gradient(135deg,#94a3b8,#cbd5e1); box-shadow:none; }
+    .tk-stale .tk-dot b { animation:none; background:rgba(148,163,184,.2); }
+
+    /* Tombol pusatkan ulang di dalam peta */
+    .tk-recenter {
+      background:var(--card); border-radius:10px; box-shadow:var(--shadow);
+      width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+      font-size:16px; cursor:pointer; border:none; line-height:1;
+    }
+    .tk-recenter.off { background:var(--g-brand); color:#fff; }
+    @media (prefers-reduced-motion:reduce) { .tk-dot b { animation:none; } }
 
     /* Buttons */
     .btn-row { display:flex; gap:10px; margin-bottom:14px; }
@@ -242,6 +287,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.js"></script>
   <script>
     (function () {
       'use strict';
@@ -260,6 +306,8 @@
       let map = null, marker = null, polyline = null, popupMarker = null;
       let sessionData = null, positions = [], watchTimer = null;
       let lastPosition = null;
+      let accuracyCircle = null, startMarker = null;
+      let _tkFollow = true, _tkRecenterBtn = null;
 
       // ===== HELPERS =====
       function escapeHtml(s) {
@@ -341,36 +389,90 @@
       }
 
       // ===== INIT MAP =====
-      function initMap() {
-        map = L.map('map', { zoomControl: true, attributionControl: true })
-          .setView([-5.29, 119.92], 14);
-
-      // OSM tiles
-      var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 18
-      }).addTo(map);
-
-      // Satellite overlay (optional, for mountain terrain context)
-      var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri',
-        maxZoom: 18,
-        pane: 'overlayPane'
-      });
-      // Add layer switcher
-      var baseMaps = { 'Peta': osm, 'Satelit': satellite };
-      L.control.layers(baseMaps).addTo(map);
-
-      // Ukur ulang setelah layout selesai — tanpa ini tile hanya mengisi sebagian kotak
-      setTimeout(function () { if (map) map.invalidateSize(); }, 60);
-      setTimeout(function () { if (map) map.invalidateSize(); }, 450);
-      window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
-      if (window.ResizeObserver) {
-        try {
-          new ResizeObserver(function () { if (map) map.invalidateSize(); })
-            .observe(document.getElementById('map'));
-        } catch (e) {}
+      function _tkSyncRecenter() {
+        if (!_tkRecenterBtn) return;
+        _tkRecenterBtn.className = 'tk-recenter' + (_tkFollow ? '' : ' off');
+        _tkRecenterBtn.title = _tkFollow ? 'Peta mengikuti pendaki' : 'Pusatkan lagi ke pendaki';
       }
+
+      function _tkAddRecenter() {
+        var Ctl = L.Control.extend({
+          options: { position: 'topleft' },
+          onAdd: function () {
+            var b = L.DomUtil.create('button', 'tk-recenter');
+            b.type = 'button';
+            b.innerHTML = '\ud83c\udfaf';
+            L.DomEvent.disableClickPropagation(b);
+            L.DomEvent.on(b, 'click', function (ev) {
+              L.DomEvent.stop(ev);
+              _tkFollow = true;
+              _tkSyncRecenter();
+              if (lastPosition) {
+                map.setView([lastPosition.lat, lastPosition.lng],
+                            Math.max(map.getZoom() || 0, 16), { animate: true });
+              }
+            });
+            _tkRecenterBtn = b;
+            return b;
+          }
+        });
+        map.addControl(new Ctl());
+        _tkSyncRecenter();
+      }
+
+      function initMap() {
+        map = L.map('map', {
+          zoomControl: true,
+          attributionControl: true,
+          zoomSnap: 0.5
+        }).setView([-5.29, 119.92], 14);
+
+        map.attributionControl.setPrefix('');
+
+        // {r} + detectRetina = tile tajam di layar HP modern
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png', {
+          attribution: '\u00a9 OpenStreetMap',
+          maxZoom: 19,
+          detectRetina: true,
+          crossOrigin: true,
+          keepBuffer: 3
+        });
+
+        // Topografi: kontur dan punggungan Bawakaraeng terbaca jelas
+        var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          attribution: '\u00a9 OpenTopoMap (CC-BY-SA)',
+          maxZoom: 17,
+          detectRetina: true,
+          crossOrigin: true
+        });
+
+        // Satelit jadi lapisan dasar penuh, bukan overlay tempelan
+        var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '\u00a9 Esri',
+          maxZoom: 19,
+          crossOrigin: true
+        });
+
+        osm.addTo(map);
+        L.control.layers({ 'Peta': osm, 'Topografi': topo, 'Satelit': satellite },
+                         {}, { position: 'topright' }).addTo(map);
+        L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+        // Berhenti mengikuti begitu keluarga menggeser peta sendiri
+        map.on('dragstart', function () { _tkFollow = false; _tkSyncRecenter(); });
+
+        _tkAddRecenter();
+
+        // Ukur ulang setelah layout selesai; tanpa ini tile hanya mengisi sebagian kotak
+        setTimeout(function () { if (map) map.invalidateSize(); }, 60);
+        setTimeout(function () { if (map) map.invalidateSize(); }, 450);
+        window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
+        if (window.ResizeObserver) {
+          try {
+            new ResizeObserver(function () { if (map) map.invalidateSize(); })
+              .observe(document.getElementById('map'));
+          } catch (e) {}
+        }
       }
 
       // ===== SHOW APP VIEW =====
@@ -477,23 +579,23 @@
 
           if (!sessRes.ok && !sessData.error) sessData.error = 'HTTP ' + sessRes.status;
 
-        if (sessData.error) {
-          console.error('[TRACKER] status gagal:', sessData.error);
-          const em = String(sessData.error);
-          if (em.indexOf('tidak ditemukan') >= 0 || em.indexOf('berakhir') >= 0) {
-            clearInterval(watchTimer);
-            showError('Sesi Berakhir', 'Pelacakan sudah dihentikan atau habis waktunya.');
+          if (sessData.error) {
+            console.error('[TRACKER] status gagal:', sessData.error);
+            const em = String(sessData.error);
+            if (em.indexOf('tidak ditemukan') >= 0 || em.indexOf('berakhir') >= 0) {
+              clearInterval(watchTimer);
+              showError('Sesi Berakhir', 'Pelacakan sudah dihentikan atau habis waktunya.');
+              return;
+            }
+            _tkFail(em);
             return;
           }
-          _tkFail(em);
-          return;
-        }
 
-        sessionData = sessData.session || sessData.data;
-        if (!sessionData) {
-          _tkFail('Server tidak mengirim data sesi.');
-          return;
-        }
+          sessionData = sessData.session || sessData.data;
+          if (!sessionData) {
+            _tkFail('Server tidak mengirim data sesi.');
+            return;
+          }
           updateSessionStatus();
 
           // Get last position
@@ -501,8 +603,13 @@
           const posData = await posRes.json();
 
           if (posData.ok && posData.position) {
-            updateMapPosition(posData.position);
+            // Statistik lebih dulu: kalau peta bermasalah, angka tetap tampil
             updateStats(posData.position);
+            try {
+              updateMapPosition(posData.position);
+            } catch (e) {
+              console.error('[TRACKER] gagal memperbarui peta:', e);
+            }
             lastPosition = posData.position;
           }
 
@@ -511,12 +618,16 @@
           const histData = await histRes.json();
 
           if (histData.ok && histData.positions && histData.positions.length > 1) {
-            updatePolyline(histData.positions);
+            try {
+              updatePolyline(histData.positions);
+            } catch (e) {
+              console.error('[TRACKER] gagal menggambar jejak:', e);
+            }
           }
 
         } catch (err) {
           console.error('[TRACKER] Refresh error:', err);
-        _tkFail('Gagal menghubungi server: ' + (err && err.message ? err.message : err));
+          _tkFail('Gagal menghubungi server: ' + (err && err.message ? err.message : err));
         }
       }
 
@@ -567,77 +678,101 @@
       // ===== UPDATE MAP =====
       function updateMapPosition(pos) {
         const latLng = [pos.lat, pos.lng];
+        const acc = _tkAcc(pos);
+        const sentAt = pos.sent_at || pos.at;
+        const ageMin = sentAt ? (Date.now() - new Date(sentAt).getTime()) / 60000 : 999;
+        const stale = ageMin > 15;
+
+        const popupHtml =
+          '<div style="padding:2px 0">' +
+            '<b>' + escapeHtml(sessionData && sessionData.name ? sessionData.name : 'Lokasi Saat Ini') + '</b><br>' +
+            '<small>' + pos.lat.toFixed(5) + ', ' + pos.lng.toFixed(5) + '</small>' +
+            (acc != null ? '<br><small>\ud83c\udfaf Akurasi \u00b1' + acc + ' m</small>' : '') +
+            (_tkBat(pos) != null ? '<br><small>\ud83d\udd0b ' + _tkBat(pos) + '%</small>' : '') +
+          '</div>';
 
         if (!marker) {
-          // Custom marker icon
           const icon = L.divIcon({
-            className: 'tracker-marker',
-            html: `<div style="
-              background:linear-gradient(135deg,#2b6fff,#5e9dff);
-              width:32px;height:32px;border-radius:50%;
-              border:4px solid #fff;
-              box-shadow:0 4px 16px rgba(43,111,255,.4);
-              display:flex;align-items:center;justify-content:center;
-              font-size:16px;
-            ">📍</div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            className: 'tk-marker',
+            html: '<div class="tk-dot"><b></b><i></i></div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
           });
-
-          marker = L.marker(latLng, { icon }).addTo(map)
-            .bindPopup(`
-              <div style="font-family:-apple-system,sans-serif;padding:4px">
-                <b>Lokasi Saat Ini</b><br>
-                <small>${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</small><br>
-                ${_tkAcc(pos) ? `<small>Akurasi: ±${_tkAcc(pos)}m</small>` : ''}
-              </div>
-            `);
-
+          marker = L.marker(latLng, { icon: icon, zIndexOffset: 1000 }).addTo(map).bindPopup(popupHtml);
           map.setView(latLng, 16);
         } else {
           marker.setLatLng(latLng);
-          marker.setPopupContent(`
-            <div style="font-family:-apple-system,sans-serif;padding:4px">
-              <b>Lokasi Saat Ini</b><br>
-              <small>${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</small><br>
-              ${_tkAcc(pos) ? `<small>Akurasi: ±${_tkAcc(pos)}m</small>` : ''}
-              ${_tkBat(pos) != null ? `<small>🔋 ${_tkBat(pos)}%</small>` : ''}
-            </div>
-          `);
+          marker.setPopupContent(popupHtml);
         }
 
-        // Fit bounds to show all positions
+        var markerEl = marker.getElement();
+        if (markerEl && markerEl.classList) markerEl.classList.toggle('tk-stale', stale);
+
+        // Lingkaran akurasi: keluarga melihat seberapa yakin GPS-nya
+        if (acc != null && acc > 0) {
+          if (!accuracyCircle) {
+            accuracyCircle = L.circle(latLng, {
+              radius: acc, color: '#2b6fff', weight: 1, opacity: .5,
+              fillColor: '#2b6fff', fillOpacity: .12, interactive: false
+            }).addTo(map);
+          } else {
+            accuracyCircle.setLatLng(latLng);
+            accuracyCircle.setRadius(acc);
+          }
+        }
+
         map.invalidateSize();
-        if (positions.length > 0 || lastPosition) {
-          const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
-          if (lastPosition) bounds.extend([lastPosition.lat, lastPosition.lng]);
-          if (bounds.isValid()) {
-            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+
+        // Hanya ikuti kalau keluarga belum menggeser peta sendiri
+        if (_tkFollow) {
+          if (positions.length > 1) {
+            const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
+            bounds.extend(latLng);
+            if (bounds.isValid()) {
+              map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17, animate: true });
+            }
+          } else {
+            map.panTo(latLng, { animate: true, duration: 0.6 });
           }
         }
       }
 
       // ===== UPDATE POLYLINE =====
       function updatePolyline(positionsList) {
-        if (positionsList.length < 2) return;
+        if (!positionsList || positionsList.length < 2) return;
 
         positions = positionsList;
         var _pts = document.getElementById('statPoints');
         if (_pts) _pts.textContent = positions.length;
 
-        if (polyline) {
-          map.removeLayer(polyline);
-        }
+        // API mengirim terbaru lebih dulu; dibalik agar animasi mengalir
+        // dari titik awal menuju posisi terkini.
+        var latlngs = positions.map(function (p) { return [p.lat, p.lng]; }).reverse();
 
-        polyline = L.polyline(
-          positions.map(p => [p.lat, p.lng]),
-          {
-            color: '#2b6fff',
-            weight: 4,
-            opacity: 0.8,
-            smoothFactor: 1.5
-          }
-        ).addTo(map);
+        if (polyline) { map.removeLayer(polyline); polyline = null; }
+
+        var opts = {
+          color: '#2b6fff', weight: 5, opacity: .85, smoothFactor: 1.4,
+          dashArray: [12, 22], delay: 1000, pulseColor: '#ffffff'
+        };
+
+        // leaflet-ant-path membuat jejak mengalir seperti arus.
+        // Kalau CDN-nya gagal dimuat, garis biasa tetap tampil.
+        var antPath = (L.polyline && L.polyline.antPath) ? L.polyline.antPath : (L.antPath || null);
+        polyline = antPath ? antPath(latlngs, opts) : L.polyline(latlngs, opts);
+        polyline.addTo(map);
+        if (polyline.bringToBack) polyline.bringToBack();
+
+        // Penanda titik awal perjalanan
+        var first = latlngs[0];
+        if (!startMarker) {
+          startMarker = L.circleMarker(first, {
+            radius: 5, color: '#fff', weight: 2,
+            fillColor: '#08b96f', fillOpacity: 1
+          }).addTo(map).bindPopup('Awal jejak');
+        } else {
+          startMarker.setLatLng(first);
+        }
       }
 
       // ===== UPDATE STATS =====
@@ -655,7 +790,7 @@
         }
 
         if (accuracy) {
-          const acc = _tkAcc(pos);
+          const acc = pos.accuracy;
           accuracy.textContent = acc ? `±${acc}m` : '—';
           accuracy.className = 'value ' + (acc ? (acc < 20 ? 'good' : acc < 50 ? 'warn' : 'bad') : '');
         }
@@ -665,7 +800,7 @@
         }
 
         if (battery) {
-          const b = _tkBat(pos);
+          const b = pos.battery;
           battery.textContent = b != null ? `${b}%` : '—';
           battery.className = 'value ' + (b != null ? (b > 50 ? 'good' : b > 20 ? 'warn' : 'bad') : '');
         }
