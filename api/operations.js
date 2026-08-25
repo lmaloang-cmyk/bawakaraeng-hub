@@ -19,6 +19,12 @@ async function restWithFallback(pathNew, pathOld) {
   return rest(pathOld);
 }
 
+// Helper untuk logging error ke console (hanya di server, tidak ke client)
+function logError(action, message, error) {
+  const errDetail = error?.message || String(error);
+  console.error(`[ops-${action}] ${message}:`, errDetail?.slice(0, 500));
+}
+
 // Endpoint gabungan untuk Vercel Hobby: SOS, dashboard operasi, check-in, dan QR SIMAKSI.
 // Gunakan ?action=sos-create|sos-nearby|sos-resolve|sos-report|sos-instructions|admin|checkin|permit-verify
 export default async function handler(req, res) {
@@ -60,7 +66,10 @@ export default async function handler(req, res) {
     if (action === 'admin') return adminDashboard(res);
     if (action === 'checkin') return checkin(req, res, user);
     return permitVerify(req, res);
-  } catch { return res.status(502).json({ error:'Server operasi tidak dapat dihubungi' }); }
+  } catch (e) {
+    logError(action, 'Unhandled error', e);
+    return res.status(502).json({ error:'Server operasi tidak dapat dihubungi' });
+  }
 }
 
 async function sosCreate(req,res,user) {
@@ -182,12 +191,32 @@ async function sosNearby(req,res) {
 }
 
 async function sosResolve(req,res,user) {
-  const id=clean((req.body||{}).id,80);if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
-  const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');const rows=r.ok?await r.json():[];const sos=rows&&rows[0];
-  if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
-  if(sos.user_id!==user.id&&!isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
-  const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
-  if(!u.ok)return res.status(502).json({error:'Status SOS gagal diperbarui'});return res.status(200).json({ok:true});
+  const id=clean((req.body||{}).id,80);
+  if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
+  
+  // Validasi format UUID untuk mencegah query injection
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(!uuidRegex.test(id))return res.status(400).json({error:'ID SOS tidak valid'});
+  
+  try {
+    const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');
+    const rows=r.ok?await r.json():[];
+    const sos=rows&&rows[0];
+    
+    if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
+    if(sos.user_id!==user.id&&!isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
+    
+    const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
+    if(!u.ok){
+      const errText = await u.text().catch(() => '');
+      logError('sos-resolve', `PATCH failed with status ${u.status}`, errText.slice(0, 500));
+      return res.status(502).json({error:'Status SOS gagal diperbarui'});
+    }
+    return res.status(200).json({ok:true});
+  } catch (e) {
+    logError('sos-resolve', 'Exception during resolve', e);
+    return res.status(502).json({error:'Gagal menyelesaikan SOS'});
+  }
 }
 
 async function sosDelete(req,res,user) {
