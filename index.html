@@ -3508,7 +3508,7 @@ function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');
   localStorage.removeItem('bwkSosQueue');
   localStorage.removeItem('bwkLastSosLat');
   localStorage.removeItem('bwkLastSosLng');
-}}catch(e){}
+}catch(e){}
 })();
 function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.setAttribute('data-locked','1');s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}var _sosOk=function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);};navigator.geolocation.getCurrentPosition(_sosOk,function(e){navigator.geolocation.getCurrentPosition(_sosOk,function(){sosShareUI(null,null,null);},{enableHighAccuracy:false,timeout:20000,maximumAge:60000});},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
 // Store & Forward: coba kirim SOS offline saat internet tersedia
