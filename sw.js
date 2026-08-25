@@ -6,7 +6,7 @@
 //   file sw.js          -> harus "ASCII text" atau "UTF-8 Unicode text"
 //   node --check sw.js  -> harus lulus tanpa keluaran
 
-const CACHE='bwk-v79-sos-kit';
+const CACHE='bwk-v80-nav-cache';
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/bmkg.js',
   '/leaflet.js','/leaflet.css',
@@ -37,9 +37,25 @@ self.addEventListener('fetch',function(e){
   if(url.origin!==location.origin || url.pathname.indexOf('/api/')===0)return;
 
   if(req.mode==='navigate'){
+    // HANYA beranda yang boleh menimpa salinan '/index.html'. Sebelumnya SETIAP
+    // navigasi (mis. /tracker) tersimpan sebagai '/index.html', sehingga halaman
+    // yang salah tersaji saat offline dan versi lama bertahan setelah pembaruan.
+    const isBeranda=(url.pathname==='/'||url.pathname==='/index.html');
     e.respondWith(fetch(req).then(function(res){
-      const copy=res.clone();caches.open(CACHE).then(function(c){c.put('/index.html',copy);});return res;
-    }).catch(function(){return caches.match('/index.html');}));
+      if(isBeranda&&res&&res.status===200){
+        const copy=res.clone();
+        caches.open(CACHE).then(function(c){c.put('/index.html',copy);}).catch(function(){});
+      }
+      return res;
+    }).catch(function(){
+      if(isBeranda)return caches.match('/index.html');
+      // Jangan pernah menyajikan beranda untuk /tracker dan kawan-kawan.
+      // Token share ada di query, jadi cocokkan tanpa query.
+      return caches.match(req,{ignoreSearch:true}).then(function(hit){
+        if(hit)return hit;
+        return new Response('<!doctype html><meta charset="utf-8"><title>Tidak ada koneksi</title><body style="font:16px/1.5 system-ui,sans-serif;padding:24px;background:#0f1115;color:#e8eaed"><h1 style="font-size:20px">Tidak ada koneksi</h1><p>Halaman ini belum tersimpan untuk mode offline. Sambungkan internet lalu muat ulang.</p></body>',{status:503,headers:{'Content-Type':'text/html; charset=utf-8'}});
+      });
+    }));
     return;
   }
 
