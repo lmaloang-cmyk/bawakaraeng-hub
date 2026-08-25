@@ -7282,7 +7282,11 @@ async function _tkPost(payload) {
     body: JSON.stringify(payload)
   });
   if (r.status === 404) return 'gone';
-  if (!r.ok) return 'retry';
+  if (!r.ok) {
+    var _tkErrTxt = await r.text().catch(function() { return ''; });
+    console.warn('[tracking] POST positions failed HTTP ' + r.status + (r.statusText ? ' ' + r.statusText : ''), r.url, _tkErrTxt.slice(0, 300));
+    return 'retry';
+  }
   var d = await r.json().catch(function() { return null; });
   return (d && d.ok) ? 'ok' : 'retry';
 }
