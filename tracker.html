@@ -429,12 +429,11 @@
 
         map.attributionControl.setPrefix('');
 
-        // {r} + detectRetina = tile tajam di layar HP modern
-        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png', {
+        // OSM tidak menyediakan tile @2x, dan tanpa crossOrigin galat tile
+        // tidak berubah menjadi galat CORS yang mengosongkan peta
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '\u00a9 OpenStreetMap',
           maxZoom: 19,
-          detectRetina: true,
-          crossOrigin: true,
           keepBuffer: 3
         });
 
@@ -442,15 +441,12 @@
         var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
           attribution: '\u00a9 OpenTopoMap (CC-BY-SA)',
           maxZoom: 17,
-          detectRetina: true,
-          crossOrigin: true
         });
 
         // Satelit jadi lapisan dasar penuh, bukan overlay tempelan
         var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
           attribution: '\u00a9 Esri',
           maxZoom: 19,
-          crossOrigin: true
         });
 
         osm.addTo(map);
