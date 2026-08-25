@@ -344,7 +344,13 @@
   }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
   window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
   window.opsDelete=function(id){if(!confirm('Hapus SOS ini sepenuhnya?'))return;api('/api/operations?action=sos-delete',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS berhasil dihapus','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal menghapus SOS','err');});};
-  window.addEventListener('load',function(){setTimeout(function(){var delBtns=document.querySelectorAll('.btn-ops-delete');delBtns.forEach(function(btn){btn.addEventListener('click',function(){opsDelete(btn.getAttribute('data-id'));});});var resBtns=document.querySelectorAll('.btn-ops-resolve');resBtns.forEach(function(btn){btn.addEventListener('click',function(){opsResolve(btn.getAttribute('data-id'));});});},500);});
+  // Event delegation - pasang di document agar berfungsi untuk tombol yang dibuat dinamis
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('.btn-ops-resolve');
+    if(btn){e.preventDefault();opsResolve(btn.getAttribute('data-id'));return;}
+    btn=e.target.closest('.btn-ops-delete');
+    if(btn){e.preventDefault();opsDelete(btn.getAttribute('data-id'));}
+  });
 
   // Kirim instruksi ke semua responder aktif untuk SOS tertentu
   window.opsSendInstr=function(sosId, sosName){
