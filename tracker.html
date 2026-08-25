@@ -283,6 +283,17 @@
     }
     .leaflet-control-zoom a:first-child { border-radius:10px 10px 0 0 !important; }
     .leaflet-control-zoom a:last-child { border-radius:0 0 10px 10px !important; }
+    /* Saat belum ada titik GPS, peta memakai titik tampilan bawaan.
+       Tanpa penjelasan, area bawaan itu terlihat seperti posisi pendaki. */
+    .tk-nogps {
+      position: absolute; inset: 0; z-index: 450;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 16px;
+      background: rgba(244, 246, 251, .82);
+      color: var(--ink); font-family: var(--font);
+    }
+    .tk-nogps b { display: block; margin-bottom: 4px; font-size: 15px; }
+    .tk-nogps small { color: var(--sub); font-size: 12px; line-height: 1.45; }
   </style>
 </head>
 <body>
@@ -387,11 +398,26 @@
       function _tkWaiting() {
         const meta = document.getElementById('infoMeta');
         if (meta) meta.textContent = 'Menunggu titik GPS pertama dari perangkat pendaki';
+
+        const box = document.getElementById('map');
+        if (box && !document.getElementById('tkNoGps')) {
+          const ov = document.createElement('div');
+          ov.id = 'tkNoGps';
+          ov.className = 'tk-nogps';
+          ov.innerHTML = '<div><b>Belum ada titik GPS</b>' +
+            '<small>Peta menampilkan area umum, bukan posisi pendaki.</small></div>';
+          box.appendChild(ov);
+        }
         const last = document.getElementById('statLast');
         if (last) {
           last.textContent = 'Menunggu';
           last.className = 'value warn';
         }
+      }
+
+      function _tkClearWaiting() {
+        const ov = document.getElementById('tkNoGps');
+        if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
       }
 
       // ===== SHOW ERROR =====
@@ -700,6 +726,7 @@
           }
 
           if (cur) {
+            _tkClearWaiting();
             // Statistik lebih dulu: kalau peta bermasalah, angka tetap tampil
             updateStats(cur);
             try {
