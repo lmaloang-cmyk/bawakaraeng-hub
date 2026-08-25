@@ -193,26 +193,29 @@ async function sosNearby(req,res) {
 async function sosResolve(req,res,user) {
   const id=clean((req.body||{}).id,80);
   if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
-  
-  // Validasi format UUID untuk mencegah query injection
+
+  // Validasi format UUID agar tidak bisa dimanipulasi sebelum dimasukkan ke query PostgREST.
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if(!uuidRegex.test(id))return res.status(400).json({error:'ID SOS tidak valid'});
-  
+
   try {
+    // Cek dulu apakah SOS ada dan siapa pemiliknya
     const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');
     const rows=r.ok?await r.json():[];
     const sos=rows&&rows[0];
-    
+
     if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
+
     // Allow owner OR admin to resolve. Also allow if user_id column is missing/null (legacy data).
     var isOwner = sos.user_id && user.id && String(sos.user_id).toLowerCase() === String(user.id).toLowerCase();
     if(!isOwner && !isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
-    
-    const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
-    if(!u.ok){
-      const errText = await u.text().catch(() => '');
-      logError('sos-resolve', `PATCH failed with status ${u.status}`, errText.slice(0, 500));
-      return res.status(502).json({error:'Status SOS gagal diperbarui'});
+
+    // Hapus SOS dari Supabase sepenuhnya (bukan hanya update status)
+    const d=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    if(!d.ok){
+      const errText = await d.text().catch(() => '');
+      logError('sos-resolve', `DELETE failed with status ${d.status}`, errText.slice(0, 500));
+      return res.status(502).json({error:'Gagal menghapus SOS dari server'});
     }
     return res.status(200).json({ok:true});
   } catch (e) {
