@@ -27,6 +27,10 @@ knowledge.db-wal
 
 # Screenshots (large, not needed in repo)
 screenshots/
+
+# Exclude PWA icons from PNG ignore rule
+!icon-192.png
+!icon-512.png
 *.png
 
 # Temporary
