@@ -1,0 +1,19 @@
+# Kunci encoding & akhir baris.
+# Penyebab bug SOS terbesar (S5) adalah sw.js yang tersimpan sebagai UTF-16LE,
+# sehingga service worker tidak pernah bisa didaftarkan sama sekali.
+# Berkas ini mencegah masalah itu terulang.
+* text=auto eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.sql  text eol=lf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.pdf  binary
+*.ico  binary
