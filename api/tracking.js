@@ -22,8 +22,13 @@ import { rest, isAdmin, requireUser, validPoint, clean } from '../lib/ops.js';
 
 // Maximum position payload size
 const MAX_PAYLOAD = 1024;
-// Position update rate limit: 1 per 10 seconds per session
-const RATE_UPDATE = 6;
+// Batas kiriman posisi: per PENGGUNA (bukan per sesi), jendela 60 detik.
+// 6 terlalu ketat. Perekam ponsel mengirim 1 titik / 12 detik = 5 kiriman/menit,
+// jadi satu tarikan antrean saja sudah menembus batas dan dibalas 429. Klien lalu
+// masuk jeda dingin 70 detik, titik menumpuk di antrean, dan pil status berkedip
+// merah-hijau tanpa henti. 20 memberi ruang untuk pengiriman langsung + penguras
+// antrean + satu perangkat kedua di akun yang sama.
+const RATE_UPDATE = 20;
 // Session lifetime: 4 hours default (shorter for safety)
 const DEFAULT_EXPIRY_HOURS = 4;
 
