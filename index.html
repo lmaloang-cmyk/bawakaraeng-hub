@@ -7562,6 +7562,113 @@ document.addEventListener('visibilitychange', function() {
   } catch (e) {}
   console.log('[tracking] perbaikan token aktif');
 })();
+// ===== PERBAIKAN TOKEN PELACAKAN (supabase-js v2, token selalu segar) =====
+(function () {
+  if (window.__tkAuthFix) return;
+  window.__tkAuthFix = true;
+
+  var _tkTok = '';
+  var _tkTokExp = 0;
+  var _tkWarnAt = 0;
+
+  function _tkDecodeExp(t) {
+    try {
+      var b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      var p = JSON.parse(atob(b));
+      return (p && p.exp) ? p.exp * 1000 : 0;
+    } catch (e) { return 0; }
+  }
+
+  function _tkLegacyToken() {
+    try {
+      var keys = Object.keys(localStorage);
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].indexOf('sb-') === 0 && keys[i].indexOf('-auth-token') > -1) {
+          var d = JSON.parse(localStorage.getItem(keys[i]));
+          if (d && d.access_token) return d.access_token;
+          if (d && d.currentSession && d.currentSession.access_token) return d.currentSession.access_token;
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  async function _tkRefreshToken(paksa) {
+    try {
+      var c = (typeof _sbClient === 'function') ? _sbClient() : null;
+      if (!c || !c.auth) return '';
+      if (paksa && c.auth.refreshSession) {
+        try { await c.auth.refreshSession(); } catch (e) {}
+      }
+      if (c.auth.getSession) {
+        var r = await c.auth.getSession();
+        var s = r && r.data && r.data.session;
+        if (s && s.access_token) {
+          _tkTok = s.access_token;
+          _tkTokExp = _tkDecodeExp(s.access_token);
+          return _tkTok;
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+  window._tkRefreshToken = _tkRefreshToken;
+
+  window._tkAuthToken = function () {
+    return _tkTok || _tkLegacyToken();
+  };
+
+  window._tkHeaders = function () {
+    var h = { 'Content-Type': 'application/json' };
+    if (_tkTok && _tkTokExp && Date.now() > _tkTokExp - 120000) _tkRefreshToken(true);
+    var t = _tkTok || _tkLegacyToken();
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  };
+
+  function _tkWarnLogin() {
+    var now = Date.now();
+    if (now - _tkWarnAt < 300000) return;
+    _tkWarnAt = now;
+    console.warn('[tracking] token ditolak server, perlu login ulang');
+    if (typeof window.toast === 'function') {
+      window.toast('Sesi login berakhir. Masuk lagi dengan Google agar pelacakan lanjut.', 'err');
+    }
+  }
+
+  window._tkPost = async function (payload) {
+    var url = '/api/tracking?act=positions';
+    var body = JSON.stringify(payload);
+    var r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+    if (r.status === 404) return 'gone';
+    if (r.status === 401) {
+      await _tkRefreshToken(true);
+      r = await fetch(url, { method: 'POST', headers: _tkHeaders(), body: body });
+      if (r.status === 401) { _tkWarnLogin(); return 'retry'; }
+    }
+    if (!r.ok) return 'retry';
+    var d = await r.json().catch(function () { return null; });
+    return (d && d.ok) ? 'ok' : 'retry';
+  };
+
+  _tkRefreshToken(false);
+  setInterval(function () { _tkRefreshToken(false); }, 240000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') _tkRefreshToken(false);
+  });
+  try {
+    var c0 = (typeof _sbClient === 'function') ? _sbClient() : null;
+    if (c0 && c0.auth && c0.auth.onAuthStateChange) {
+      c0.auth.onAuthStateChange(function (_e, s) {
+        if (s && s.access_token) {
+          _tkTok = s.access_token;
+          _tkTokExp = _tkDecodeExp(s.access_token);
+        }
+      });
+    }
+  } catch (e) {}
+  console.log('[tracking] perbaikan token aktif');
+})();
 
 </script>
 
