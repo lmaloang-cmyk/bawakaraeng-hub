@@ -310,8 +310,11 @@ async function sendPosition(req, res, user) {
       session_id: sessionId,
       lat,
       lng,
-      accuracy_m: isFinite(accuracy) ? accuracy : null,
-      altitude_m: isFinite(altitude) ? altitude : null,
+      // Kolom accuracy_m & altitude_m bertipe int di Postgres. PostgREST TIDAK
+      // membulatkan: nilai pecahan dari GPS ponsel (93.7 / 60.4) ditolak dengan
+      // galat sintaks integer, sehingga seluruh penyisipan gagal dan API balas 502.
+      accuracy_m: isFinite(accuracy) ? Math.max(0, Math.min(100000, Math.round(accuracy))) : null,
+      altitude_m: isFinite(altitude) ? Math.max(-500, Math.min(12000, Math.round(altitude))) : null,
       battery_pct: isFinite(batteryPct) ? Math.max(0, Math.min(100, Math.round(batteryPct))) : null,
       sent_at: new Date().toISOString(),
       client_id: clientId || null
