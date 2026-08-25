@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   // TEMUAN S8: 'sos-create' dulu hanya 6 per 10 menit. Panik menekan tombol berkali-kali
   // adalah perilaku manusia yang normal, dan pengiriman ulang otomatis dari antrian juga
   // memakai kuota yang sama. Orang yang benar-benar butuh tolong bisa diblokir 429.
-  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':20, 'sos-report':10, 'sos-instructions':5, 'sos-delete':10, admin:60, checkin:30, 'permit-verify':60 };
+  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':60, 'sos-report':10, 'sos-instructions':5, 'sos-delete':10, admin:60, checkin:30, 'permit-verify':60 };
   if (!limits[action]) return res.status(404).json({ error: 'Operasi tidak ditemukan' });
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
