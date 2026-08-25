@@ -261,7 +261,7 @@
     _sosId = null;
     _stepDone = {};
     var host = document.getElementById('bwkSosEscalate');
-    if (host) host.innerHTML = '';
+    if (host) host.remove();
   }
 
   window.BWKSosRelay = {

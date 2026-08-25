@@ -209,11 +209,12 @@
     _sosResolving=true;
     // Disable tombol "Saya Aman" segera
     var btn=document.querySelector('#mySosActive button');if(btn){btn.disabled=true;btn.textContent='Memproses...';}
+    // Stop eskalasi SEGERA - jangan tunggu API berhasil
+    try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
+    // Hapus panel eskalasi dari DOM
+    try{var esc=document.getElementById('bwkSosEscalate');if(esc)esc.remove();}catch(e){}
     api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){
       localStorage.removeItem(ACTIVE_KEY);_stopWaves();
-      try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
-      // Remove the active SOS banner immediately
-      var activeEl=document.getElementById('mySosActive');if(activeEl)activeEl.remove();
       toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
       // Refresh admin panel if open
       try{if(typeof opsDashboard==='function')opsDashboard();}catch(e){}
