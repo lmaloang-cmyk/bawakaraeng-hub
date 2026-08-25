@@ -7,6 +7,13 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" type="image/png" href="/icon-192.png" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
+
+  <!-- Tanpa stylesheet ini, Leaflet kehilangan position:absolute untuk tile,
+       kontrol, dan penanda. Tile lalu mengalir seperti teks biasa sehingga
+       peta tampak terpotong. Versinya wajib sama dengan leaflet.js di bawah.
+       Cadangan /leaflet.css dipakai bila CDN tidak terjangkau. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        onerror="var l=document.createElement('link');l.rel='stylesheet';l.href='/leaflet.css';document.head.appendChild(l);" />
   <meta name="theme-color" content="#10243D" />
   <meta name="description" content="Lihat lokasi pendaki secara realtime di Gunung Bawakaraeng." />
   <style>
@@ -376,6 +383,17 @@
         }
       }
 
+      // ===== BELUM ADA TITIK GPS =====
+      function _tkWaiting() {
+        const meta = document.getElementById('infoMeta');
+        if (meta) meta.textContent = 'Menunggu titik GPS pertama dari perangkat pendaki';
+        const last = document.getElementById('statLast');
+        if (last) {
+          last.textContent = 'Menunggu';
+          last.className = 'value warn';
+        }
+      }
+
       // ===== SHOW ERROR =====
       function showError(title, msg) {
         document.getElementById('app').innerHTML = `
@@ -666,15 +684,32 @@
           const posRes = await fetch(`${API}?act=latest&id=${SESSION_ID}&token=${TOKEN}`);
           const posData = await posRes.json();
 
-          if (posData.ok && posData.position) {
+          // Titik pertama dari HP sering belum sampai ketika tautan dibuka:
+          // perekam GPS baru mulai, atau layar HP pengirim sempat mati. Riwayat
+          // dan ringkasan sesi dipakai sebagai cadangan supaya kartu statistik
+          // tidak diam-diam kosong tanpa penjelasan.
+          let cur = (posData.ok && posData.position) ? posData.position : null;
+          if (!cur && hist.length) cur = hist[0];
+          if (!cur && sessionData.last_lat != null && sessionData.last_lng != null) {
+            cur = {
+              lat: sessionData.last_lat,
+              lng: sessionData.last_lng,
+              accuracy_m: sessionData.last_accuracy_m,
+              sent_at: sessionData.last_seen || sessionData.created_at
+            };
+          }
+
+          if (cur) {
             // Statistik lebih dulu: kalau peta bermasalah, angka tetap tampil
-            updateStats(posData.position);
+            updateStats(cur);
             try {
-              updateMapPosition(posData.position);
+              updateMapPosition(cur);
             } catch (e) {
               console.error('[TRACKER] gagal memperbarui peta:', e);
             }
-            lastPosition = posData.position;
+            lastPosition = cur;
+          } else {
+            _tkWaiting();
           }
 
           if (hist.length > 1) {
