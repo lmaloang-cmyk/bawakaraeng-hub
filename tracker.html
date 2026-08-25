@@ -1053,61 +1053,6 @@
       // Start
       init();
     })();
-    // ==== PANEL DIAGNOSA GPS (sementara, hapus setelah selesai) ====
-(function () {
-  if (window.__tkDiag) return;
-  window.__tkDiag = true;
-  var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;' +
-    'background:rgba(20,26,44,.92);color:#fff;font:12px/1.5 system-ui,sans-serif;' +
-    'padding:10px 12px;border-radius:12px;white-space:pre-wrap;max-height:40vh;overflow:auto';
-  var lines = [];
-  function log(s) {
-    lines.push(new Date().toLocaleTimeString('id-ID') + '  ' + s);
-    if (lines.length > 12) lines.shift();
-    el.textContent = 'DIAGNOSA GPS (tempel isi kotak ini ke chat)\n' + lines.join('\n');
-  }
-  function tempel() { if (document.body && !el.parentNode) document.body.appendChild(el); }
-  tempel();
-  document.addEventListener('DOMContentLoaded', tempel);
-  log('panel aktif');
-
-  if (!navigator.geolocation) {
-    log('geolocation TIDAK ADA di browser ini');
-  } else {
-    navigator.geolocation.watchPosition(function (p) {
-      log('GPS ok, akurasi ' + Math.round(p.coords.accuracy) + ' m');
-    }, function (e) {
-      log('GPS GAGAL, kode ' + e.code + ', ' + e.message);
-    }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
-  }
-
-  if (navigator.permissions && navigator.permissions.query) {
-    navigator.permissions.query({ name: 'geolocation' }).then(function (s) {
-      log('izin lokasi: ' + s.state);
-      s.onchange = function () { log('izin lokasi berubah: ' + s.state); };
-    }).catch(function () {});
-  }
-
-  var f = window.fetch;
-  window.fetch = function (u) {
-    var url = (typeof u === 'string') ? u : (u && u.url) || '';
-    var pantau = url.indexOf('act=positions') >= 0;
-    return f.apply(this, arguments).then(function (r) {
-      if (pantau) log('kirim posisi -> HTTP ' + r.status);
-      return r;
-    }).catch(function (err) {
-      if (pantau) log('kirim posisi GAGAL: ' + (err && err.message));
-      throw err;
-    });
-  };
-
-  setInterval(function () {
-    var a = (typeof _tkWatchActive !== 'undefined') ? _tkWatchActive : 'n/a';
-    var n = (typeof _tkSessions !== 'undefined' && _tkSessions) ? _tkSessions.length : 'n/a';
-    log('perekam aktif: ' + a + ' | sesi di memori: ' + n);
-  }, 20000);
-})();
   </script>
 </body>
 </html>
