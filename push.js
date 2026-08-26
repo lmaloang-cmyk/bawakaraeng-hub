@@ -30,7 +30,8 @@
       if(!force&&prev&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&(Date.now()-_lastPush<LOC_TTL))return Promise.resolve(false);
       return _pos().then(function(pos){
         if(!force&&pos&&prev&&prev.lat!=null&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&_far(prev,pos)<LOC_MOVE)return false;
-        var row={endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:_dev(),name:_name(),active:true,updated_at:new Date().toISOString()};
+       var _u={};try{_u=JSON.parse(localStorage.getItem('bwkUser')||'{}');}catch(e){}
+var row={endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:_dev(),name:_name(),active:true,updated_at:new Date().toISOString(),role:(_u&&_u.role)||'',user_email:(_u&&_u.email)||''};
         if(pos){row.lat=pos.lat;row.lng=pos.lng;}
         _lastPush=Date.now();
         return fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)})

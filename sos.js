@@ -86,9 +86,8 @@
   var _instrPanelShown=false; // panel instruksi dari admin
   function _sosCount(){try{return parseInt(localStorage.getItem('bwkSosCount')||'0',10)||0;}catch(e){return 0;}}
   function _incSosCount(){try{var c=_sosCount()+1;localStorage.setItem('bwkSosCount',String(c));return c;}catch(e){return _sosCount();}}
-   var _timer=null,_busy=false,_backoffUntil=0,_backoff=0,_lastTouch=Date.now(),_lastOk=0,_fails=0;
-   var _status={mode:'idle',detail:''};
-   var _sosResolving=false; // TEMUAN S12: stop polling saat user resolve SOS sendiri
+  var _timer=null,_busy=false,_backoffUntil=0,_backoff=0,_lastTouch=Date.now(),_lastOk=0,_fails=0;
+  var _status={mode:'idle',detail:''};
 
   function _devId(){try{var d=localStorage.getItem('bwkDev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',d);}return d;}catch(e){return 'd0';}}
   function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
@@ -351,10 +350,9 @@
   function _penalize(ms){_backoff=Math.min(BACKOFF_MAX,Math.max(BACKOFF_MIN,ms||(_backoff?_backoff*2:BACKOFF_MIN)));_backoffUntil=Date.now()+_backoff;}
   function _recover(){_backoff=0;_backoffUntil=0;_fails=0;}
 
-   function _tick(force){
-     if(_busy){return;}
-     if(_sosResolving){_schedule(POLL_ACTIVE*2);return;} // TEMUAN S12: skip polling saat resolve
-     if(!force&&_backoffUntil>Date.now()){_schedule();return;}
+  function _tick(force){
+    if(_busy){return;}
+    if(!force&&_backoffUntil>Date.now()){_schedule();return;}
     if(typeof window._opsNearby!=='function'){_setStatus('net','modul operasi belum siap');_schedule(8000);return;}
     if(!navigator.geolocation){_setStatus('unsupported');return;}
     _busy=true;
@@ -425,10 +423,9 @@
   }
   ['pointerdown','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){_lastTouch=Date.now();_unlockAudio();},{passive:true});});
 
-   window._sosStart=function(){if(_started)return;_started=true;localStorage.setItem('bwkSosCount','0');_tick(true);};
-   window._sosPing=function(){_backoffUntil=0;_backoff=0;_tick(true);};
-   window._sosMarkResolving=function(v){_sosResolving=v||false;}; // TEMUAN S12
-   window.addEventListener('load',function(){setTimeout(window._sosStart,2500);});
+  window._sosStart=function(){if(_started)return;_started=true;localStorage.setItem('bwkSosCount','0');_tick(true);};
+  window._sosPing=function(){_backoffUntil=0;_backoff=0;_tick(true);};
+  window.addEventListener('load',function(){setTimeout(window._sosStart,2500);});
   window.addEventListener('online',function(){_recover();if(_started)_tick(true);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden){_lastTouch=Date.now();if(_started){_recover();_tick(true);}}else{_schedule();}});
   // Service worker memberi tahu saat push SOS masuk: langsung periksa, jangan tunggu siklus berikutnya.

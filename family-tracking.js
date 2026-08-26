@@ -316,14 +316,6 @@
 
     getQueueSize: function () {
       return loadQueue().length;
-    },
-
-    /** Hapus session dari server (selesai / riwayat) */
-    deleteSession: function (sessionId) {
-      if (!sessionId) return Promise.resolve();
-      return apiPost('delete', { session_id: sessionId })
-        .then(function (r) { return r.ok || true; })
-        .catch(function () { return false; });
     }
   };
 

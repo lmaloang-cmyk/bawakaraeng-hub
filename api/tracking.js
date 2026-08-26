@@ -23,10 +23,12 @@ import { rest, isAdmin, requireUser, validPoint, clean } from '../lib/ops.js';
 // Maximum position payload size
 const MAX_PAYLOAD = 1024;
 // Batas kiriman posisi: per PENGGUNA (bukan per sesi), jendela 60 detik.
-// Naik dari 20 ke 30: keluarga tracking sering flush antrian offline sekaligus,
-// dan saat bersamaan dengan polling SOS nearby + push wave, kuota 20 terlalu sempit
-// sehingga operasi darurat kena 429. 30 memberi ruang cukup.
-const RATE_UPDATE = 30;
+// 6 terlalu ketat. Perekam ponsel mengirim 1 titik / 12 detik = 5 kiriman/menit,
+// jadi satu tarikan antrean saja sudah menembus batas dan dibalas 429. Klien lalu
+// masuk jeda dingin 70 detik, titik menumpuk di antrean, dan pil status berkedip
+// merah-hijau tanpa henti. 20 memberi ruang untuk pengiriman langsung + penguras
+// antrean + satu perangkat kedua di akun yang sama.
+const RATE_UPDATE = 20;
 // Session lifetime: 4 hours default (shorter for safety)
 const DEFAULT_EXPIRY_HOURS = 4;
 
@@ -66,13 +68,6 @@ export default async function handler(req, res) {
     if (!user) return res.status(401).json({ error: 'Login diperlukan' });
     if (!rateLimit(req, res, { prefix: 'track-stop', id: user.id, limit: 10, windowMs: 3600000 })) return;
     return stopSession(req, res, user);
-  }
-
-  // --- DELETE SESSION (hapus riwayat) ---
-  if (act === 'delete') {
-    if (!user) return res.status(401).json({ error: 'Login diperlukan' });
-    if (!rateLimit(req, res, { prefix: 'track-delete', id: user.id, limit: 20, windowMs: 3600000 })) return;
-    return deleteSession(req, res, user);
   }
 
   // --- SEND POSITION ---
@@ -275,34 +270,7 @@ async function stopSession(req, res, user) {
     if (!stopR.ok) throw new Error(`HTTP ${stopR.status}`);
     return res.json({ ok: true, message: 'Sesi dihentikan' });
   } catch (e) {
-    return res.status(502).json({ error: 'Gagal menghentikan sesi', detail: e?.message });
-  }
-}
-
-// ===========================================================================
-// DELETE SESSION (hapus riwayat dari server)
-// ===========================================================================
-async function deleteSession(req, res, user) {
-  const b = req.body || {};
-  const sessionId = b.session_id;
-  if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId)) {
-    return res.status(400).json({ error: 'ID sesi tidak valid' });
-  }
-  try {
-    // Hapus posisi dulu
-    await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tracking_positions?session_id=eq.${sessionId}`,
-      { method: 'DELETE', headers: { 'apikey': process.env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}` } }
-    );
-    // Hapus sesi
-    const r = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tracking_sessions?id=eq.${sessionId}&created_by=eq.${user.id}`,
-      { method: 'DELETE', headers: { 'apikey': process.env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}` } }
-    );
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return res.json({ ok: true, message: 'Sesi dihapus' });
-  } catch (e) {
-    return res.status(502).json({ error: 'Gagal menghapus sesi', detail: e?.message });
+    return res.status(502).json({ error: 'Gagal menghentikan sesi' });
   }
 }
 

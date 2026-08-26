@@ -20,7 +20,7 @@ async function restWithFallback(pathNew, pathOld) {
 }
 
 // Endpoint gabungan untuk Vercel Hobby: SOS, dashboard operasi, check-in, dan QR SIMAKSI.
-// Gunakan ?action=sos-create|sos-nearby|sos-resolve|admin|checkin|permit-verify
+// Gunakan ?action=sos-create|sos-nearby|sos-resolve|sos-report|sos-instructions|admin|checkin|permit-verify
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, private');
@@ -34,10 +34,7 @@ export default async function handler(req, res) {
   // TEMUAN S8: 'sos-create' dulu hanya 6 per 10 menit. Panik menekan tombol berkali-kali
   // adalah perilaku manusia yang normal, dan pengiriman ulang otomatis dari antrian juga
   // memakai kuota yang sama. Orang yang benar-benar butuh tolong bisa diblokir 429.
-  // TEMUAN S12: 'sos-resolve' sebelumnya hanya 20 per 10 menit, tapi saat keluarga tracking
-  // aktif bersamaan, posisi update + push wave + nearby polling bisa terpakai sisa kuota.
-  // Naikkan ke 60 agar resolve tetap aman bahkan saat beban server tinggi.
-  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':60, admin:60, checkin:30, 'permit-verify':60 };
+  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':20, 'sos-report':10, 'sos-instructions':5, admin:60, checkin:30, 'permit-verify':60 };
   if (!limits[action]) return res.status(404).json({ error: 'Operasi tidak ditemukan' });
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
@@ -57,6 +54,8 @@ export default async function handler(req, res) {
     if (action === 'sos-create') return sosCreate(req, res, user);
     if (action === 'sos-nearby') return sosNearby(req, res);
     if (action === 'sos-resolve') return sosResolve(req, res, user);
+    if (action === 'sos-report') return sosReport(req, res, user);
+    if (action === 'sos-instructions') return sosInstructions(req, res, user);
     if (action === 'admin') return adminDashboard(res);
     if (action === 'checkin') return checkin(req, res, user);
     return permitVerify(req, res);
@@ -185,17 +184,101 @@ async function sosResolve(req,res,user) {
   if(!u.ok)return res.status(502).json({error:'Status SOS gagal diperbarui'});return res.status(200).json({ok:true});
 }
 
+// Responder (bukan admin, bukan pengirim) melaporkan posisi mereka saat menekan "Sudah ditangani".
+// Petugas bisa melihat daftar responder + jarak dari pengirim SOS + instruksi yang dikirim balik.
+async function sosReport(req,res,user) {
+  const b=req.body||{};
+  const sosId=clean(b.sos_id,80);if(!sosId)return res.status(400).json({error:'ID SOS diperlukan'});
+  const lat=Number(b.lat),lng=Number(b.lng);
+  if(!validPoint(lat,lng))return res.status(400).json({error:'Lokasi tidak valid'});
+
+  // Verifikasi SOS masih aktif
+  const sr=await rest('sos_alerts?select=id,active,lat,lng&limit=1&id=eq.'+encodeURIComponent(sosId));
+  const sosRow=sr.ok?await sr.json():[];
+  const sos=sosRow&&sosRow[0];
+  if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
+  if(!sos.active)return res.status(409).json({error:'SOS sudah tidak aktif'});
+
+  // Hitung jarak dari pengirim SOS
+  const distM=Math.round(distance(lat,lng,Number(sos.lat),Number(sos.lng)));
+  const meta=user.user_metadata||{};
+  const name=clean(meta.full_name||meta.name||String(user.email||'Pendaki').split('@')[0],80);
+
+  // Cek duplikat: satu user satu kali per SOS (max 1 laporan dalam 5 menit)
+  const cutTime=new Date(Date.now()-5*60_000).toISOString();
+  const dupR=await rest('sos_responders?'+new URLSearchParams({
+    select:'id',sos_alert_id:'eq.'+sosId,responder_id:'eq.'+user.id,created_at:'gte.'+cutTime
+  }));
+  if(dupR.ok){const dup=await dupR.json();if(Array.isArray(dup)&&dup.length)return res.status(200).json({ok:true,reason:'already_reported',distance_m:distM});}
+
+  // Simpan laporan
+  const postR=await rest('sos_responders',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Prefer:'return=representation'},
+    body:JSON.stringify({
+      sos_alert_id:sosId,
+      responder_id:user.id,
+      responder_email:clean(user.email,254),
+      responder_name:name,
+      lat,lng,distance_m:distM,
+      status:'reported',
+      responded_at:new Date().toISOString()
+    })
+  });
+  if(!postR.ok)return res.status(502).json({error:'Gagal menyimpan laporan'});
+  const postD=await postR.json();
+  return res.status(201).json({ok:true,distance_m:distM,id:postD&&postD[0]&&postD[0].id});
+}
+
+// Admin mengirim instruksi ke semua responder aktif untuk sebuah SOS.
+// Instruksi bisa dikirim sebelum ada responder yang lapor (misal untuk menyiagakan area).
+async function sosInstructions(req,res,user) {
+  if(!isAdmin(user))return res.status(403).json({error:'Hanya petugas yang dapat mengirim instruksi'});
+  const b=req.body||{};
+  const sosId=clean(b.sos_id,80);if(!sosId)return res.status(400).json({error:'ID SOS diperlukan'});
+  const msg=clean(b.message,500);if(!msg)return res.status(400).json({error:'Instruksi tidak boleh kosong'});
+
+  // Update semua responder dengan status 'reported' untuk SOS ini
+  const u=await rest('sos_responders?'+new URLSearchParams({
+    sos_alert_id:'eq.'+sosId,status:'eq.reported'
+  }),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({message_sent:msg,status:'acknowledged',responded_at:new Date().toISOString()})});
+  if(!u.ok)return res.status(502).json({error:'Gagal mengirim instruksi'});
+  // Tidak masalah jika 0 baris diupdate (belum ada responder)
+  return res.status(200).json({ok:true,sent:true});
+}
+
 async function adminDashboard(res) {
   // Petugas BOLEH melihat konteks darurat (termasuk profil medis) karena merekalah
   // yang menolong. Endpoint ini sudah dijaga requireUser(..., admin=true).
   const SOS_NEW='sos_alerts?select=id,name,lat,lng,device,created_at,status,user_email,handled_at,handled_by,plus_code,accuracy_m,altitude_m,battery_pct,profile&order=created_at.desc&limit=80';
   const SOS_OLD='sos_alerts?select=id,name,lat,lng,device,created_at,status,user_email,handled_at,handled_by&order=created_at.desc&limit=80';
-  const [a,b]=await Promise.all([
+  // Responder aktif: orang di sekitar yang baru saja melaporkan posisi mereka
+  const RESPONDERS='sos_responders?select=id,sos_alert_id,responder_name,responder_email,lat,lng,distance_m,message_sent,status,responded_at&order=created_at.desc&limit=200';
+  const [a,b,c]=await Promise.all([
     restWithFallback(SOS_NEW,SOS_OLD),
-    rest('trail_checkins?select=id,position_id,position_name,lat,lng,checked_at,user_email,user_name,sync_state&order=checked_at.desc&limit=80')
+    rest('trail_checkins?select=id,position_id,position_name,lat,lng,checked_at,user_email,user_name,sync_state&order=checked_at.desc&limit=80'),
+    rest(RESPONDERS)
   ]);
   const sos=a.ok?await a.json():[], checkins=b.ok?await b.json():[];
-  return res.status(200).json({sos:Array.isArray(sos)?sos:[],checkins:Array.isArray(checkins)?checkins:[]});
+  const responderRows=c.ok?await c.json():[];
+  // Kelompokkan responder berdasarkan sos_alert_id
+  const respondersBySos={};
+  if(Array.isArray(responderRows)){
+    responderRows.forEach(r=>{
+      const key=r.sos_alert_id;if(!key)return;
+      if(!respondersBySos[key])respondersBySos[key]=[];
+      respondersBySos[key].push({
+        id:r.id,name:r.responder_name||r.responder_email||'Responder',
+        email:r.responder_email,
+        lat:Number(r.lat),lng:Number(r.lng),
+        distance_m:Number(r.distance_m),
+        message_sent:r.message_sent||'',
+        status:r.status||'reported',
+        responded_at:r.responded_at
+      });
+    });
+  }
+  return res.status(200).json({sos:Array.isArray(sos)?sos:[],checkins:Array.isArray(checkins)?checkins:[],responders:respondersBySos});
 }
 
 async function checkin(req,res,user) {

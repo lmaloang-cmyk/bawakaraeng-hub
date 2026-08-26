@@ -958,6 +958,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
 @keyframes introLogoFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.025)}}
 @media(prefers-reduced-motion:reduce){#introOverlay .intro-icon,#introOverlay .intro-icon::before,#introOverlay .intro-icon::after{animation:none!important}#introOverlay .intro-icon::before{opacity:.68;transform:scale(1.22)}#introOverlay .intro-icon::after{display:none}}
 </style>
+<script src="logo-blessing.js" defer></script>
 </head>
 <body>
 <div class="phone">
@@ -2022,7 +2023,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <div class="pli" onclick="go('simaksi');setTimeout(function(){skGo('status')},50)"><div class="pi g-indigo">🎫</div><b>SIMAKSI Saya</b><span class="chev">›</span></div>
       <div class="pli" onclick="go('regulasi')"><div class="pi g-violet">⚖️</div><b>Regulasi &amp; Aturan</b><span class="chev">›</span></div>
       <div class="pli" onclick="openSettings()"><div class="pi g-blue">⚙️</div><b>Pengaturan</b><span class="chev">›</span></div>
-      <div class="pli" onclick="go('survival')"><div class="pi g-green">📘</div><b>Panduan Penggunaan</b><span class="chev">›</span></div>
+      <div class="pli" onclick="window.open('PANDUAN.html','_blank','noopener')"><div class="pi g-green">📘</div><b>Panduan Penggunaan</b><span class="chev">›</span></div>
       <div class="pli" onclick="openHelp()"><div class="pi g-green">❓</div><b>Bantuan</b><span class="chev">›</span></div>
       <div class="pli" onclick="switchGoogleAccount()"><div class="pi g-blue">🔄</div><b>Ganti akun Google</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
@@ -2226,7 +2227,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
 </div>
 
 <script>
-var MAC='https://commons.wikimedia.org/wiki/Special:FilePath/Macaca_maure_sulawesi_brown-throated_sulawesi_macaque.jpg?width=960';
+var MAC='/species-macaca.jpg';
 var WMC='https://commons.wikimedia.org/wiki/Special:FilePath/';
 var reports=[];
 var species=[
@@ -8719,27 +8720,6 @@ document.addEventListener('visibilitychange', function() {
       });
       var selesai = kartu.filter(function (c) { return /Selesai/.test(c.textContent || ''); });
       if (selesai.length < 2) return;
-      // TOMBOL HAPUS RIWAYAT
-      var btnHapus = document.getElementById('tk-hapusRiwayat');
-      if (!btnHapus) {
-        btnHapus = document.createElement('button');
-        btnHapus.id = 'tk-hapusRiwayat';
-        btnHapus.style.cssText = 'display:block;margin:8px auto;padding:6px 14px;border-radius:8px;border:1px solid #e5484d;background:transparent;color:#e5484d;font-size:12px;font-weight:700;cursor:pointer;';
-        btnHapus.textContent = '🗑️ Hapus Riwayat Sesi (' + selesai.length + ')';
-        btnHapus.onclick = function() {
-          if (!confirm('Hapus semua riwayat sesi tracking yang sudah selesai?')) return;
-          selesai.forEach(function(card) {
-            var id = card.getAttribute('data-session-id');
-            if (id) FamilyTracker.deleteSession(id);
-            card.remove();
-          });
-          btnHapus.remove();
-          rapikanSesi();
-        };
-        list.appendChild(btnHapus);
-      } else {
-        btnHapus.textContent = '🗑️ Hapus Riwayat Sesi (' + selesai.length + ')';
-      }
       var d = bungkus('tk-riwayat', 'Riwayat sesi (' + selesai.length + ')', selesai);
       if (d) list.appendChild(d);
     }

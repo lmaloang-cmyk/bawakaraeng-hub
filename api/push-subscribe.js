@@ -27,12 +27,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Langganan notifikasi tidak valid' });
   }
 
-  const row = {
-    endpoint, p256dh: p256dh.slice(0, 512), auth: auth.slice(0, 512),
-    device: String(b.device || '').slice(0, 80),
-    name: String(b.name || 'Pendaki').slice(0, 80),
-    active: true, updated_at: new Date().toISOString()
-  };
+  ``javascript
+const row = {
+  endpoint, p256dh: p256dh.slice(0, 512), auth: auth.slice(0, 512),
+ device: String(b.device || '').slice(0, 80),
+  name: String(b.name || 'Pendaki').slice(0, 80),
+  active: true, updated_at: new Date().toISOString(),
+  role: String(b.role || '').slice(0, 20),
+  user_email: String(b.user_email || '').slice(0, 254)
+};
   // Jejak kapan koordinat terakhir diperbarui, untuk audit radius push.
   if (Number.isFinite(Number(b.lat)) && Number.isFinite(Number(b.lng))) row.loc_updated_at = new Date().toISOString();
   // Tanpa lokasi, perangkat tidak masuk radius push; aplikasi tetap meminta GPS saat SOS.
