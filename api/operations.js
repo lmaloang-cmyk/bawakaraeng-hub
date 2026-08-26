@@ -19,12 +19,6 @@ async function restWithFallback(pathNew, pathOld) {
   return rest(pathOld);
 }
 
-// Helper untuk logging error ke console (hanya di server, tidak ke client)
-function logError(action, message, error) {
-  const errDetail = error?.message || String(error);
-  console.error(`[ops-${action}] ${message}:`, errDetail?.slice(0, 500));
-}
-
 // Endpoint gabungan untuk Vercel Hobby: SOS, dashboard operasi, check-in, dan QR SIMAKSI.
 // Gunakan ?action=sos-create|sos-nearby|sos-resolve|sos-report|sos-instructions|admin|checkin|permit-verify
 export default async function handler(req, res) {
@@ -40,7 +34,7 @@ export default async function handler(req, res) {
   // TEMUAN S8: 'sos-create' dulu hanya 6 per 10 menit. Panik menekan tombol berkali-kali
   // adalah perilaku manusia yang normal, dan pengiriman ulang otomatis dari antrian juga
   // memakai kuota yang sama. Orang yang benar-benar butuh tolong bisa diblokir 429.
-  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':60, 'sos-report':10, 'sos-instructions':5, 'sos-delete':10, admin:60, checkin:30, 'permit-verify':60 };
+  const limits = { 'sos-create':40, 'sos-nearby':200, 'sos-resolve':20, 'sos-report':10, 'sos-instructions':5, admin:60, checkin:30, 'permit-verify':60 };
   if (!limits[action]) return res.status(404).json({ error: 'Operasi tidak ditemukan' });
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
@@ -60,16 +54,12 @@ export default async function handler(req, res) {
     if (action === 'sos-create') return sosCreate(req, res, user);
     if (action === 'sos-nearby') return sosNearby(req, res);
     if (action === 'sos-resolve') return sosResolve(req, res, user);
-    if (action === 'sos-delete') return sosDelete(req, res, user);
     if (action === 'sos-report') return sosReport(req, res, user);
     if (action === 'sos-instructions') return sosInstructions(req, res, user);
     if (action === 'admin') return adminDashboard(res);
     if (action === 'checkin') return checkin(req, res, user);
     return permitVerify(req, res);
-  } catch (e) {
-    logError(action, 'Unhandled error', e);
-    return res.status(502).json({ error:'Server operasi tidak dapat dihubungi' });
-  }
+  } catch { return res.status(502).json({ error:'Server operasi tidak dapat dihubungi' }); }
 }
 
 async function sosCreate(req,res,user) {
@@ -78,12 +68,7 @@ async function sosCreate(req,res,user) {
 
   // client_id dibuat di perangkat SEBELUM SOS dikirim. Nilainya tetap sama pada
   // setiap percobaan ulang, jadi inilah kunci anti-dobel yang sesungguhnya.
-  // DUA LAYAR SANITASI: clean() memotong panjang, regex membuang karakter berbahaya.
-  // Hasilnya HANYA [a-zA-Z0-9_.:-] — tidak ada koma, kurung, kutip, atau tanda
-  // lain yang bisa mengeksploitasi sintaks filter PostgREST.
-  const clientId = clean(b.client_id, 64)
-    .replace(/[^a-zA-Z0-9_.:\-]/g, '')
-    .slice(0, 64);
+  const clientId = clean(b.client_id, 64).replace(/[^a-zA-Z0-9_\-:.]/g, '').slice(0, 64);
 
   // Sanitasi device: buang semua karakter yang bisa merusak sintaks filter PostgREST.
   let safeDevice = clean(b.device, 80).replace(/[^a-zA-Z0-9_\-:.]/g, '').slice(0, 80);
@@ -191,49 +176,12 @@ async function sosNearby(req,res) {
 }
 
 async function sosResolve(req,res,user) {
-  const id=clean((req.body||{}).id,80);
-  if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
-
-  // Validasi format UUID agar tidak bisa dimanipulasi sebelum dimasukkan ke query PostgREST.
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if(!uuidRegex.test(id))return res.status(400).json({error:'ID SOS tidak valid'});
-
-  try {
-    // Cek dulu apakah SOS ada dan siapa pemiliknya
-    const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');
-    const rows=r.ok?await r.json():[];
-    const sos=rows&&rows[0];
-
-    if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
-
-    // Allow owner OR admin to resolve. Also allow if user_id column is missing/null (legacy data).
-    var isOwner = sos.user_id && user.id && String(sos.user_id).toLowerCase() === String(user.id).toLowerCase();
-    if(!isOwner && !isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
-
-    // Hapus SOS dari Supabase sepenuhnya (bukan hanya update status)
-    const d=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
-    if(!d.ok){
-      const errText = await d.text().catch(() => '');
-      logError('sos-resolve', `DELETE failed with status ${d.status}`, errText.slice(0, 500));
-      return res.status(502).json({error:'Gagal menghapus SOS dari server'});
-    }
-    return res.status(200).json({ok:true});
-  } catch (e) {
-    logError('sos-resolve', 'Exception during resolve', e);
-    return res.status(502).json({error:'Gagal menyelesaikan SOS'});
-  }
-}
-
-async function sosDelete(req,res,user) {
-  if(!isAdmin(user))return res.status(403).json({error:'Hanya petugas yang dapat menghapus SOS'});
   const id=clean((req.body||{}).id,80);if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
-  const r=await rest('sos_alerts?id=eq.'+encodeURIComponent(id)+'&limit=1');const rows=r.ok?await r.json():[];const sos=rows&&rows[0];
+  const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');const rows=r.ok?await r.json():[];const sos=rows&&rows[0];
   if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
-  const d=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
-  if(!d.ok)return res.status(502).json({error:'Gagal menghapus SOS dari server'});
-  // Hapus juga data responder terkait
-  const dr=await rest('sos_responders?sos_alert_id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
-  return res.status(200).json({ok:true});
+  if(sos.user_id!==user.id&&!isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
+  const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
+  if(!u.ok)return res.status(502).json({error:'Status SOS gagal diperbarui'});return res.status(200).json({ok:true});
 }
 
 // Responder (bukan admin, bukan pengirim) melaporkan posisi mereka saat menekan "Sudah ditangani".
