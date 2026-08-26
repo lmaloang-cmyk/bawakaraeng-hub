@@ -27,7 +27,11 @@ knowledge.db-wal
 
 # Screenshots (large, not needed in repo)
 screenshots/
+
+# Ignore all PNG except icons
 *.png
+!icon-192.png
+!icon-512.png
 
 # Temporary
 *.tmp
