@@ -57,17 +57,30 @@
   // Error kini membawa kode status + Retry-After supaya pemanggil bisa membedakan
   // "belum login" (401), "kuota penuh" (429), dan gangguan jaringan biasa.
   function apiErr(msg,status,extra){var e=new Error(msg);e.status=status||0;if(extra)Object.keys(extra).forEach(function(k){e[k]=extra[k];});return e;}
-  function api(path,opt){opt=opt||{};return token().then(function(t){
-    if(!t)throw apiErr('Login Google diperlukan',401);
-    var h=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+t},opt.headers||{});
-    return fetch(path,Object.assign({},opt,{headers:h})).then(function(r){
-      var ra=Number(r.headers&&r.headers.get?r.headers.get('Retry-After'):0)||0;
-      return r.json().catch(function(){return {};}).then(function(d){
-        if(!r.ok)throw apiErr(d.error||'Permintaan gagal',r.status,{retryAfter:ra,data:d});
-        return d;
+  function api(path,opt,maxRetries){opt=opt||{};maxRetries=maxRetries||3;var tries=0;
+    function _do(){
+      return token().then(function(t){
+        if(!t)throw apiErr('Login Google diperlukan',401);
+        var h=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+t},opt.headers||{});
+        return fetch(path,Object.assign({},opt,{headers:h})).then(function(r){
+          var ra=Number(r.headers&&r.headers.get?r.headers.get('Retry-After'):0)||0;
+          return r.json().catch(function(){return {};}).then(function(d){
+            if(!r.ok){
+              // TEMUAN S13: Retry otomatis saat 429 dengan backoff + Retry-After
+              tries++;
+              if(tries<maxRetries&&(r.status===429||r.status===503)){
+                var delay=Math.max(ra*1000,2000*Math.pow(2,tries-1));
+                setTimeout(_do,delay);return new Promise(function(){}); // pending
+              }
+              throw apiErr(d.error||'Permintaan gagal',r.status,{retryAfter:ra,data:d});
+            }
+            return d;
+          });
+        },function(){throw apiErr('Jaringan tidak tersedia',0);});
       });
-    },function(){throw apiErr('Jaringan tidak tersedia',0);});
-  });}
+    }
+    return _do();
+  }
   function getJson(k,df){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(df));}catch(e){return df;}}
   function setJson(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
   function _sosName(){try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)return o.name;}var n=localStorage.getItem('bwkSosName');if(n)return n;return 'Pendaki';}catch(e){return 'Pendaki';}}
