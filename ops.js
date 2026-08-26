@@ -115,12 +115,7 @@
   }
   // Dipanggil oleh sos-outbox.js saat sebuah SOS antrian akhirnya terkirim.
   window._sosAdoptQueued=function(id,payload){
-    try{
-      payload=payload||{};
-      adopt(id,payload.lat,payload.lng,payload.name);
-      // Simpan client_id juga agar relay eskalasi bisa melacak sumber.
-      try{localStorage.setItem('bwkActiveSos',JSON.stringify({id:id,lat:payload.lat,lng:payload.lng,client_id:payload.client_id,created_at:Date.now()}));}catch(e){}
-    }catch(e){}
+    try{payload=payload||{};adopt(id,payload.lat,payload.lng,payload.name);}catch(e){}
   };
 
   // ===================================================================
@@ -200,25 +195,14 @@
     });
   };
 
-  // Debounce global untuk operasi SOS agar tidak bisa diklik berkali-kali
-  var _sosResolving=false;
   window._sosResolveMy=function(){
-    if(_sosResolving){toastx('Tunggu sebentar, sedang memproses...','err');return;}
     var a=getJson(ACTIVE_KEY,null);
     if(!a||!a.id){toastx('Tidak ada SOS aktif pada perangkat ini','err');return;}
-    _sosResolving=true;
-    // Disable tombol "Saya Aman" segera
-    var btn=document.querySelector('#mySosActive button');if(btn){btn.disabled=true;btn.textContent='Memproses...';}
-    // Stop eskalasi SEGERA - jangan tunggu API berhasil
-    try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
-    // Hapus panel eskalasi dari DOM
-    try{var esc=document.getElementById('bwkSosEscalate');if(esc)esc.remove();}catch(e){}
     api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){
       localStorage.removeItem(ACTIVE_KEY);_stopWaves();
-      toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
-      // Refresh admin panel if open
-      try{if(typeof opsDashboard==='function')opsDashboard();}catch(e){}
-    }).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');}).finally(function(){_sosResolving=false;});
+      try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
+      showActiveSos();toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
+    }).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');});
   };
 
   // ===== Antrian lama (hanya untuk jalur cadangan) =====
@@ -342,9 +326,7 @@
       var pc=x.plus_code?('<small>\uD83D\uDD22 '+esc(x.plus_code)+'</small>'):'';
       var ac=(x.accuracy_m!=null)?('<small>\uD83C\uDFAF akurasi \u00b1'+esc(Math.round(Number(x.accuracy_m)))+' m</small>'):'';
       var bt=(x.battery_pct!=null)?('<small>\uD83D\uDD0B baterai '+esc(Math.round(Number(x.battery_pct)))+'%</small>'):'';
-      // Sanitasi ID untuk data-id: hanya alphanumeric + dash/underscore
-      var safeId=String(x.id||'').replace(/[^a-zA-Z0-9_\-]/g,'');
-      return '<div class="ops-card danger"><div><b>'+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>'+esc(Number(x.lat).toFixed(5))+', '+esc(Number(x.lng).toFixed(5))+'</small>'+pc+ac+bt+'</div><a href="'+esc(map)+'" target="_blank" rel="noopener">🗺️ Peta</a><div style="display:flex;gap:6px;margin-left:8px"><button onclick="opsResolve(\''+safeId+'\')">✅ Tangani</button><button onclick="opsDelete(\''+safeId+'\')">🗑️</button></div></div>';
+      return '<div class="ops-card danger"><div><b>\uD83C\uDD98 '+esc(x.name||'Pendaki')+'</b><small>'+new Date(x.created_at).toLocaleString('id-ID')+'</small><small>\uD83D\uDCCD '+esc(Number(x.lat).toFixed(5))+', '+esc(Number(x.lng).toFixed(5))+'</small>'+pc+ac+bt+'</div><a href="'+esc(map)+'" target="_blank" rel="noopener">\uD83D\uDDFA\ufe0f Peta</a><button onclick="opsResolve(\''+esc(x.id)+'\')">\u2705 Tangani</button></div>';
     }).join(''):'<div class="aempty">\u2705 Tidak ada SOS aktif.</div>';
     var hist=sos.filter(function(x){return x.status!=='active';}).slice(0,8).map(function(x){return '<li>'+esc(x.name||'Pendaki')+' \u00b7 '+esc(x.status||'resolved')+' \u00b7 '+new Date(x.created_at).toLocaleString('id-ID')+'</li>';}).join('')||'<li>Belum ada riwayat.</li>';
     var check=checks.slice(0,12).map(function(x){
@@ -353,32 +335,7 @@
     }).join('')||'<li>Belum ada check-in.</li>';
     b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line,#e4e8ef);border-radius:13px;padding:12px;margin:9px 0;background:var(--card,#ffffff);color:var(--ink,#141a2c);box-shadow:var(--shadow)}.ops-card.danger{border-color:#eeadb4;background:#fff6f7;color:#991b1b}html.dark .ops-card.danger{border-color:#7f1d1d;background:#2c1517;color:#fca5a5}.ops-card div{flex:1}.ops-card b{color:var(--ink,#141a2c);display:block}.ops-card small{color:var(--sub,#69758a);font-size:11px;margin-top:3px;display:block}.ops-card a,.ops-card button{border:0;border-radius:9px;padding:9px;text-decoration:none;font-size:12px;font-weight:800;background:var(--brand,#26705a);color:#fff}.ops-card button{background:#198754;color:#fff}.ops-resp-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin-top:6px}.ops-resp-list{margin-top:8px;padding:8px;background:#f8fafc;border-radius:8px;font-size:12px}html.dark .ops-resp-item{background:#14532d;border-color:#22c55e;color:#86efac}.ops-list{margin:6px 0;padding-left:18px;font-size:12px;line-height:1.55;color:var(--ink,#141a2c)}.ops-list li{color:var(--ink,#141a2c);margin:4px 0}.ops-list li b{color:var(--ink,#141a2c)}.ops-list li small{color:var(--sub,#565f78);font-size:11px}.ops-list li a{color:#2563eb;font-weight:700;text-decoration:underline}html.dark .ops-list li a{color:#60a5fa}.ops-head{background:linear-gradient(135deg,#17314d,#2a6173);color:#fff;border-radius:14px;padding:13px}.ops-head b{font-size:18px}</style><div class="ops-head"><b>\uD83C\uDD98 Dashboard Operasi</b><br/><small>'+active.length+' SOS aktif · '+allResp.length+' responder · '+checks.length+' check-in terbaru</small></div><div class="sh"><span class="bar" style="background:#e5484d"></span><h3>SOS Aktif</h3></div>'+cards+'<div class="sh"><span class="bar" style="background:#7c3aed"></span><h3>Responder Aktif ('+allResp.length+')</h3></div><ul class="ops-list">'+respList+'</ul><div class="sh"><span class="bar" style="background:#2b6fff"></span><h3>Check-in Terbaru</h3></div><ul class="ops-list">'+check+'</ul><div class="sh"><span class="bar" style="background:#7b61ff"></span><h3>Riwayat SOS</h3></div><ul class="ops-list">'+hist+'</ul><div style="display:flex;gap:8px;margin-top:10px"><button class="btn g-indigo" style="flex:1" onclick="opsDashboard()">\u21bb Muat Ulang</button><button class="btn gh" style="flex:1" onclick="opsVerifyPermit()">\uD83C\uDFAB Verifikasi QR SIMAKSI</button></div>';
   }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
-  window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;
-    if(_sosResolving){toastx('Tunggu sebentar, sedang memproses...','err');return;}
-    _sosResolving=true;
-    console.log('[ops] Resolve SOS:', id);
-    api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(r){
-      console.log('[ops] Resolve response:', r);
-      toastx('SOS ditandai sudah ditangani','ok');
-      opsDashboard();
-    }).catch(function(e){
-      console.error('[ops] Resolve error:', e);
-      toastx(e.message||'Gagal memperbarui SOS','err');
-    }).finally(function(){_sosResolving=false;});
-  };
-  window.opsDelete=function(id){if(!confirm('Hapus SOS ini sepenuhnya?'))return;
-    if(_sosResolving){toastx('Tunggu sebentar, sedang memproses...','err');return;}
-    _sosResolving=true;
-    console.log('[ops] Delete SOS:', id);
-    api('/api/operations?action=sos-delete',{method:'POST',body:JSON.stringify({id:id})}).then(function(r){
-      console.log('[ops] Delete response:', r);
-      toastx('SOS berhasil dihapus','ok');
-      opsDashboard();
-    }).catch(function(e){
-      console.error('[ops] Delete error:', e);
-      toastx(e.message||'Gagal menghapus SOS','err');
-    }).finally(function(){_sosResolving=false;});
-  };
+  window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
 
   // Kirim instruksi ke semua responder aktif untuk SOS tertentu
   window.opsSendInstr=function(sosId, sosName){

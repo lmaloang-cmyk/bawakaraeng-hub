@@ -3500,25 +3500,29 @@ window.addEventListener('load',function(){setTimeout(refreshMyAlt,1500);});
 var SOS_CONTACTS=[{n:'Basecamp RC',p:'6282320124040'},{n:'Tim SAR',p:'6282320124040'}];
 function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)u=o.name;}}catch(e){}return u;}
 // ===== Store & Forward SOS: cek antrian offline saat aplikasi dibuka =====
-// Catat bahwa SOS offline sudah ditangani BWKSosOutbox (IndexedDB).
-// Notifikasi antrian diturunkan oleh BWKSosOutbox event 'bwk:sos-outbox' di ops.js.
 (function(){try{
-  // Hapus jejak bwkSosQueue lama agar tidak dipakai lagi. Outbox baru sudah menangani
-  // migrasi satu kali lewat _migrateOldQueue() di ops.js.
-  localStorage.removeItem('bwkSosQueue');
-  localStorage.removeItem('bwkLastSosLat');
-  localStorage.removeItem('bwkLastSosLng');
-}catch(e){}
+  var q=JSON.parse(localStorage.getItem('bwkSosQueue')||'[]');
+  if(q.length){
+    var u=bwkUser();
+    if(u&&u.google){
+      var el=document.getElementById('sosStatus');
+      if(el)el.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#f59e0b;font-size:12px;font-weight:700">📡 '+q.length+' SOS offline menunggu dikirim. Pastikan koneksi internet.</div>');
+      else toastx(q.length+' SOS offline menunggu pengiriman','ok');
+    }else{
+      // Belum login Google — hapus antrian lama, device ID tidak valid untuk akun baru
+      localStorage.removeItem('bwkSosQueue');
+      localStorage.removeItem('bwkActiveSos');
+      localStorage.removeItem('bwkLastSosLat');
+      localStorage.removeItem('bwkLastSosLng');
+    }
+  }}catch(e){}
 })();
 function sosSent(){var f=document.getElementById('fill');if(f)f.style.height='100%';var s=document.getElementById('sosStatus');if(!s)return;s.setAttribute('data-locked','1');s.innerHTML='<div class="sos-loc">\ud83d\udce1 Mendapatkan lokasi GPS\u2026</div>';if(!navigator.geolocation){sosShareUI(null,null,null);return;}var _sosOk=function(p){sosShareUI(p.coords.latitude,p.coords.longitude,p.coords.accuracy);};navigator.geolocation.getCurrentPosition(_sosOk,function(e){navigator.geolocation.getCurrentPosition(_sosOk,function(){sosShareUI(null,null,null);},{enableHighAccuracy:false,timeout:20000,maximumAge:60000});},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
 // Store & Forward: coba kirim SOS offline saat internet tersedia
 window._sosTryOfflineSend=function(){
   if(!navigator.onLine)return;
-  // Terima autentikasi Google ATAU sesi anonim (BWKSosAuth). Tanpa ini, pengguna
-  // yang sedang anonymous akan dikunci saat internet kembali pulih.
   var u=bwkUser();
-  var hasAuth=u&&u.google||window.BWKSosAuth&&window.BWKSosAuth.mode()==='anon';
-  if(!hasAuth){if(window.toast)window.toast('Login diperlukan untuk kirim SOS','err');return;}
+  if(!u||!u.google){if(window.toast)window.toast('Login Google diperlukan untuk kirim SOS','err');return;}
   var a=JSON.parse(localStorage.getItem('bwkActiveSos')||'null');
   if(!a||!a.id)return;
   var lat=parseFloat(localStorage.getItem('bwkLastSosLat')||'0');
@@ -3536,8 +3540,8 @@ function sosShareUI(lat,lng,acc){var s=document.getElementById('sosStatus');if(!
   if(hasLoc&&window._sosPublish){try{_sosPublish(lat,lng,u);}catch(e){}}var coordTxt=hasLoc?(lat.toFixed(5)+', '+lng.toFixed(5)):'lokasi tidak terdeteksi';var maps=hasLoc?('https://maps.google.com/?q='+lat+','+lng):'';var msg='\ud83c\udd98 DARURAT Bawakaraeng! Saya '+u+' butuh bantuan. Lokasi: '+coordTxt+(hasLoc?(' '+maps):'')+'. Mohon segera kirim tim SAR.';var emsg=encodeURIComponent(msg);
 // Simpan koordinat terakhir untuk store & forward
 if(hasLoc){try{localStorage.setItem('bwkLastSosLat',lat.toString());localStorage.setItem('bwkLastSosLng',lng.toString());}catch(e){}}
-// Cek status antrian baru dari BWKSosOutbox (IndexedDB).
-var offlineQ=0;try{if(window.BWKSosOutbox&&window.BWKSosOutbox.count)offlineQ=window.BWKSosOutbox.count();}catch(e){}
+// Cek antrian offline
+var offlineQ=0;try{var q=JSON.parse(localStorage.getItem('bwkSosQueue')||'[]');offlineQ=q.length;}catch(e){}
 var head=hasLoc?('<div class="sos-loc ok">\ud83d\udccd Lokasi terkunci<br><b>'+coordTxt+'</b><small>akurasi \u00b1'+Math.round(acc||0)+' m</small></div>'):'<div class="sos-loc warn">\u26a0\ufe0f GPS gagal \u2014 aktifkan izin lokasi. Kamu tetap bisa kirim pesan manual di bawah.</div>';
 if(offlineQ>0){head+='<div class="sos-loc" style="margin-top:8px;color:#f59e0b;font-size:12px">\ud83d\udce1 '+offlineQ+' SOS offline menunggu dikirim saat internet pulih.</div>';}
 var btns='';SOS_CONTACTS.forEach(function(c){btns+='<a class="sos-share wa" href="https://wa.me/'+c.p+'?text='+emsg+'" target="_blank" rel="noopener">\ud83d\udfe2 WhatsApp '+c.n+'</a>';});
@@ -7282,11 +7286,7 @@ async function _tkPost(payload) {
     body: JSON.stringify(payload)
   });
   if (r.status === 404) return 'gone';
-  if (!r.ok) {
-    var _tkErrTxt = await r.text().catch(function() { return ''; });
-    console.warn('[tracking] POST positions failed HTTP ' + r.status + (r.statusText ? ' ' + r.statusText : ''), r.url, _tkErrTxt.slice(0, 300));
-    return 'retry';
-  }
+  if (!r.ok) return 'retry';
   var d = await r.json().catch(function() { return null; });
   return (d && d.ok) ? 'ok' : 'retry';
 }
