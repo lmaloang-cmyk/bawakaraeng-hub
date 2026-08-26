@@ -1,0 +1,116 @@
+/*!
+ * maps-ui.css - Tampilan MAPS ramah pemula
+ * Paket perbaikan hasil audit 23 Agustus 2026.
+ * Semua kelas diawali .bwk- agar tidak bentrok dengan styles.css yang ada.
+ */
+
+.bwk-ui, .bwk-ui * { box-sizing: border-box; font-family: inherit; }
+
+/* ---------- Bar status: pemula butuh kepastian peta benar-benar siap ---------- */
+.bwk-status {
+  position: absolute; top: 8px; left: 8px; right: 8px; z-index: 800;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 10px; border-radius: 12px;
+  background: rgba(16, 36, 61, .92); color: #fff;
+  font-size: 12px; font-weight: 700; line-height: 1.3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+  pointer-events: none;
+}
+.bwk-status span { display: inline-flex; align-items: center; gap: 4px; }
+.bwk-ok { color: #86d6b9; }
+.bwk-warn { color: #ffd45b; }
+.bwk-bad { color: #ff8f8f; }
+
+/* ---------- Tombol besar: bisa ditekan dengan sarung tangan ---------- */
+.bwk-actions {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 800;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.bwk-btn {
+  min-height: 56px; padding: 8px 4px; border: 0; border-radius: 14px;
+  background: #fff; color: #10243d; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-size: 11px; font-weight: 800; text-align: center;
+  box-shadow: 0 6px 18px rgba(16, 36, 61, .22);
+  -webkit-tap-highlight-color: transparent;
+}
+.bwk-btn i { font-style: normal; font-size: 22px; line-height: 1; }
+.bwk-btn:active { transform: scale(.97); }
+.bwk-btn[aria-pressed="true"] { background: #26705a; color: #fff; }
+.bwk-btn.bwk-danger { background: #c9444d; color: #fff; }
+.bwk-btn:disabled { opacity: .5; cursor: not-allowed; }
+.bwk-btn:focus-visible { outline: 3px solid #ffd45b; outline-offset: 2px; }
+
+/* Mode Pro memunculkan alat lanjutan (Unduh, Rekam, Ukur, Kompas) */
+.bwk-pro-only { display: none; }
+.bwk-actions.bwk-pro .bwk-pro-only { display: flex; }
+
+.bwk-mode {
+  position: absolute; right: 8px; top: 56px; z-index: 800;
+  border: 0; border-radius: 999px; padding: 10px 14px; min-height: 40px;
+  background: rgba(255, 255, 255, .95); color: #10243d;
+  font-size: 11px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+}
+
+/* ---------- Panel (onboarding, unduh area) ---------- */
+.bwk-sheet {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(8, 18, 30, .55);
+}
+.bwk-sheet[hidden] { display: none; }
+.bwk-sheet-in {
+  width: min(560px, 100%); max-height: 88vh; overflow: auto;
+  background: #fff; border-radius: 22px 22px 0 0; padding: 20px 18px 24px;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, .3);
+}
+.bwk-sheet h3 { margin: 0 0 6px; font-size: 20px; color: #10243d; }
+.bwk-sheet p { margin: 0 0 14px; font-size: 14px; color: #617087; line-height: 1.55; }
+.bwk-sheet ol { margin: 0 0 16px; padding-left: 20px; color: #172235; font-size: 14px; }
+.bwk-sheet li { margin: 6px 0; line-height: 1.5; }
+
+.bwk-choice { display: grid; gap: 8px; margin-bottom: 14px; }
+.bwk-choice label {
+  display: flex; align-items: center; gap: 10px; min-height: 56px;
+  padding: 12px 14px; border: 1px solid #dfe7ec; border-radius: 14px;
+  font-size: 14px; font-weight: 700; color: #172235; cursor: pointer;
+}
+.bwk-choice input { width: 20px; height: 20px; accent-color: #26705a; }
+.bwk-choice small { display: block; font-weight: 500; color: #617087; font-size: 12px; }
+
+.bwk-row { display: flex; gap: 10px; }
+.bwk-row .bwk-cta { flex: 1; }
+.bwk-cta {
+  min-height: 52px; border: 0; border-radius: 14px; cursor: pointer;
+  background: #26705a; color: #fff; font-size: 15px; font-weight: 800;
+}
+.bwk-cta.bwk-ghost { background: #eef3f2; color: #10243d; }
+.bwk-cta:disabled { opacity: .6; cursor: not-allowed; }
+
+.bwk-progress { height: 12px; border-radius: 999px; background: #e7eef1; overflow: hidden; margin: 12px 0 8px; }
+.bwk-progress > i { display: block; height: 100%; width: 0; background: #2f8a70; transition: width .2s ease; }
+.bwk-log { font-size: 12px; color: #617087; min-height: 18px; line-height: 1.5; }
+
+.bwk-alert {
+  position: absolute; left: 8px; right: 8px; top: 96px; z-index: 900;
+  padding: 14px 16px; border-radius: 14px;
+  background: #c9444d; color: #fff; font-size: 14px; font-weight: 800; line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(201, 68, 77, .35);
+}
+.bwk-alert[hidden] { display: none; }
+.bwk-alert.bwk-info { background: #10243d; }
+.bwk-alert.bwk-good { background: #26705a; }
+
+/* ---------- Mode malam: jaga penglihatan gelap pendaki ---------- */
+.bwk-night .leaflet-tile-pane { filter: brightness(.55) sepia(.5) hue-rotate(-20deg) saturate(2.2); }
+.bwk-night .bwk-btn { background: #2a0d10; color: #ffb3b3; }
+.bwk-night .bwk-status { background: rgba(40, 8, 10, .92); color: #ffb3b3; }
+
+@media (min-width: 640px) {
+  .bwk-actions { left: auto; right: 12px; bottom: 12px; width: 104px; grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bwk-progress > i, .bwk-btn { transition: none; }
+}
