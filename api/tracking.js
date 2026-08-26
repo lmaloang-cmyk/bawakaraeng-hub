@@ -68,6 +68,13 @@ export default async function handler(req, res) {
     return stopSession(req, res, user);
   }
 
+  // --- DELETE SESSION (hapus riwayat) ---
+  if (act === 'delete') {
+    if (!user) return res.status(401).json({ error: 'Login diperlukan' });
+    if (!rateLimit(req, res, { prefix: 'track-delete', id: user.id, limit: 20, windowMs: 3600000 })) return;
+    return deleteSession(req, res, user);
+  }
+
   // --- SEND POSITION ---
   if (act === 'positions') {
     if (!user) return res.status(401).json({ error: 'Login diperlukan' });
@@ -268,7 +275,34 @@ async function stopSession(req, res, user) {
     if (!stopR.ok) throw new Error(`HTTP ${stopR.status}`);
     return res.json({ ok: true, message: 'Sesi dihentikan' });
   } catch (e) {
-    return res.status(502).json({ error: 'Gagal menghentikan sesi' });
+    return res.status(502).json({ error: 'Gagal menghentikan sesi', detail: e?.message });
+  }
+}
+
+// ===========================================================================
+// DELETE SESSION (hapus riwayat dari server)
+// ===========================================================================
+async function deleteSession(req, res, user) {
+  const b = req.body || {};
+  const sessionId = b.session_id;
+  if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId)) {
+    return res.status(400).json({ error: 'ID sesi tidak valid' });
+  }
+  try {
+    // Hapus posisi dulu
+    await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/tracking_positions?session_id=eq.${sessionId}`,
+      { method: 'DELETE', headers: { 'apikey': process.env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}` } }
+    );
+    // Hapus sesi
+    const r = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/tracking_sessions?id=eq.${sessionId}&created_by=eq.${user.id}`,
+      { method: 'DELETE', headers: { 'apikey': process.env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}` } }
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return res.json({ ok: true, message: 'Sesi dihapus' });
+  } catch (e) {
+    return res.status(502).json({ error: 'Gagal menghapus sesi', detail: e?.message });
   }
 }
 

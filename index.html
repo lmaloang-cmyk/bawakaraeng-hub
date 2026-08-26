@@ -8719,6 +8719,27 @@ document.addEventListener('visibilitychange', function() {
       });
       var selesai = kartu.filter(function (c) { return /Selesai/.test(c.textContent || ''); });
       if (selesai.length < 2) return;
+      // TOMBOL HAPUS RIWAYAT
+      var btnHapus = document.getElementById('tk-hapusRiwayat');
+      if (!btnHapus) {
+        btnHapus = document.createElement('button');
+        btnHapus.id = 'tk-hapusRiwayat';
+        btnHapus.style.cssText = 'display:block;margin:8px auto;padding:6px 14px;border-radius:8px;border:1px solid #e5484d;background:transparent;color:#e5484d;font-size:12px;font-weight:700;cursor:pointer;';
+        btnHapus.textContent = '🗑️ Hapus Riwayat Sesi (' + selesai.length + ')';
+        btnHapus.onclick = function() {
+          if (!confirm('Hapus semua riwayat sesi tracking yang sudah selesai?')) return;
+          selesai.forEach(function(card) {
+            var id = card.getAttribute('data-session-id');
+            if (id) FamilyTracker.deleteSession(id);
+            card.remove();
+          });
+          btnHapus.remove();
+          rapikanSesi();
+        };
+        list.appendChild(btnHapus);
+      } else {
+        btnHapus.textContent = '🗑️ Hapus Riwayat Sesi (' + selesai.length + ')';
+      }
       var d = bungkus('tk-riwayat', 'Riwayat sesi (' + selesai.length + ')', selesai);
       if (d) list.appendChild(d);
     }
