@@ -154,7 +154,22 @@ export default async function handler(req, res) {
     const seg = s.loc_updated_at ? Date.parse(s.loc_updated_at) : 0;
     if (!seg || (Date.now() - seg) > STALE_MS) return true; // koordinat basi = anggap tidak diketahui
     return dist(lat, lng, sLat, sLng) <= RADIUS;
-  });
+  }); // Tambah admin yang berlangganan push ke semua SOS (tanpa filter radius)
+  const adminSubs = subs.filter(s => s.role === 'admin' && s.endpoint && s.p256dh && s.auth);
+  if (adminSubs.length) {
+    for (let i = 0; i < adminSubs.length; i += 12) {
+    await Promise.all(adminSubs.slice(i, i + 12).map(async s => {
+        try {
+          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 1800, urgency: 'high' });
+          sent++;
+        } catch (err) {
+          failed++;
+          lastError = String((err && err.message) || 'gagal');
+        }
+      }));
+   }
+  }
+  
   const dead = []; let sent = 0, failed = 0, lastError = '';
   // Batas 12 koneksi bersamaan: cepat tanpa membebani server/push gateway.
   for (let i = 0; i < targets.length; i += 12) {
