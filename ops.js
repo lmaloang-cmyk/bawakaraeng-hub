@@ -53,7 +53,9 @@
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function toastx(m,t){try{if(window.toast)window.toast(m,t||'ok');}catch(e){}}
   function user(){try{return typeof bwkUser==='function'?bwkUser():null;}catch(e){return null;}}
-  function token(){try{var c=(typeof _sbClient==='function')?_sbClient():null;if(!c)return Promise.resolve('');return c.auth.getSession().then(function(r){return (r&&r.data&&r.data.session&&r.data.session.access_token)||'';}).catch(function(){return '';});}catch(e){return Promise.resolve('');}}
+  // Sesi Google yang mati (refresh token gagal di sinyal buruk) tidak boleh
+  // mematikan tombol "Saya Aman" maupun pemantauan alarm: jatuh ke sesi anonim.
+  function token(){try{var c=(typeof _sbClient==='function')?_sbClient():null;if(!c)return Promise.resolve('');return c.auth.getSession().then(function(r){var t=(r&&r.data&&r.data.session&&r.data.session.access_token)||'';if(t)return t;try{if(window.BWKSosAuth&&window.BWKSosAuth.token)return window.BWKSosAuth.token();}catch(e){}return '';}).catch(function(){try{if(window.BWKSosAuth&&window.BWKSosAuth.token)return window.BWKSosAuth.token();}catch(e){}return '';});}catch(e){return Promise.resolve('');}}
   // Error kini membawa kode status + Retry-After supaya pemanggil bisa membedakan
   // "belum login" (401), "kuota penuh" (429), dan gangguan jaringan biasa.
   function apiErr(msg,status,extra){var e=new Error(msg);e.status=status||0;if(extra)Object.keys(extra).forEach(function(k){e[k]=extra[k];});return e;}
@@ -134,7 +136,31 @@
     });
   }
 
+  // Koordinat kosong/nol (GPS belum terkunci saat tombol selesai ditahan, atau
+  // uji dari laptop tanpa GPS): dulu SOS seperti ini tersimpan sebagai baris 0,0
+  // bernama "Pendaki" yang tidak pernah membunyikan alarm siapa pun dan hanya
+  // memenuhi dashboard admin.
+  function _badCoord(la,ln){var a=Number(la),b=Number(ln);return !isFinite(a)||!isFinite(b)||(a===0&&b===0);}
+  function _freshFix(){
+    return new Promise(function(res){
+      if(!navigator.geolocation){res(null);return;}
+      try{navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lng:p.coords.longitude});},function(){res(null);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}catch(e){res(null);}
+    });
+  }
+
   window._sosPublish=function(lat,lng,name){
+    if(!_badCoord(lat,lng))return _sosPublishSend(Number(lat),Number(lng),name);
+    // Coba kunci GPS satu kali lagi sebelum menyerah. SOS tanpa lokasi tidak
+    // diantrekan: ia tidak bisa ditolong dan hanya menjadi baris 0,0 di server.
+    toastx('Mengunci GPS dulu\u2026','ok');
+    return _freshFix().then(function(f){
+      if(f&&!_badCoord(f.lat,f.lng))return _sosPublishSend(f.lat,f.lng,name);
+      toastx('Lokasi GPS belum terkunci. Tunggu sampai muncul "Lokasi terkunci", lalu tahan lagi tombol SOS. Bila benar-benar darurat, pakai tombol WhatsApp/SMS di layar ini.','err');
+      return null;
+    });
+  };
+
+  function _sosPublishSend(lat,lng,name){
     if(!window.BWKSosOutbox||typeof window.BWKSosOutbox.enqueue!=='function'){
       try{console.warn('[BWK] BWKSosOutbox tidak tersedia \u2014 memakai jalur lama.');}catch(e){}
       return _sosPublishLegacy(lat,lng,name);
@@ -168,12 +194,20 @@
       try{console.error('[BWK] jalur SOS baru gagal, beralih ke jalur lama:',e);}catch(_){}
       return _sosPublishLegacy(lat,lng,name);
     });
-  };
+  }
 
   window._sosResolveMy=function(){
     var a=getJson(ACTIVE_KEY,null);
     if(!a||!a.id){toastx('Tidak ada SOS aktif pada perangkat ini','err');return;}
-    api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id})}).then(function(){
+    // Umpan balik langsung supaya pengguna tahu ketukannya teregister. Dulu tombol
+    // terasa "tidak bisa dipencet" karena tidak ada respons apa pun saat sesi atau
+    // jaringan sedang bermasalah.
+    toastx('Menutup sinyal SOS\u2026','ok');
+    // Sertakan device + client_id terakhir: kalau sesi anonim sudah berganti,
+    // server tetap mengenali perangkat pengirim (lihat sos-resolve di server).
+    var dev='';try{dev=localStorage.getItem('bwkDev')||'';}catch(e){}
+    var cid='';try{var ids=JSON.parse(localStorage.getItem('bwkMyClientIds')||'[]');cid=ids[ids.length-1]||'';}catch(e){}
+    api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id,device:dev,client_id:cid})}).then(function(){
       localStorage.removeItem(ACTIVE_KEY);_stopWaves();
       try{if(window.BWKSosRelay&&window.BWKSosRelay.stopEscalation)window.BWKSosRelay.stopEscalation();}catch(e){}
       showActiveSos();toastx('SOS ditandai selesai. Tim diberi status aman.','ok');
@@ -236,13 +270,16 @@
   window.addEventListener('bwk:sos-outbox',function(ev){
     var d=(ev&&ev.detail)||{};
     try{
-      if(d.status==='sent'){
-        if(d.id)window._sosAdoptQueued(d.id,d.payload||{});
+      // Event memakai properti "type", bukan "status" — dulu pengecekan d.status
+      // tidak pernah cocok sehingga pill ini tidak pernah tampil.
+      if(d.type==='sent'){
+        // Adopsi SOS sudah dilakukan flush() memakai d.sosId (id server). Jangan
+        // mengadopsi d.id di sini: itu id antrean lokal, bukan id SOS di server.
         _outboxPill('SOS terkirim ke pusat',false);
         setTimeout(function(){_outboxPill('');},6000);
         return;
       }
-      if(d.status==='dead'){
+      if(d.type==='dead'){
         _outboxPill('SOS gagal terkirim — pakai jalur cadangan',true);
         return;
       }

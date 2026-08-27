@@ -47,14 +47,22 @@ export default async function handler(req, res) {
       row.lat = lat; row.lng = lng;
     }
 
-    const r = await fetch(SB_URL + '/rest/v1/push_subscriptions?on_conflict=endpoint', {
-      method: 'POST',
-      headers: {
-        apikey: key, Authorization: 'Bearer ' + key,
-        'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify(row), signal: AbortSignal.timeout(8000)
-    });
+    // Fetch ke Supabase tanpa try/catch dulu jatuh ke catch terluar sebagai 500
+    // tanpa keterangan (di DevTools hanya terlihat "500 Internal Server Error").
+    // Laporkan sebagai 502 dengan detail supaya penyebabnya bisa didiagnosis.
+    let r;
+    try {
+      r = await fetch(SB_URL + '/rest/v1/push_subscriptions?on_conflict=endpoint', {
+        method: 'POST',
+        headers: {
+          apikey: key, Authorization: 'Bearer ' + key,
+          'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify(row), signal: AbortSignal.timeout(8000)
+      });
+    } catch (e) {
+      return res.status(502).json({ error: 'Supabase tidak dapat dihubungi', detail: String((e && e.message) || e) });
+    }
     if (!r.ok) {
       const detail = await r.text().catch(() => '');
       return res.status(502).json({ error: 'Gagal menyimpan langganan push', detail });
