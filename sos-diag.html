@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnostik SOS — Pintu Angin</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#0b1220;color:#e8f0ff;margin:0;padding:16px 14px 48px;line-height:1.5}
+h1{font-size:19px;margin:0 0 2px}
+.sub{font-size:11px;color:#8ea3c9;margin:0 0 14px;word-break:break-word}
+.row{background:#141d33;border:1px solid #24304d;border-radius:12px;padding:11px 13px;margin:9px 0}
+.lbl{font-size:11px;color:#93a6cc;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.val{font-size:16px;font-weight:700;word-break:break-word}
+.ok{color:#3ad07f}.bad{color:#ff6b6b}.warn{color:#ffcf5c}
+pre{white-space:pre-wrap;word-break:break-word;background:#0a0f1d;border:1px solid #1c273f;border-radius:8px;padding:9px;font-size:12px;color:#cfe0ff;margin:6px 0 0}
+button{color:#fff;border:0;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;width:100%;margin-top:12px}
+#run{background:#2f6df6}
+#sos{background:#c0392b}
+</style>
+</head>
+<body>
+<h1>🔧 Diagnostik SOS</h1>
+<p class="sub" id="meta"></p>
+<div id="app"></div>
+<button id="run">🔄 Ulangi Tes</button>
+<button id="sos" style="display:none">🚨 Tes kirim SOS ke server (muncul di panel admin)</button>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+var SB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
+var SB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
+var TEST_LAT=-5.13028, TEST_LNG=119.50090, TEST_PC='6P6XVG92+V9';
+var _lastToken='';
+
+function E(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
+function esc(s){return String(s).replace(/[&<>]/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m];});}
+function add(label,val,state){var r=E('div','row');r.appendChild(E('div','lbl',esc(label)));r.appendChild(E('div','val '+(state||''),esc(val)));document.getElementById('app').appendChild(r);return r;}
+function addPre(label,txt){var r=E('div','row');r.appendChild(E('div','lbl',esc(label)));var s=(typeof txt==='string')?txt:JSON.stringify(txt,null,2);r.appendChild(E('pre',null,esc(s)));document.getElementById('app').appendChild(r);}
+
+function diagId(){
+  try{
+    var k=sessionStorage.getItem('diagId'); if(k) return k;
+    var v='diag-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    sessionStorage.setItem('diagId',v); return v;
+  }catch(e){ return 'diag-'+Date.now().toString(36); }
+}
+
+function rawSignup(){
+  return fetch(SB_URL+'/auth/v1/signup',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({data:{},gotrue_meta_security:{}})})
+    .then(function(r){return r.text().then(function(t){return {status:r.status,body:t};});})
+    .catch(function(e){return {err:((e&&e.name)||'Error')+': '+((e&&e.message)||e)};});
+}
+
+function sosCreate(token){
+  var id=diagId();
+  var payload={lat:TEST_LAT,lng:TEST_LNG,name:'TES DIAGNOSTIK',device:id,client_id:id,accuracy_m:20,plus_code:TEST_PC};
+  return fetch('/api/operations?action=sos-create',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload)})
+    .then(function(r){return r.text().then(function(t){var d;try{d=JSON.parse(t);}catch(e){d=t;}return {status:r.status,body:d};});})
+    .catch(function(e){return {err:((e&&e.name)||'Error')+': '+((e&&e.message)||e)};});
+}
+
+async function run(){
+  document.getElementById('app').innerHTML='';
+  document.getElementById('sos').style.display='none';
+  _lastToken='';
+  document.getElementById('meta').textContent='Waktu '+new Date().toString()+' • Online '+navigator.onLine+' • Kunci '+SB_KEY.slice(0,14)+'…';
+
+  var libOk=!!(window.supabase&&window.supabase.createClient);
+  add('1. Library Supabase (CDN)', libOk?'BERHASIL dimuat':'GAGAL dimuat', libOk?'ok':'bad');
+  if(!libOk){ add('KESIMPULAN','CDN Supabase tidak termuat di jaringan/HP ini, sehingga semua login & SOS mati. Coba ganti jaringan (data seluler / WiFi), matikan VPN atau pemblokir iklan, lalu Ulangi Tes.','bad'); return; }
+
+  var c=null;
+  try{ c=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false}}); add('2. Buat koneksi Supabase','BERHASIL','ok'); }
+  catch(e){ add('2. Buat koneksi Supabase','GAGAL: '+((e&&e.message)||e),'bad'); return; }
+
+  var hasAnon=!!(c.auth&&typeof c.auth.signInAnonymously==='function');
+  add('3. Fitur sesi anonim di library', hasAnon?'ADA':'TIDAK ADA (library lama)', hasAnon?'ok':'bad');
+
+  var token='';
+  if(hasAnon){
+    try{
+      var r=await c.auth.signInAnonymously();
+      if(r&&r.error){
+        add('4. Buat sesi anonim (cara aplikasi)','DITOLAK','bad');
+        addPre('   Pesan dari server',{message:(r.error.message||''),status:(r.error.status||''),code:(r.error.code||r.error.name||'')});
+        var raw=await rawSignup();
+        if(raw.err){ addPre('5. Cek mentah ke server (ERROR)', raw.err); }
+        else{ add('5. Cek mentah ke server','HTTP '+raw.status,(raw.status===200?'ok':'bad')); addPre('   Balasan server mentah', String(raw.body).slice(0,1000)); }
+      }else{
+        token=(r&&r.data&&r.data.session&&r.data.session.access_token)||'';
+        var uid=(r&&r.data&&r.data.user&&r.data.user.id)||'';
+        add('4. Buat sesi anonim (cara aplikasi)', token?'BERHASIL':'sukses tapi tanpa token', token?'ok':'warn');
+        addPre('   Detail sesi',{user_id:uid,is_anonymous:!!(r&&r.data&&r.data.user&&r.data.user.is_anonymous),token:(token?token.slice(0,18)+'…':null)});
+      }
+    }catch(e){ add('4. Buat sesi anonim (cara aplikasi)','ERROR','bad'); addPre('   Error',((e&&e.message)||String(e))); }
+  }else{
+    var raw2=await rawSignup();
+    if(raw2.err){ addPre('5. Cek mentah ke server (ERROR)', raw2.err); }
+    else{ add('5. Cek mentah ke server','HTTP '+raw2.status,(raw2.status===200?'ok':'bad')); addPre('   Balasan server mentah', String(raw2.body).slice(0,1000)); }
+  }
+
+  _lastToken=token;
+  if(token){ document.getElementById('sos').style.display='block'; }
+
+  add('KESIMPULAN', token
+    ? 'Sesi anonim BERHASIL di HP ini, jadi Supabase sudah benar. Sekarang tekan tombol merah "Tes kirim SOS" di bawah untuk menguji server SOS-nya — hasilnya menentukan apakah bug ada di server atau di aplikasi.'
+    : 'Sesi anonim GAGAL dibuat. Penyebabnya di pengaturan Supabase — baca "balasan server mentah" di atas: "disabled" = toggle anonim belum tersimpan; "captcha" = proteksi captcha aktif; "Database error saving new user" = ada trigger DB yang menolak akun anonim. Kirim screenshot ini.',
+    token?'ok':'bad');
+}
+
+async function doSos(){
+  if(!_lastToken){ return; }
+  var btn=document.getElementById('sos'); btn.disabled=true; btn.textContent='Mengirim SOS TES…';
+  var sc=await sosCreate(_lastToken);
+  if(sc.err){ addPre('6. Kirim SOS TES (ERROR jaringan)', sc.err); }
+  else{
+    var good=(sc.status===201||sc.status===200||sc.status===409);
+    add('6. Kirim SOS TES ke server','HTTP '+sc.status+(good?' — DITERIMA':' — DITOLAK'), good?'ok':'bad');
+    addPre('   Balasan endpoint SOS', sc.body);
+    add('KESIMPULAN AKHIR', good
+      ? 'PIPELINE SERVER OK: server menerima SOS anonim (cek panel admin, ada "TES DIAGNOSTIK"). Berarti bug ada di LOGIKA SESI APLIKASI — akan kuperbaiki di kode.'
+      : 'Server MENOLAK SOS walau sesi anonim ada (HTTP '+sc.status+'). Kirim screenshot; 401=token ditolak server, 403=domain, 502=tabel/kolom DB.', good?'ok':'bad');
+  }
+  btn.disabled=false; btn.textContent='🚨 Tes kirim SOS lagi';
+}
+
+window.addEventListener('load', function(){ setTimeout(run, 400); });
+document.getElementById('run').addEventListener('click', run);
+document.getElementById('sos').addEventListener('click', doSos);
+</script>
+</body>
+</html>
