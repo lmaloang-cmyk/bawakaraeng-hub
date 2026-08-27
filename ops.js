@@ -233,6 +233,8 @@
       q.forEach(function(item){
         if(!item||!item.payload)return;
         if(item.ts&&(now-item.ts)>86400000)return;
+        // SOS lama tanpa koordinat hanya akan menjadi baris 0,0 baru — buang saja.
+        if(_badCoord(item.payload.lat,item.payload.lng))return;
         try{window.BWKSosOutbox.enqueue(item.payload);moved++;}catch(e){}
       });
       localStorage.removeItem(SOS_QUEUE_KEY);
@@ -294,6 +296,7 @@
   });
 
   window.addEventListener('online',function(){_bootOutbox();});
+
   window.addEventListener('load',function(){setTimeout(_bootOutbox,3000);});
 
   function showActiveSos(){var old=document.getElementById('mySosActive');if(old)old.remove();var a=getJson(ACTIVE_KEY,null);if(!a||!a.id)return;var x=document.createElement('div');x.id='mySosActive';x.style.cssText='position:fixed;left:12px;right:12px;bottom:86px;z-index:99997;max-width:500px;margin:auto;background:#fff2f3;border:1px solid #f4b4ba;color:#8e1d2c;border-radius:14px;padding:11px 13px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13px;font-weight:700;display:flex;gap:10px;align-items:center';x.innerHTML='<span style="font-size:21px">\uD83C\uDD98</span><span style="flex:1">SOS kamu sedang aktif. Bila sudah aman, segera tutup sinyal.</span><button onclick="_sosResolveMy()" style="border:0;border-radius:9px;background:#c93647;color:#fff;padding:9px 10px;font-weight:800">Saya Aman</button>';document.body.appendChild(x);}
