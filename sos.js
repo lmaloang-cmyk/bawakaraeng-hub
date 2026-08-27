@@ -64,12 +64,9 @@
   .bwk-instr-panel .bwk-instr-close:hover{background:var(--line,#e6e9ef)}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
-  // TEMUAN S7: dulu Infinity ("mode percobaan"). Klien menampilkan alarm dari SOS
-  // yang bahkan tidak pernah dikirimi push oleh server (server memakai 20 km), lalu
-  // jaraknya ditulis "± 1.284 km" — membuat orang panik tanpa bisa menolong.
-  // SEKARANG: Mode uji coba radius unlimited (Infinity) untuk test jangkauan.
-  // Setelah launching, ganti kembali ke 20000 (20 km).
-  var SOS_RADIUS=(window.BWK_SOS_RADIUS_M||Infinity);
+  // Default radius = 20 km (cocok dengan server). Infinity hanya untuk mode uji,
+  // dan bisa membuat alarm/penyaringan tidak konsisten.
+  var SOS_RADIUS=(window.BWK_SOS_RADIUS_M||20000);
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var POLL_ALARM=15000;    // alarm sedang tampil: cepat, supaya status "selesai" cepat terdeteksi
   var POLL_ACTIVE=25000;   // aplikasi terlihat & baru disentuh
@@ -90,27 +87,21 @@
   var _status={mode:'idle',detail:''};
 
   function _devId(){try{var d=localStorage.getItem('bwkDev');if(!d){d='d'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('bwkDev',d);}return d;}catch(e){return 'd0';}}
-  function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.cos(la2*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
+  function _dist(la1,lo1,la2,lo2){var R=6371000,tr=Math.PI/180;var dLa=(la2-la1)*tr,dLo=(lo2-lo1)*tr;var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
 
   // ===== Alarm suara =====
   var _ttsQueue=[];var _ttsPlaying=false;var _ttsVoicesReady=false;
   var _ttsTryCount=0;var _ttsMaxRetries=5;
-  // TEMUAN S11: suara lama berbahasa Inggris ("SOS! SOS! Help! Help!"). Sebagian besar
-  // pendaki Bawakaraeng berbahasa Indonesia; kalimat Inggris memperlambat pemahaman
-  // pada detik-detik yang paling menentukan. Suara berbahasa Indonesia diprioritaskan.
   function _getFemaleVoice(){
     try{
       if(!('speechSynthesis' in window))return null;
       var voices=speechSynthesis.getVoices();
       if(!voices||!voices.length)return null;
       var i,v;
-      // Prioritas 1: suara Indonesia yang terdengar perempuan.
       for(i=0;i<voices.length;i++){v=voices[i];
         if(v.lang&&v.lang.toLowerCase().indexOf('id')===0&&/female|woman|damayanti|andika|gadis|sari|wanita/i.test(v.name))return v;}
-      // Prioritas 2: suara Indonesia apa pun.
       for(i=0;i<voices.length;i++){v=voices[i];
         if(v.lang&&v.lang.toLowerCase().indexOf('id')===0)return v;}
-      // Prioritas 3: suara Inggris yang terdengar perempuan.
       for(i=0;i<voices.length;i++){v=voices[i];
         if(v.lang&&v.lang.toLowerCase().indexOf('en')===0&&/female|woman|samantha|zira|susan|karen|moira|tessa|gwen/i.test(v.name))return v;}
       return voices[0];
@@ -119,32 +110,26 @@
   function _speakSOS(){
     try{
       if(!('speechSynthesis' in window))return false;
-      _ttsTryCount=0; // RESET di awal untuk cegah infinite loop
-      // TEMUAN S10: _playAlarm dipanggil tiap 8 detik, tetapi satu kalimat butuh ~4-6
-      // detik. Tanpa cancel(), antrian ucapan menumpuk tanpa batas sampai suaranya
-      // saling bertindih dan menjadi bunyi yang tidak bisa dipahami.
+      _ttsTryCount=0;
       try{speechSynthesis.cancel();}catch(e2){}
       var voices=speechSynthesis.getVoices();
-      // TEMUAN iPhone/Safari: getVoices() sering empty meski TTS tersedia.
-      // Coba max _ttsMaxRetries kali dengan delay bertambah.
       if(!voices||!voices.length){
         _ttsTryCount++;
         if(_ttsTryCount<=_ttsMaxRetries){
           setTimeout(function(){
             var v=speechSynthesis.getVoices();
             if(v&&v.length)_speakSOS();
-            else if(_ttsTryCount>=_ttsMaxRetries)_beep(); // fallback ke beep
+            else if(_ttsTryCount>=_ttsMaxRetries)_beep();
           },200*_ttsTryCount);
         }else{_beep();}
         return false;
       }
-      _ttsTryCount=0; // reset counter
+      _ttsTryCount=0;
       var voice=_getFemaleVoice();
       var utter=new SpeechSynthesisUtterance('Darurat! Ada pendaki minta tolong di dekat kamu. Buka aplikasi sekarang.');
       utter.lang='id-ID';
       utter.rate=0.95;utter.pitch=1.15;utter.volume=1;
       if(voice)utter.voice=voice;
-      // Handler untuk iOS: beberapa versi Safari butuh explicit trigger
       utter.onend=function(){_ttsPlaying=false;};
       utter.onerror=function(){_ttsPlaying=false;_beep();};
       speechSynthesis.speak(utter);
@@ -152,7 +137,6 @@
       return true;
     }catch(e){return false;}
   }
-  // Tunggu voices siap (Chrome memuatnya secara asinkron, Safari kadang perlu retry)
   if(typeof speechSynthesis!=='undefined'){
     speechSynthesis.addEventListener('voiceschanged',function(){
       try{
@@ -164,39 +148,26 @@
   }
   function _beep(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();var t=_audio.currentTime;for(var i=0;i<5;i++){var o=_audio.createOscillator();var g=_audio.createGain();o.type='square';o.frequency.value=(i%2?1320:880);o.connect(g);g.connect(_audio.destination);var st=t+i*0.4;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.3,st+0.02);g.gain.exponentialRampToValueAtTime(0.0001,st+0.35);o.start(st);o.stop(st+0.37);}}catch(e){}}
   function _vibe(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,700]);}catch(e){}}
-  // Main alarm: TTS + beep + vibe, berulang tiap 8 detik
   function _playAlarm(){
-    try{
-      _speakSOS();
-      _beep();
-      _vibe();
-    }catch(e){}
+    try{_speakSOS();_beep();_vibe();}catch(e){}
   }
   function _fmtDist(m){m=Math.round(m);return m>=1000?((m/1000).toFixed(m>=10000?0:1)+' km'):(m+' m');}
 
-  // --- Penanda SOS milik sendiri (persisten) supaya HP pengirim tidak bunyi sendiri ---
   function _myIds(){try{return JSON.parse(localStorage.getItem('bwkMyAlertIds')||'[]');}catch(e){return [];}}
   function _addMyId(id){try{if(id==null)return;var a=_myIds();if(a.map(String).indexOf(String(id))<0){a.push(id);localStorage.setItem('bwkMyAlertIds',JSON.stringify(a.slice(-50)));}}catch(e){}}
   function _mySigs(){try{return JSON.parse(localStorage.getItem('bwkMySos')||'[]');}catch(e){return [];}}
   function _addMySig(s){try{var a=_mySigs();a.push(s);localStorage.setItem('bwkMySos',JSON.stringify(a.slice(-20)));}catch(e){}}
-  // Daftar client_id (dibuat oleh sos-outbox.js sebelum server memberi id).
   function _myClientIds(){try{return JSON.parse(localStorage.getItem('bwkMyClientIds')||'[]');}catch(e){return [];}}
   window._sosMarkMineClient=function(cid){try{if(!cid)return;var a=_myClientIds();if(a.map(String).indexOf(String(cid))<0){a.push(String(cid));localStorage.setItem('bwkMyClientIds',JSON.stringify(a.slice(-50)));}}catch(e){}};
 
   window._sosMarkMine=function(id,lat,lng,name){_addMyId(id);if(lat!=null&&lng!=null)_addMySig({t:Date.now(),name:(name||'Pendaki'),lat:+lat,lng:+lng});if(id!=null){_myAlerts[id]=1;_seen[id]=1;}};
 
-  // TEMUAN S4: pencocokan lama memakai nama + jarak <=60 m + selisih waktu <=35 menit.
-  // Nama bawaan semua orang adalah "Pendaki", dan di basecamp puluhan orang berdiri
-  // dalam radius 60 m. Akibatnya SOS orang lain dikira milik sendiri lalu DIBISUKAN
-  // secara diam-diam \u2014 kegagalan paling berbahaya yang mungkin terjadi pada fitur ini.
-  // Sekarang hanya identitas yang pasti yang dipakai: device, id, dan client_id.
   function _isMine(a){try{
     if(a.device&&a.device===_devId())return true;
     if(a.id!=null&&_myIds().map(String).indexOf(String(a.id))>=0)return true;
     if(a.client_id!=null&&_myClientIds().indexOf(String(a.client_id))>=0)return true;
   }catch(e){}return false;}
 
-  // --- SOS yang sudah ditangani (permanen 3 jam) vs sekadar dibisukan (10 menit) ---
   function _map(k){try{return JSON.parse(localStorage.getItem(k)||'{}');}catch(e){return {};}}
   function _put(k,id,ttl){try{if(id==null)return;var o=_map(k);o[String(id)]=Date.now();var cut=Date.now()-ttl;Object.keys(o).forEach(function(x){if(o[x]<cut)delete o[x];});localStorage.setItem(k,JSON.stringify(o));}catch(e){}}
   function _markDone(id){_put('bwkSosDone',id,3*60*60000);}
@@ -205,11 +176,10 @@
     var s=_map('bwkSosSnooze');var st=s[String(id)];return !!(st&&Date.now()-st<=SNOOZE_MS);}
   function _esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
 
-  // ================= Status pemantauan (tidak lagi gagal senyap) =================
   var STATUS_TEXT={
     ok:'', idle:'',
     gps:['Pemantauan SOS: GPS belum terkunci',false],
-    net:['Pemantauan SOS terputus \u2014 periksa koneksi',false],
+    net:['Pemantauan SOS terputus — periksa koneksi',false],
     auth:['Masuk agar alarm SOS sekitar aktif',true],
     limit:['Pemantauan SOS dijeda sementara, mencoba lagi otomatis',false],
     unsupported:['Perangkat ini tidak mendukung pemantauan lokasi',true]
@@ -230,33 +200,24 @@
         el.addEventListener('click',function(){_backoffUntil=0;_backoff=0;_tick(true);});
         document.body.appendChild(el);}
       el.className=info[1]?'bad':'';
-      el.innerHTML="<span class='sm-dot'></span><span>"+_esc(info[0])+(_status.detail?(' \u2014 '+_esc(_status.detail)):'')+"</span>";
+      el.innerHTML="<span class='sm-dot'></span><span>"+_esc(info[0])+(_status.detail?(' — '+_esc(_status.detail)):'')+"</span>";
     }catch(e){}
   }
 
   window._sosStop=function(){try{_queue.forEach(function(q){_markSnooze(q.id);_seen[String(q.id)]=1;});_queue=[];_lastResolved=null;_instrPanelShown=false;var elInstr=document.getElementById('bwkInstrPanel');if(elInstr)elInstr.remove();if(_alarmTimer){clearInterval(_alarmTimer);_alarmTimer=null;}var el=document.getElementById('sosAlarm');if(el)el.remove();if(navigator.vibrate)navigator.vibrate(0);if('speechSynthesis' in window)speechSynthesis.cancel();_schedule();_renderStatus();_refreshBellBadge();}catch(e){}};
-  // Simpan SOS yang baru muncul tapi belum dilihat user (untuk polling berikutnya)
   var _pendingAlerts={};
 
-  // --- Badge lonceng: aktif=merah+angka, selesai=tunjuk info terakhir ---
-  window._refreshBellBadge=function(){try{var b=document.getElementById('bellDot');if(!b)return;var btn=document.getElementById('bellBtn');var n=_queue.length;var total=_sosCount();if(n>0){b.textContent=n>99?'99+':String(n);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','active');if(btn)btn.title='SOS Aktif: '+n+' \u00b7 Total: '+total+' panggilan';}
-    else if(_lastResolved){var nm=_esc(_lastResolved.name||'Pendaki');var ds=_fmtDist(_lastResolved.dist||0);b.textContent='\u2713';b.className='dot sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','done');if(btn)btn.title='SOS selesai: '+nm+' \u00b7 '+ds+' \u00b7 Total: '+total+' panggilan';}
+  window._refreshBellBadge=function(){try{var b=document.getElementById('bellDot');if(!b)return;var btn=document.getElementById('bellBtn');var n=_queue.length;var total=_sosCount();if(n>0){b.textContent=n>99?'99+':String(n);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','active');if(btn)btn.title='SOS Aktif: '+n+' · Total: '+total+' panggilan';}
+    else if(_lastResolved){var nm=_esc(_lastResolved.name||'Pendaki');var ds=_fmtDist(_lastResolved.dist||0);b.textContent='✓';b.className='dot sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','done');if(btn)btn.title='SOS selesai: '+nm+' · '+ds+' · Total: '+total+' panggilan';}
     else if(total>0){b.textContent=total>99?'99+':String(total);b.className='dot num sos';b.style.display='inline-flex';b.setAttribute('data-sos','1');b.setAttribute('data-state','done');if(btn)btn.title='Total SOS hari ini: '+total+' panggilan';}
     else{b.style.display='none';b.className='dot';b.removeAttribute('data-sos');b.removeAttribute('data-state');if(btn)btn.title='Notifikasi';}}catch(e){}};
 
   function _dismiss(id){try{_markDone(id);_seen[String(id)]=1;var idx=_queue.findIndex(function(q){return String(q.id)===String(id);});if(idx>=0){var r=_queue[idx];_lastResolved={id:r.id,name:r.name,dist:r.dist};}_queue=_queue.filter(function(q){return String(q.id)!==String(id);});if(!_queue.length){window._sosStop();}else{_renderAlarm(false);_refreshBellBadge();}}catch(e){}}
-  // Tandai semua alarm di queue sebagai sudah dilihat (untuk polling berikutnya)
   function _markAllSeen(){try{_queue.forEach(function(q){_seen[String(q.id)]=1;});}catch(e){}}
 
-  // ============================================================
-  // KOORDINASI RESPONDER: kirim koordinat saat user tekan "Sudah ditangani"
-  // ============================================================
-  // Responder (bukan admin, bukan pengirim) melaporkan posisi mereka ke server.
-  // Admin bisa melihat daftar semua responder + jarak + kirim instruksi balik.
   window._sosReport=function(id,lat,lng){
     if(!id||lat==null||lng==null)return Promise.resolve();
     try{
-      // Ambil token dari _sbClient jika tersedia (ops.js pattern)
       var tokP=null;
       try{if(typeof _sbClient==='function'){var c=_sbClient();if(c&&c.auth&&c.auth.getSession){tokP=c.auth.getSession().then(function(r){return (r&&r.data&&r.data.session&&r.data.session.access_token)||'';}).catch(function(){return '';});}}}catch(e){}
       if(!tokP)tokP=Promise.resolve('');
@@ -270,21 +231,18 @@
     }catch(e){return Promise.resolve();}
   };
 
-  // Panggil _sosReport secara async setelah _dismiss
   function _dismissWithReport(id,lat,lng){
     _dismiss(id);
-    // Kirim laporan posisi ke server (non-blocking)
     _sosReport(id,lat,lng).catch(function(){});
   }
 
-  // Tampilkan panel instruksi dari admin
   window._showInstrPanel=function(src, msg){
     if(_instrPanelShown)return;
     _instrPanelShown=true;
     var el=document.createElement('div');
     el.id='bwkInstrPanel';
     el.className='bwk-instr-panel';
-    el.innerHTML='<div class="bwk-instr-hd"><span>\uD83D\uDCE3 Instruksi dari Petugas</span><span class="bwk-instr-src">Dari: '+_esc(src)+'</span><button class="bwk-instr-close" onclick="(_instrPanelShown=false);(function(){var e=document.getElementById(\'bwkInstrPanel\');if(e)e.remove();})()">\u2715</button></div><div class="bwk-instr-msg">'+_esc(msg)+'</div>';
+    el.innerHTML='<div class="bwk-instr-hd"><span>📣 Instruksi dari Petugas</span><span class="bwk-instr-src">Dari: '+_esc(src)+'</span><button class="bwk-instr-close" onclick="(_instrPanelShown=false);(function(){var e=document.getElementById(\'bwkInstrPanel\');if(e)e.remove();})()">✕</button></div><div class="bwk-instr-msg">'+_esc(msg)+'</div>';
     document.body.appendChild(el);
     setTimeout(function(){if(_instrPanelShown){_instrPanelShown=false;var e=document.getElementById('bwkInstrPanel');if(e)e.remove();}},120000);
   };
@@ -298,16 +256,15 @@
         var maps=(a.lat!=null&&a.lng!=null)?('https://maps.google.com/?q='+a.lat+','+a.lng):'#';
         var pc=a.plus_code?("<div class='sosal-ds' style='font-weight:700;color:#42506b'>Kode lokasi: "+_esc(a.plus_code)+"</div>"):'';
         var wa='https://wa.me/'+wnum+'?text='+encodeURIComponent('DARURAT! Ada sinyal SOS dari '+nm+' sekitar '+_fmtDist(a.dist)+' dari saya di jalur Bawakaraeng.'+(a.plus_code?(' Kode lokasi: '+a.plus_code+'.'):'')+' Lokasi: '+maps);
-        return "<div class='sosal-item'><div class='sosal-nm'>"+_esc(nm)+" butuh bantuan</div><div class='sosal-ds'>\u00b1 "+_fmtDist(a.dist)+" dari lokasimu</div>"+pc+"<div class='sosal-bs'><a class='sosal-b map' href='"+maps+"' target='_blank' rel='noopener'>\uD83D\uDDFA\ufe0f Lihat Lokasi</a><a class='sosal-b wa' href='"+wa+"' target='_blank' rel='noopener'>\uD83D\uDCDE Koordinasi Bantuan</a><button class='sosal-b done' data-sos-done='"+_esc(String(a.id))+"'>\u2705 Sudah ditangani</button></div></div>";
+        return "<div class='sosal-item'><div class='sosal-nm'>"+_esc(nm)+" butuh bantuan</div><div class='sosal-ds'>± "+_fmtDist(a.dist)+" dari lokasimu</div>"+pc+"<div class='sosal-bs'><a class='sosal-b map' href='"+maps+"' target='_blank' rel='noopener'>🗺️ Lihat Lokasi</a><a class='sosal-b wa' href='"+wa+"' target='_blank' rel='noopener'>📞 Koordinasi Bantuan</a><button class='sosal-b done' data-sos-done='"+_esc(String(a.id))+"'>✅ Sudah ditangani</button></div></div>";
       }).join('');
       var title=multi?(_queue.length+' SINYAL DARURAT DI DEKATMU'):'DARURAT DI DEKATMU';
-      var foot="<button class='sosal-b off' data-sos-stop='1'>\uD83D\uDD07 "+(multi?'Matikan Semua Alarm':'Matikan Alarm')+"</button>";
+      var foot="<button class='sosal-b off' data-sos-stop='1'>🔇 "+(multi?'Matikan Semua Alarm':'Matikan Alarm')+"</button>";
       var el=document.getElementById('sosAlarm');
       if(!el){el=document.createElement('div');el.className='sosal';el.id='sosAlarm';document.body.appendChild(el);
         el.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.getAttribute)return;var did=t.getAttribute('data-sos-done');if(did!=null&&did!==''){_dismiss(did);_markAllSeen();return;}if(t.getAttribute('data-sos-stop')){window._sosStop();_markAllSeen();}});
       }
-      el.innerHTML="<div class='sosal-card'><div class='sosal-ic'>\uD83C\uDD98</div><div class='sosal-tt'>"+title+"</div><div class='sosal-list'>"+items+"</div>"+foot+"</div>";
-      // JANGAN set _seen di sini \u2014 tunggu user benar-benar melihat/merespons alarm
+      el.innerHTML="<div class='sosal-card'><div class='sosal-ic'>🆘</div><div class='sosal-tt'>"+title+"</div><div class='sosal-list'>"+items+"</div>"+foot+"</div>";
       var mon=document.getElementById('sosMon');if(mon)mon.remove();
       if(play){_playAlarm();}
       if(!_alarmTimer)_alarmTimer=setInterval(function(){if(!document.getElementById('sosAlarm')||!_queue.length){window._sosStop();return;}_playAlarm();},8000);
@@ -315,7 +272,6 @@
     }catch(e){return false;}
   }
 
-  // ================= GPS berlapis =================
   function _pos(){
     return new Promise(function(resolve,reject){
       if(!navigator.geolocation){reject(new Error('nogeo'));return;}
@@ -325,7 +281,6 @@
         if(done)return;
         navigator.geolocation.getCurrentPosition(ok,function(){
           if(done)return;
-          // Lapis terakhir: pakai posisi terakhir yang masih segar daripada melewatkan alarm.
           if(_myPos&&_myPos.t&&Date.now()-_myPos.t<=GPS_CACHE_MS){done=true;resolve(_myPos);return;}
           done=true;reject(new Error('gps'));
         },{enableHighAccuracy:false,timeout:20000,maximumAge:120000});
@@ -334,7 +289,6 @@
     });
   }
 
-  // ================= Penjadwalan adaptif =================
   function _interval(){
     if(_queue.length)return POLL_ALARM;
     if(document.hidden)return POLL_HIDDEN;
@@ -357,11 +311,6 @@
     if(!navigator.geolocation){_setStatus('unsupported');return;}
     _busy=true;
 
-    // BUG FIX: versi lama memakai .catch().then() \u2014 bila handler .catch() sendiri melempar
-    // exception (misalnya _setStatus atau _penalize crash karena DOM tidak siap), blok .then()
-    // akhir tidak pernah jalan, _busy tetap true selamanya, dan polling SOS berhenti total.
-    // Solusi: gunakan .finally() \u2014 dijamin jalan meski .catch() throw \u2014 dan lindungi seluruh
-    // rantai dengan try/catch agar _busy PASTI di-reset dalam kondisi apa pun.
     _pos().then(function(p){
       return window._opsNearby(p.la,p.ln).then(function(rows){
         _recover();_lastOk=Date.now();
@@ -376,10 +325,8 @@
         else if(code===429){_setStatus('limit');_penalize(Math.max(BACKOFF_MIN,(err.retryAfter||120)*1000));}
         else if(code===401||code===403||/Login/i.test(msg)){_setStatus('auth');_penalize(120000);}
         else{_fails++;_setStatus('net');_penalize();}
-      }catch(e2){/* jangan biarkan error di handler ini menghentikan .finally() */}
+      }catch(e2){}
     }).finally(function(){
-      // Dijamin jalan bahkan bila .catch() melempar, sehingga _busy tidak pernah
-      // "terkunci" dan polling tidak berhenti tanpa jejak.
       _busy=false;
       _schedule();
     });
@@ -387,7 +334,6 @@
 
   function _consume(rows,p){
     var cut=Date.now()-MAX_AGE_MIN*60000;
-    // Buang alarm yang sebelumnya tampil tetapi sudah diselesaikan / tidak lagi aktif di server.
     var activeIds={};rows.forEach(function(a){if(a&&a.id!=null&&a.active!==false)activeIds[String(a.id)]=1;});
     var before=_queue.length;_queue=_queue.filter(function(q){return !!activeIds[String(q.id)];});
     var removed=before!==_queue.length;
@@ -408,7 +354,6 @@
   }
 
   function _unlockAudio(){try{if(!_audio)_audio=new (window.AudioContext||window.webkitAudioContext)();if(_audio.state==='suspended')_audio.resume();}catch(e){}
-    // iPhone/Safari butuh gesture untuk speechSynthesis; coba trigger dengan utter kosong
     try{
       if(typeof speechSynthesis!=='undefined'&&!speechSynthesis.speaking){
         var u=document.createElement('span');u.style.cssText='position:absolute;left:-9999px;top:-9999px';
@@ -428,10 +373,7 @@
   window.addEventListener('load',function(){setTimeout(window._sosStart,2500);});
   window.addEventListener('online',function(){_recover();if(_started)_tick(true);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden){_lastTouch=Date.now();if(_started){_recover();_tick(true);}}else{_schedule();}});
-  // Service worker memberi tahu saat push SOS masuk: langsung periksa, jangan tunggu siklus berikutnya.
   try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-push'){_recover();_tick(true);
-    // Wake lock: cegah layar tidur saat ada SOS darurat
     if(d.urgent && 'wakeLock' in navigator){try{navigator.wakeLock.request('screen');}catch(e){}}}});}catch(e){}
-  // Mendengarkan instruksi dari admin via service worker message
   try{if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(ev){var d=ev&&ev.data;if(d&&d.type==='sos-instruction'&&d.src&&d.msg){window._showInstrPanel(d.src,d.msg);}});}catch(e){}
 })();
