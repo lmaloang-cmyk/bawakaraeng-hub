@@ -18,9 +18,9 @@
   try{
     if(window.__bwkSosKitLoaded)return;
     window.__bwkSosKitLoaded=true;
-    // Mode uji coba: radius unlimited (Infinity) untuk test jangkauan SOS
-    // Setelah launching, ganti kembali ke 20000 (20 km)
-    if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=Infinity;
+    // Default radius SOS harus sama dengan server (20 km). Mode uji coba Infinity
+    // membuat alarm/penyaringan jadi tidak konsisten dan mudah membingungkan.
+    if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=20000;
 
     var CSS='/sos-ui.css';
     if(!document.querySelector('link[data-bwk-sos-css]')){
@@ -98,33 +98,18 @@
   }
   window._sosStopWaves=_stopWaves;
 
-  // ===================================================================
-  // ADOPSI SOS: dipanggil setelah server memberi ID, baik lewat jalur
-  // langsung maupun lewat Outbox (offline-first).
-  // ===================================================================
   function adopt(id,lat,lng,name){
     setJson(ACTIVE_KEY,{id:id,created_at:Date.now()});showActiveSos();
-    // Tandai SOS ini milik sendiri supaya HP pengirim tidak ikut berbunyi.
     try{if(window._sosMarkMine)window._sosMarkMine(id,lat,lng,name);}catch(e){}
     try{if(window._sosStart)window._sosStart();}catch(e){}
-    // Segarkan koordinat langganan push pengirim: server memfilter penerima
-    // memakai lokasi tersimpan, jadi data basi membuat alarm tidak terkirim.
     try{if(window._sosRefreshPush)window._sosRefreshPush(true);}catch(e){}
     _pushWave(id,'first');_startWaves(id);
     return id;
   }
-  // Dipanggil oleh sos-outbox.js saat sebuah SOS antrian akhirnya terkirim.
   window._sosAdoptQueued=function(id,payload){
     try{payload=payload||{};adopt(id,payload.lat,payload.lng,payload.name);}catch(e){}
   };
 
-  // ===================================================================
-  // JALUR LAMA (cadangan). Dipakai HANYA bila modul BWKSosOutbox gagal
-  // dimuat. Tanpa ini, kegagalan memuat satu berkas akan mematikan tombol
-  // SOS sepenuhnya \u2014 risiko yang tidak boleh diambil untuk fitur darurat.
-  // Catatan: gerbang "wajib login Google" DIHAPUS (temuan S2). SOS tidak
-  // boleh pernah ditolak karena pengguna belum login.
-  // ===================================================================
   function _sosPublishLegacy(lat,lng,name){
     var device='';try{device=localStorage.getItem('bwkDev')||'';}catch(e){}
     return api('/api/operations?action=sos-create',{method:'POST',body:JSON.stringify({lat:lat,lng:lng,device:device})}).then(function(d){
@@ -133,8 +118,6 @@
       var status=document.getElementById('sosStatus');if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">\u2705 SOS terverifikasi dan diteruskan ke petugas terdekat.</div>');
       return d;
     }).catch(function(e){
-      // 409 = SOS aktif milik sendiri sudah ada. Itu bukan kegagalan: pakai ID yang ada
-      // dan lanjutkan gelombang push, jangan biarkan pengguna mengira SOS tidak terkirim.
       if(e&&e.status===409&&e.data&&e.data.id){
         adopt(e.data.id,lat,lng,name);
         var st=document.getElementById('sosStatus');if(st)st.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">\u2705 SOS kamu masih aktif \u2014 sinyal dikirim ulang ke perangkat sekitar.</div>');
@@ -144,7 +127,6 @@
       var why=st2===401?'Kamu belum login.':st2===429?'Terlalu banyak percobaan, tunggu beberapa menit.':st2===403?'Domain ini belum diizinkan server. Isi ALLOWED_ORIGINS di Vercel.':st2===400?'Koordinat atau nama perangkat tidak valid.':st2===502?'Database menolak menyimpan SOS. Jalankan supabase-perbaikan-sos.sql.':st2===503?'Kunci server belum lengkap di Vercel.':st2===0?'Koneksi ke server terputus.':('Server menjawab kode '+st2+'.');
       why+=' [kode '+st2+(det?': '+det.slice(0,120):'')+']';
       toastx(e.message||'SOS gagal dikirim','err');
-      // Simpan ke antrian lama; nanti dipindahkan otomatis ke Outbox oleh _migrateOldQueue().
       _legacyQueueEnqueue({lat:lat,lng:lng,device:device,name:name||_sosName()});
       var status=document.getElementById('sosStatus');
       if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#ffd9d9;font-size:12px;font-weight:800">\u26a0\ufe0f '+esc(why)+'<br>SOS disimpan offline \u2014 akan otomatis terkirim saat internet pulih.</div>');
@@ -152,11 +134,6 @@
     });
   }
 
-  // ===================================================================
-  // JALUR BARU: simpan dulu \u2192 pasang jalur cadangan \u2192 baru kirim.
-  // Urutan ini disengaja. SOS harus sudah aman tersimpan di perangkat
-  // sebelum satu pun paket jaringan dicoba.
-  // ===================================================================
   window._sosPublish=function(lat,lng,name){
     if(!window.BWKSosOutbox||typeof window.BWKSosOutbox.enqueue!=='function'){
       try{console.warn('[BWK] BWKSosOutbox tidak tersedia \u2014 memakai jalur lama.');}catch(e){}
@@ -183,9 +160,7 @@
         toastx('SOS tersimpan. Mengirim\u2026','ok');
         var status=document.getElementById('sosStatus');
         if(status)status.insertAdjacentHTML('beforeend','<div style="margin-top:10px;font-size:12px;font-weight:800">\uD83C\uDD98 SOS tersimpan di perangkat dan akan terus dicoba sampai terkirim.'+(ctx.plus_code?('<br>Kode lokasi: '+esc(ctx.plus_code)):'')+'</div>');
-        // Catat client_id sebagai milik sendiri supaya HP pengirim tidak ikut beralarm.
         try{if(rec&&rec.client_id&&window._sosMarkMineClient)window._sosMarkMineClient(rec.client_id);}catch(e){}
-        // Jalur cadangan (WA / SMS / telepon) dipasang SEBELUM pengiriman dicoba.
         try{if(window.BWKSosRelay&&rec&&rec.client_id)window.BWKSosRelay.startEscalation(rec.client_id);}catch(e){}
         return Promise.resolve(window.BWKSosOutbox.flush()).catch(function(){return null;});
       });
@@ -205,11 +180,6 @@
     }).catch(function(e){toastx(e.message||'Gagal menyelesaikan SOS','err');});
   };
 
-  // ===== Antrian lama (hanya untuk jalur cadangan) =====
-  // Fungsi _sosQueueDequeue / _sosQueueRemove / _syncSosQueue yang lama DIHAPUS:
-  // dequeue mengembalikan item tanpa menghapusnya dan jalur gagal menambah salinan
-  // baru, sehingga satu SOS bisa berlipat ganda tanpa batas (temuan S1).
-  // Yang tersisa hanya penyimpan darurat; pengiriman ulang kini milik BWKSosOutbox.
   function _legacyQueueEnqueue(payload){
     try{
       var q=getJson(SOS_QUEUE_KEY,[]);
@@ -218,8 +188,6 @@
     }catch(e){}
   }
 
-  // Migrasi satu kali: pindahkan sisa antrian lama ke Outbox baru supaya SOS
-  // milik pengguna lama yang belum terkirim tidak menjadi yatim.
   function _migrateOldQueue(){
     try{
       if(!window.BWKSosOutbox||typeof window.BWKSosOutbox.enqueue!=='function')return;
@@ -230,7 +198,7 @@
       var now=Date.now(),moved=0;
       q.forEach(function(item){
         if(!item||!item.payload)return;
-        if(item.ts&&(now-item.ts)>86400000)return; // lewat 24 jam, jangan bangkitkan lagi
+        if(item.ts&&(now-item.ts)>86400000)return;
         try{window.BWKSosOutbox.enqueue(item.payload);moved++;}catch(e){}
       });
       localStorage.removeItem(SOS_QUEUE_KEY);
@@ -246,7 +214,6 @@
         window.BWKSosOutbox.setTokenProvider(function(){
           return token().then(function(t){
             if(t)return t;
-            // Belum login Google? Pakai sesi anonim supaya SOS tetap terkirim.
             if(window.BWKSosAuth&&window.BWKSosAuth.token)return window.BWKSosAuth.token();
             return '';
           }).catch(function(){return '';});
@@ -257,7 +224,6 @@
     }catch(e){}
   }
 
-  // ===== Penanda antrian di layar =====
   function _outboxPill(text,bad){
     try{
       var el=document.getElementById('bwkSosOutboxPill');
@@ -277,7 +243,7 @@
         return;
       }
       if(d.status==='dead'){
-        _outboxPill('SOS gagal terkirim \u2014 pakai jalur cadangan',true);
+        _outboxPill('SOS gagal terkirim — pakai jalur cadangan',true);
         return;
       }
       var n=d.pending;
@@ -295,7 +261,6 @@
 
   function showActiveSos(){var old=document.getElementById('mySosActive');if(old)old.remove();var a=getJson(ACTIVE_KEY,null);if(!a||!a.id)return;var x=document.createElement('div');x.id='mySosActive';x.style.cssText='position:fixed;left:12px;right:12px;bottom:86px;z-index:99997;max-width:500px;margin:auto;background:#fff2f3;border:1px solid #f4b4ba;color:#8e1d2c;border-radius:14px;padding:11px 13px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13px;font-weight:700;display:flex;gap:10px;align-items:center';x.innerHTML='<span style="font-size:21px">\uD83C\uDD98</span><span style="flex:1">SOS kamu sedang aktif. Bila sudah aman, segera tutup sinyal.</span><button onclick="_sosResolveMy()" style="border:0;border-radius:9px;background:#c93647;color:#fff;padding:9px 10px;font-weight:800">Saya Aman</button>';document.body.appendChild(x);}
 
-  // Gantikan polling SOS langsung Supabase dengan endpoint radius yang terproteksi.
   window._opsNearby=function(lat,lng){return api('/api/operations?action=sos-nearby',{method:'POST',body:JSON.stringify({lat:lat,lng:lng})}).then(function(x){return x.items||[];});};
 
   function ensureCheckin(){var host=document.getElementById('peta');if(!host||document.getElementById('trailCheckin'))return;var box=document.createElement('div');box.id='trailCheckin';box.style.cssText='margin:16px 0;background:var(--card,#fff);border:1px solid var(--line,#e6e9ef);border-radius:16px;padding:14px;box-shadow:var(--shadow,0 3px 14px rgba(0,0,0,.08))';box.innerHTML='<div style="display:flex;gap:10px;align-items:center"><span style="font-size:25px">\uD83D\uDCCD</span><div><b>Check-in Pos</b><small style="display:block;color:var(--sub,#667);font-size:12px;margin-top:2px">Simpan posisi saat melewati pos. Tetap tersimpan bila offline dan dikirim saat internet kembali.</small></div></div><select id="ciPos" style="width:100%;margin:12px 0 8px;padding:11px;border:1px solid #dce2ea;border-radius:10px;background:var(--card,#fff)">'+POS.map(function(p){return '<option value="'+p[0]+'">'+p[1]+'</option>';}).join('')+'</select><button class="btn g-green" onclick="opsCheckin()">\uD83D\uDCCD Check-in dengan GPS</button><div id="ciStatus" style="font-size:12px;color:var(--sub,#667);margin-top:8px"></div>';host.appendChild(box);checkinStatus();}
@@ -303,24 +268,17 @@
   function checkinStatus(){var el=document.getElementById('ciStatus'),q=getJson(QUEUE_KEY,[]);if(el)el.textContent=q.length?('\u23f3 '+q.length+' check-in menunggu sinkronisasi.'):'\u2705 Semua check-in sudah tersinkron.';}
   function syncCheckins(){if(!navigator.onLine)return;var q=getJson(QUEUE_KEY,[]);if(!q.length)return;var first=q[0];api('/api/operations?action=checkin',{method:'POST',body:JSON.stringify(first)}).then(function(){q.shift();setJson(QUEUE_KEY,q);checkinStatus();syncCheckins();}).catch(function(){checkinStatus();});}
 
-  // Dashboard petugas: SOS aktif, riwayat, dan check-in paling baru.
   function isAdminClient(){var u=user();return !!(u&&u.role==='Admin');}
   function addOpsTab(){if(!isAdminClient())return;var tabs=document.querySelector('.admin-tabs');if(tabs&&!document.getElementById('opsSosTab')){var b=document.createElement('button');b.id='opsSosTab';b.className='admin-tab';b.textContent='\uD83C\uDD98 Operasi';b.onclick=function(){adminTab('operasi',b);};tabs.insertBefore(b,tabs.firstChild);}}
 
-  // BUG FIX #2: lat/lng dulu dimasukkan ke href tanpa sanitasi. Nilai seperti
-  // `" onclick="alert(1)` yang disimpan di DB menghasilkan XSS di panel admin.
-  // safeCoord() hanya mengizinkan karakter angka, titik, minus \u2014 cukup untuk koordinat.
   function safeCoord(v){return String(v==null?'':v).replace(/[^0-9.\-]/g,'').slice(0,20);}
   function safeMapUrl(lat,lng){return 'https://maps.google.com/?q='+safeCoord(lat)+','+safeCoord(lng);}
 
   window.opsDashboard=function(){var b=document.getElementById('adminBody');if(!b)return;b.innerHTML='<div class="aempty">Memuat dashboard operasi\u2026</div>';api('/api/operations?action=admin',{method:'GET'}).then(function(d){
     var sos=d.sos||[],active=sos.filter(function(x){return x.status==='active';}),checks=d.checkins||[],responders=d.responders||{};
-    // Simpan responders ke global agar opsSendInstr bisa mengaksesnya
     try{window._opsResponders=responders;}catch(e){}
-    // Kelompokkan responder berdasarkan sos_alert_id
     var allResp=[];Object.keys(responders).forEach(function(sosId){(responders[sosId]||[]).forEach(function(r){allResp.push(Object.assign({sos_id:sosId},r));});});
     var respList=allResp.slice(0,10).map(function(r){return '<li><b>'+esc(r.name)+'</b> <small>(±'+esc(r.distance_m)+'m)</small> '+(r.message_sent?('<span style="color:#2563eb">\uD83D\uDCE3 '+esc(r.message_sent).slice(0,40)+'</span>'):('<span style="color:#16a34a">\u2705</span>'))+'</li>';}).join('')||'<li>Belum ada responder.</li>';
-    // BUG FIX #2 (lanjutan): pakai safeMapUrl() + esc() untuk SEMUA URL peta di dashboard.
     var cards=active.length?active.map(function(x){
       var map=safeMapUrl(x.lat,x.lng);
       var pc=x.plus_code?('<small>\uD83D\uDD22 '+esc(x.plus_code)+'</small>'):'';
@@ -337,7 +295,6 @@
   }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
   window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('SOS ditandai sudah ditangani','ok');opsDashboard();}).catch(function(e){toastx(e.message||'Gagal memperbarui SOS','err');});};
 
-  // Kirim instruksi ke semua responder aktif untuk SOS tertentu
   window.opsSendInstr=function(sosId, sosName){
     var rMap=window._opsResponders||{};
     var count=(rMap[sosId]||[]).length||0;
@@ -349,7 +306,6 @@
     }).catch(function(e){toastx(e.message||'Gagal mengirim instruksi','err');});
   };
 
-  // QR SIMAKSI memakai payload baku sehingga kode tetap dapat diverifikasi manual oleh petugas.
   window.simaksiQrPayload=function(r){return JSON.stringify({type:'RC-SIMAKSI',version:1,code:r.code,valid_from:r.naik,valid_to:r.turun,route:r.jalur});};
   function addPermitVerify(){if(!isAdminClient())return;var p=document.getElementById('adminPanel');if(!p||document.getElementById('opsPermitVerifier'))return;var el=document.createElement('div');el.id='opsPermitVerifier';el.style.cssText='display:none';el.innerHTML='';p.appendChild(el);}
   window.opsVerifyPermit=function(code){if(!isAdminClient())return;var c=(code||prompt('Masukkan kode SIMAKSI dari QR / kartu:')||'').trim().toUpperCase();if(!c)return;api('/api/operations?action=permit-verify',{method:'POST',body:JSON.stringify({code:c})}).then(function(r){var x=r.permit||{},ok=!!r.valid;alert((ok?'\u2705 SIMAKSI SAH':'\u26a0\ufe0f BELUM SAH')+'\n\nKode: '+(x.code||c)+'\nKetua: '+(x.nama||'-')+'\nJalur: '+(x.jalur||'-')+'\nBerlaku: '+(x.naik||'-')+' s/d '+(x.turun||'-'));}).catch(function(e){toastx(e.message||'Gagal memeriksa SIMAKSI','err');});};
