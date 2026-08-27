@@ -63,8 +63,14 @@ export default async function handler(req, res) {
 }
 
 async function sosCreate(req,res,user) {
-  const b=req.body||{}, lat=Number(b.lat), lng=Number(b.lng);
-  if (!validPoint(lat,lng)) return res.status(400).json({error:'Lokasi tidak valid'});
+  const b=req.body||{};
+  // Number(null)===0 dan Number('')===0: SOS yang dikirim sebelum GPS terkunci
+  // (atau uji dari laptop tanpa GPS) dulu tersimpan sebagai baris 0,0 — titik
+  // "Null Island" yang tidak pernah masuk radius alarm perangkat mana pun dan
+  // memenuhi dashboard admin. Tolak nilai kosong SEBELUM konversi ke Number.
+  if (b.lat==null||b.lng==null||b.lat===''||b.lng==='') return res.status(400).json({error:'Lokasi GPS belum terkunci'});
+  const lat=Number(b.lat), lng=Number(b.lng);
+  if (!validPoint(lat,lng)||(lat===0&&lng===0)) return res.status(400).json({error:'Lokasi tidak valid'});
 
   // client_id dibuat di perangkat SEBELUM SOS dikirim. Nilainya tetap sama pada
   // setiap percobaan ulang, jadi inilah kunci anti-dobel yang sesungguhnya.
@@ -177,9 +183,15 @@ async function sosNearby(req,res) {
 
 async function sosResolve(req,res,user) {
   const id=clean((req.body||{}).id,80);if(!id)return res.status(400).json({error:'ID SOS diperlukan'});
-  const r=await rest('sos_alerts?select=id,user_id,active&id=eq.'+encodeURIComponent(id)+'&limit=1');const rows=r.ok?await r.json():[];const sos=rows&&rows[0];
+  // device + client_id ikut dibaca sebagai bukti kepemilikan perangkat pengirim.
+  const r=await restWithFallback('sos_alerts?select=id,user_id,active,device,client_id&id=eq.'+encodeURIComponent(id)+'&limit=1','sos_alerts?select=id,user_id,active,device&id=eq.'+encodeURIComponent(id)+'&limit=1');const rows=r.ok?await r.json():[];const sos=rows&&rows[0];
   if(!sos)return res.status(404).json({error:'SOS tidak ditemukan'});
-  if(sos.user_id!==user.id&&!isAdmin(user))return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
+  // Sesi anonim bisa terganti setelah refresh token gagal di sinyal buruk, sehingga
+  // user.id baru tidak lagi cocok dengan pembuat SOS. Perangkat yang sama tetap
+  // boleh menutup sinyalnya sendiri.
+  const cid=clean((req.body||{}).client_id,80), dev=clean((req.body||{}).device,80);
+  const sameDevice=(dev&&sos.device&&sos.device===dev)||(cid&&sos.client_id&&sos.client_id===cid);
+  if(sos.user_id!==user.id&&!isAdmin(user)&&!sameDevice)return res.status(403).json({error:'Hanya pengirim atau petugas yang dapat menyelesaikan SOS'});
   const u=await rest('sos_alerts?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({active:false,status:'resolved',handled_at:new Date().toISOString(),handled_by:clean(user.email,254)})});
   if(!u.ok)return res.status(502).json({error:'Status SOS gagal diperbarui'});return res.status(200).json({ok:true});
 }
