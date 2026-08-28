@@ -1,10 +1,12 @@
-﻿import { verifySupabaseUser } from '../lib/security.js';
+import { verifySupabaseUser } from '../lib/security.js';
 import { bodyWithin, rateLimit, secureApi } from '../lib/security.js';
 import { clean, distance, isAdmin, requireUser, rest, validPoint } from '../lib/ops.js';
 
-// Radius pencarian SOS. Satu sumber kebenaran untuk klien dan server; klien
-// membacanya lewat window.BWK_SOS_RADIUS_M yang diset di ops.js.
-const RADIUS = Number(process.env.SOS_RADIUS_M || 20000);
+// Radius pencarian SOS — penyaringan sos-nearby yang sesungguhnya terjadi DI SINI.
+// MODE TES: Infinity (tanpa batas) — semua SOS aktif dikirim ke semua perangkat.
+// SEBELUM LAUNCHING: ganti Infinity menjadi 20000 (20 km), atau set env SOS_RADIUS_M
+// di Vercel tanpa mengubah kode. Samakan dengan api/sos-push.js dan sos.js.
+const RADIUS = process.env.SOS_RADIUS_M ? Number(process.env.SOS_RADIUS_M) : Infinity;
 
 // Kolom client_id / plus_code / accuracy_m / altitude_m / battery_pct / profile
 // baru ada SETELAH supabase-sos-optimasi.sql dijalankan. Supaya penempatan kode

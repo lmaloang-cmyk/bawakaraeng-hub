@@ -58,7 +58,11 @@ export default async function handler(req, res) {
   try { webpush.setVapidDetails(subject, vapidPublic, vapidPrivate); }
   catch (e) { return res.status(503).json({ error: 'Kunci VAPID tidak valid', code: 'BAD_VAPID' }); }
 
-  const RADIUS = 20000, lat = Number(sos.lat), lng = Number(sos.lng);
+  // Radius gelombang push.
+  // MODE TES: Infinity (tanpa batas) — semua perangkat terdaftar menerima push SOS.
+  // SEBELUM LAUNCHING: ganti Infinity menjadi 20000 (20 km), atau set env SOS_RADIUS_M.
+  // Samakan dengan api/operations.js dan sos.js.
+  const RADIUS = process.env.SOS_RADIUS_M ? Number(process.env.SOS_RADIUS_M) : Infinity, lat = Number(sos.lat), lng = Number(sos.lng);
   // Koordinat basi lebih berbahaya daripada koordinat kosong: perangkat yang mendaftar
   // di kota lalu naik gunung akan tersaring keluar radius dan alarmnya tidak berbunyi.
   const STALE_MS = 3 * 24 * 3600_000;
@@ -97,7 +101,10 @@ export default async function handler(req, res) {
       'lat.is.null',
       'loc_updated_at.lt.' + staleISOStr
     ].join(',');
-    u.searchParams.set('or', '(' + orFilter + ')');
+    // MODE TES: bila RADIUS tidak hingga, filter bounding box tidak valid (Infinity)
+    // — lewati dan ambil semua perangkat aktif, saring perangkat pengirim di bawah.
+    if (Number.isFinite(RADIUS)) u.searchParams.set('or', '(' + orFilter + ')');
+    else u.searchParams.set('limit', '500');
 
     let r = await fetch(u, { headers: headers(key), signal: AbortSignal.timeout(8000) });
     if (!r.ok) {
