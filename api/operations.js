@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   // Penjaga kasar per IP hanya untuk menahan penyalahgunaan sebelum verifikasi token.
   if (!rateLimit(req, res, { prefix:'ops-ip', limit: 400, windowMs: 10*60_000 })) return;
 
-  const isPublicAction = action === 'sos-nearby' || action === 'permit-verify';
+  const isPublicAction = action === 'sos-nearby' || action === 'permit-verify' || action === 'sos-report';
   let user = null;
   if (!isPublicAction) {
     user = await requireUser(req, res, action === 'admin');
