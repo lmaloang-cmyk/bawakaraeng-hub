@@ -1,4 +1,4 @@
-const CACHE='bwk-v77-login-gate';
+const CACHE='bwk-v78-netfirst';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
@@ -20,6 +20,18 @@ self.addEventListener('fetch',function(e){
     e.respondWith(fetch(req).then(function(res){
       const copy=res.clone();caches.open(CACHE).then(function(c){c.put('/index.html',copy);});return res;
     }).catch(function(){return caches.match('/index.html');}));
+    return;
+  }
+  // v17.6: file aplikasi (JS/CSS/HTML) NETWORK-FIRST — dulu cache-first, sehingga HP
+  // terus memakai salinan lama (mis. ops.js/hike.js) dan perbaikan baru tidak pernah
+  // tampil. Offline tetap aman: bila jaringan gagal, jatuh ke cache. Aset gambar
+  // (logo/ikon, jarang berubah) tetap cache-first supaya hemat kuota.
+  var isAppFile=/\.(js|css|html?)$/i.test(url.pathname);
+  if(isAppFile){
+    e.respondWith(fetch(req).then(function(res){
+      if(res&&res.status===200){const copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
+      return res;
+    }).catch(function(){return caches.match(req);}));
     return;
   }
   e.respondWith(caches.match(req).then(function(hit){

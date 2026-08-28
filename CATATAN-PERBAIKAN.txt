@@ -1,34 +1,47 @@
-PERBAIKAN v17.3 — 28 Agustus 2026
-==================================
+PERBAIKAN v17.6 — 28 Agustus 2026 (PENTING: baca dulu)
+======================================================
 
-Timpa 1 file ini di repo, lalu push/deploy:
+GEJALA YANG DILAPORKAN
+----------------------
+Di HP: Check-in Pos tidak pindah ke halaman Peta Jalur dan
+tombol Reset tidak muncul — hanya fungsi geser tile jalur
+yang berubah.
 
-  ops.js   -> di folder utama (root)
+PENYEBAB
+--------
+Perbaikan Check-in Pos ada di ops.js (v17.3) dan tombol Reset
+ada di hike.js (v17.5). Kedua file itu tidak sampai ke HP karena:
+1. Mungkin belum ikut ter-push, ATAU
+2. Service worker memakai strategi CACHE-FIRST untuk file JS:
+   HP terus memuat salinan LAMA ops.js/hike.js dari cache,
+   walaupun file baru sudah di server.
 
-PENTING: file ops.js ini SUDAH TERMASUK perbaikan v17.2 (panel admin
-tanpa responder + dark mode check-in). Kalau v17.2 belum sempat dipasang,
-langsung pasang yang ini saja untuk ops.js (api/operations.js dari v17.2
-tetap perlu dipasang bila belum).
+CARA MEMPERBAIKI (wajib urut)
+-----------------------------
+1. Timpa 3 file ini di repo, lalu push/deploy:
+     sw.js    -> root  (perbaikan utama: strategi cache)
+     ops.js   -> root  (berisi v17.2 + v17.3: admin bersih,
+                        Check-in Pos pindah ke Peta Jalur,
+                        dark mode check-in)
+     hike.js  -> root  (berisi v17.5: tombol Reset tracker)
+2. Setelah deploy selesai, di HP: buka aplikasi, TUTUP sepenuhnya
+   (swipe dari recent apps), lalu buka lagi 1-2 kali.
+   Muat ulang pertama memasang service worker baru; muat berikutnya
+   file baru dipakai.
+3. Kalau masih bandel: Setelan browser -> Hapus data situs untuk
+   pintuangin.my.id (atau buka lewat mode samar sekali untuk
+   memastikan versi baru jalan), lalu buka normal.
 
-YANG BERUBAH
-------------
-Panel "Check-in Pos" dipindah MASUK ke dalam halaman Peta Jalur,
-tepat di bawah peta + tombol lokasi + hiking tracker.
-
-Sebelumnya panel itu disisipkan SETELAH section Peta Jalur sebagai
-elemen lepas, sehingga:
-- tampil di SEMUA halaman (Beranda, Peta Jalur, dll)
-- di Beranda posisinya di dasar dan tertutup nav bawah
-- terlihat dobel/membingungkan
-
-Sekarang:
-- hanya tampil di halaman Peta Jalur (ikut tersembunyi/tampil
-  bersama halaman)
-- tidak tertutup nav bawah
-- tidak lagi muncul di Beranda
+YANG BERUBAH DI sw.js
+---------------------
+- File aplikasi (JS/CSS/HTML) sekarang NETWORK-FIRST: selalu ambil
+  versi terbaru dari server bila online, cache hanya jadi cadangan
+  saat offline. Perbaikan berikutnya tidak akan lagi "nyangkut".
+- Aset gambar tetap cache-first (jarang berubah, hemat kuota).
+- Nama cache dinaikkan: bwk-v77-login-gate -> bwk-v78-netfirst.
 
 CEK CEPAT SETELAH DEPLOY
 ------------------------
-- Beranda: panel Check-in Pos hilang.
-- Peta Jalur: panel Check-in Pos ada di bawah peta, huruf terbaca
-  di dark mode, dan bisa dipakai check-in normal.
+- Peta Jalur: panel Check-in Pos ada DI BAWAH peta (bukan ngambang
+  di dasar Beranda), dan di kartu Mode Pendakian ada tombol
+  "Reset" setelah Mulai Pendakian.
