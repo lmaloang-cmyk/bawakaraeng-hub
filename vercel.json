@@ -11,6 +11,10 @@
     {
       "source": "/manifest.json",
       "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }]
+    },
+    {
+      "source": "/tracker.html",
+      "headers": [{ "key": "Content-Type", "value": "text/html; charset=utf-8" }]
     }
   ],
   "functions": {
@@ -21,6 +25,7 @@
     "api/push-subscribe.js": { "maxDuration": 15 },
     "api/bmkg.js":         { "maxDuration": 15 },
     "api/hotspot.js":      { "maxDuration": 15 },
-    "api/species-search.js": { "maxDuration": 10 }
+    "api/species-search.js": { "maxDuration": 10 },
+    "api/tracking.js":     { "maxDuration": 15 }
   }
 }
