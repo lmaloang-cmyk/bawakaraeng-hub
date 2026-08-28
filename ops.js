@@ -359,7 +359,7 @@
       var map=safeMapUrl(x.lat,x.lng);
       return '<li><b>'+esc(x.user_name||x.user_email||'Pendaki')+'</b> \u00b7 '+esc(x.position_name)+' <a href="'+esc(map)+'" target="_blank" rel="noopener">peta</a><br/><small>'+new Date(x.check_in_time).toLocaleString('id-ID')+'</small></li>';
     }).join('')||'<li>Belum ada check-in.</li>';
-    b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line,#e4e8ef);border-radius:13px;padding:12px;margin:9px 0;background:var(--card,#fff)}.ops-card.danger{border-color:#e0154a;background:#fff5f7}.aempty{text-align:center;padding:20px;color:var(--sub,#69758a);font-size:14px}</style><h2>\uD83C\uDD98 SOS Aktif ('+active.length+')</h2>'+cards+'<h3>\uD83D\uDCE3 Responder Aktif</h3><ul>'+respList+'</ul><h3>\uD83D\uDCC4 Riwayat SOS</h3><ul style="max-height:150px;overflow-y:auto">'+hist+'</ul><h3>\u2705 Check-in Terakhir</h3><ul style="max-height:150px;overflow-y:auto">'+check+'</ul>';
+    b.innerHTML='<style>.ops-card{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line,#e4e8ef);border-radius:13px;padding:12px;margin:9px 0;background:var(--card,#fff)}.ops-card.danger{border-color:#e0154a;background:#fff5f7;color:var(--ink,#991b1b)}html.dark .ops-card{background:var(--card,#1a1f2e);color:var(--ink,#e5e9f0)}html.dark .ops-card.danger{background:#2d1517;border-color:#7f1d1d;color:#fca5a5}.aempty{text-align:center;padding:20px;color:var(--sub,#69758a);font-size:14px}</style><h2>\uD83C\uDD98 SOS Aktif ('+active.length+')</h2>'+cards+'<h3>\uD83D\uDCE3 Responder Aktif</h3><ul>'+respList+'</ul><h3>\uD83D\uDCC4 Riwayat SOS</h3><ul style="max-height:150px;overflow-y:auto">'+hist+'</ul><h3>\u2705 Check-in Terakhir</h3><ul style="max-height:150px;overflow-y:auto">'+check+'</ul>';
   }).catch(function(e){b.innerHTML='<div class="aempty">Dashboard tidak dapat dibuka: '+esc(e.message||'Pastikan konfigurasi server dan SQL sudah dijalankan.')+'</div>';});};
   window.opsResolve=function(id){if(!confirm('Tandai SOS ini sudah ditangani?'))return;api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:id})}).then(function(){toastx('\u2705 SOS ditandai selesai','ok');window.opsDashboard();}).catch(function(e){toastx(e.message||'Gagal','err');});};
 
@@ -382,3 +382,5 @@
   window.addEventListener('load',function(){setTimeout(boot,1200);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden){ensureCheckin();}});
 })();
+
+
