@@ -173,6 +173,8 @@
   };
 
   function _sosPublishSend(lat,lng,name){
+    // Simpan koordinat terakhir ke cache untuk Tahap 3 GPS berlapis
+    try{localStorage.setItem('bwkLastSosCoords',JSON.stringify({lat:lat,lng:lng,ts:Date.now()}));}catch(e){}
     if(!window.BWKSosOutbox||typeof window.BWKSosOutbox.enqueue!=='function'){
       try{console.warn('[BWK] BWKSosOutbox tidak tersedia \u2014 memakai jalur lama.');}catch(e){}
       return _sosPublishLegacy(lat,lng,name);
