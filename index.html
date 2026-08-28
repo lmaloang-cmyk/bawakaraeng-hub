@@ -1246,7 +1246,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <div class="pli" onclick="switchGoogleAccount()"><div class="pi g-blue">🔄</div><b>Ganti akun Google</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Pintu Angin · Versi 16</div>
+    <div class="appver">Pintu Angin · Versi 17</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -2545,10 +2545,8 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
       <div class="login-benefit"><span>🛡️</span><span><b>Data komunitas</b> tersimpan aman</span></div>
     </div>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
-    <div class="login-divider">atau</div>
-    <button class="login-guest" onclick="enterGuest()">Jelajahi sebagai Tamu</button>
-    <p class="login-hint">Mode tamu dapat melihat informasi publik. Login diperlukan untuk mengirim dan menyimpan data.</p>
-    <div class="login-ver">Versi 16</div>
+    <p class="login-hint">Pintu Angin khusus pengguna terdaftar. Masuk dengan akun Google untuk melanjutkan.</p>
+    <div class="login-ver">Versi 17</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -2598,8 +2596,7 @@ window.playLogoMantra=playLogoMantra;
 <script>
 var BWK_ROLE='';
 function bwkUser(){try{return JSON.parse(localStorage.getItem('bwkUser')||'null');}catch(e){return null;}}
-function isGuest(){var u=bwkUser();return !!(u&&u.guest);}
-function enterGuest(){var u={name:'Tamu',role:'Guest',guest:true,ts:Date.now()};try{localStorage.setItem('bwkUser',JSON.stringify(u));}catch(e){}applyUser(u);hideLogin();}
+function isGuest(){return false;}
 function openGuestGate(feature){
   var label=feature||'menggunakan fitur ini';
   var host=document.getElementById('sheetBody');if(!host)return;
@@ -2607,7 +2604,7 @@ function openGuestGate(feature){
   openSheet();
 }
 function selRole(el,r){BWK_ROLE=r;var cs=document.querySelectorAll('.role-chip');for(var i=0;i<cs.length;i++){cs[i].classList.remove('on');}el.classList.add('on');}
-function enterApp(){closeIntro();var u=bwkUser();if(u&&(u.google||u.guest)){applyUser(u);}else{try{localStorage.removeItem('bwkUser');}catch(e){}setTimeout(openLogin,460);}}
+function enterApp(){closeIntro();var u=bwkUser();if(u&&u.google){applyUser(u);}else{try{localStorage.removeItem('bwkUser');}catch(e){}setTimeout(openLogin,460);}}
 function triToggle(node){var a=node.parentNode;if(a){a.classList.toggle('open');}}
 function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
@@ -2696,13 +2693,7 @@ function _sosName(){var u='Pendaki';try{var raw=localStorage.getItem('bwkUser');
     if(u&&u.google){
       var el=document.getElementById('sosStatus');
       if(el)el.insertAdjacentHTML('beforeend','<div style="margin-top:10px;color:#f59e0b;font-size:12px;font-weight:700">📡 '+q.length+' SOS offline menunggu dikirim. Pastikan koneksi internet.</div>');
-      else toastx(q.length+' SOS offline menunggu pengiriman','ok');
-    }else{
-      // Belum login Google — hapus antrian lama, device ID tidak valid untuk akun baru
-      localStorage.removeItem('bwkSosQueue');
-      localStorage.removeItem('bwkActiveSos');
-      localStorage.removeItem('bwkLastSosLat');
-      localStorage.removeItem('bwkLastSosLng');
+      else if(window.toast)window.toast(q.length+' SOS offline menunggu pengiriman','ok');
     }
   }}catch(e){}
 })();
@@ -2894,14 +2885,14 @@ var ROLE_MAP={'songkranveo@gmail.com':'Admin','songkrangveo@gmail.com':'Admin','
 var _sb=null;
 function _sbClient(){if(_sb)return _sb;try{if(window.supabase&&window.supabase.createClient){_sb=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}return _sb;}
 function _sbUser(){var c=_sbClient();if(!c)return Promise.resolve(null);return c.auth.getUser().then(function(r){return (r&&r.data)?r.data.user:null;}).catch(function(){return null;});}
-function sbInsert(table,row){var allowed={reports:1,simaksi:1,jurnal:1};var c=_sbClient();if(!c||!allowed[table]||!row||typeof row!=='object')return Promise.resolve({ok:false});return _sbUser().then(function(u){if(!u)return {ok:false};var clean=Object.assign({},row);clean.user_id=u.id;clean.user_email=(u.email||'').slice(0,254);if(!clean.user_name){clean.user_name=((u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||clean.user_email||'Pengguna').slice(0,80);}return c.from(table).insert(clean).then(function(res){return {ok:!res.error,error:res.error};});}).catch(function(e){return {ok:false,error:e};});}
+function sbInsert(table,row){var allowed={reports:1,simaksi:1,jurnal:1};var c=_sbClient();if(!c||!allowed[table]||!row||typeof row!=='object')return Promise.resolve({ok:false});return _sbUser().then(function(u){if(!u)return {ok:false};var clean=Object.assign({},row);clean.user_id=u.id;clean.user_email=(u.email||'').slice(0,254);if(!clean.user_name){clean.user_name=((u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||(clean.user_email?String(clean.user_email).split('@')[0]:'')||'Pendaki').slice(0,80);}return c.from(table).insert(clean).then(function(res){return {ok:!res.error,error:res.error};});}).catch(function(e){return {ok:false,error:e};});}
 window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(pilihAkun){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}var opt={redirectTo:location.origin+location.pathname};if(pilihAkun)opt.queryParams={prompt:'select_account'};c.auth.signInWithOAuth({provider:'google',options:opt});};
 function _fromGoogle(su){try{
   var m=su.user_metadata||{};
   var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();
-  var name=m.full_name||m.name||(email?email.split('@')[0]:'Pengguna');
+  var name=m.full_name||m.name||(email?email.split('@')[0]:'Pendaki');
   var owner='';try{owner=(localStorage.getItem('bwkOwner')||'').toLowerCase().trim();}catch(e){}
   if(email&&owner&&owner!==email){
     /* Data tampilan lama dibersihkan, tetapi progres akun tersimpan di kunci per-email. */
@@ -2958,7 +2949,7 @@ function _blDate(v){try{return new Date(v).toLocaleDateString('id-ID',{day:'2-di
 function _blDuration(r){if(!r.active)return 'Blokir dicabut';if(!r.expires_at)return 'Permanen';var ms=new Date(r.expires_at).getTime()-Date.now();if(ms<=0)return 'Masa blokir berakhir';var d=Math.max(1,Math.ceil(ms/86400000));return d+' hari tersisa · s/d '+_blDate(r.expires_at);}
 function _blacklistForm(){return `<div class='bl-form'><b>⛔ Tambah Larangan Mendaki</b><div class='bl-grid'><input id='bl-name' placeholder='Nama pendaki / individu'/><input id='bl-ktp' inputmode='numeric' maxlength='16' placeholder='No. KTP · 16 digit'/><input id='bl-email' type='email' placeholder='Email akun (opsional)'/><select id='bl-duration'><option value='7'>7 hari</option><option value='30'>30 hari</option><option value='90'>90 hari</option><option value='0'>Permanen</option></select><select id='bl-violation' onchange='blacklistReasonPreset(this.value)'><option value=''>Pilih jenis pelanggaran</option><option value='Membakar dan membuang sampah sembarangan di kawasan Gunung Bawakaraeng.'>Membakar & membuang sampah sembarangan</option><option value='Membuang sampah sembarangan di jalur pendakian.'>Membuang sampah sembarangan</option><option value='Melakukan pembakaran tanpa izin di kawasan.'>Melakukan pembakaran tanpa izin</option><option value='Melanggar tata tertib dan arahan petugas kawasan.'>Melanggar tata tertib kawasan</option></select><textarea id='bl-reason' placeholder='Jelaskan kesalahan atau alasan larangan secara faktual.'></textarea></div><button class='btn g-brand' style='margin-top:10px' onclick='blacklistAdd()'>⛔ Simpan Larangan Mendaki</button></div>`;}
 function blacklistReasonPreset(v){var el=document.getElementById('bl-reason');if(el&&v)el.value=v;}
-function _renderBlacklist(rows,cloud){var b=document.getElementById('adminBody');if(!b)return;rows=rows||[];var active=rows.filter(function(r){return r.active!==false;});var html='<div class="amode">'+(cloud?'☁️ Daftar larangan mendaki tersimpan di server':'📴 Daftar larangan mendaki lokal')+'</div>'+_blacklistForm()+'<div class="sh"><span class="bar" style="background:#e5484d"></span><h3>Daftar Pendaki Dilarang Naik ('+active.length+')</h3></div>';if(!rows.length){b.innerHTML=html+'<div class="aempty">Belum ada pendaki dalam daftar larangan mendaki.</div>';return;}rows.forEach(function(r,i){var isOn=r.active!==false;var ref=cloud?JSON.stringify(r.id):i;var ident=r.identity_number?('No. KTP: '+r.identity_number):(r.user_email||r.email||'Identitas akun tidak dicatat');html+=`<div class='bl-card'><div class='bl-card-h'><div><b>${escapeHtml(r.display_name||r.name||'Pengguna')}</b><small>${escapeHtml(ident)}</small></div><span class='bl-chip ${isOn?'danger':'ok'}'>${isOn?'Dilarang Naik':'Dicabut'}</span></div><div class='bl-reason'><b>Kesalahan:</b> ${escapeHtml(r.reason||r.note||'-')}</div><div class='bl-meta'><span class='bl-chip'>Sejak ${_blDate(r.blacklisted_at||r.created_at)}</span><span class='bl-chip'>${_blDuration(r)}</span></div>${isOn?`<div class='bl-actions'><button class='btn gh' onclick='blacklistRevoke(${ref},${cloud?'true':'false'})'>✓ Cabut Larangan</button></div>`:''}</div>`;});b.innerHTML=html;}
+function _renderBlacklist(rows,cloud){var b=document.getElementById('adminBody');if(!b)return;rows=rows||[];var active=rows.filter(function(r){return r.active!==false;});var html='<div class="amode">'+(cloud?'☁️ Daftar larangan mendaki tersimpan di server':'📴 Daftar larangan mendaki lokal')+'</div>'+_blacklistForm()+'<div class="sh"><span class="bar" style="background:#e5484d"></span><h3>Daftar Pendaki Dilarang Naik ('+active.length+')</h3></div>';if(!rows.length){b.innerHTML=html+'<div class="aempty">Belum ada pendaki dalam daftar larangan mendaki.</div>';return;}rows.forEach(function(r,i){var isOn=r.active!==false;var ref=cloud?JSON.stringify(r.id):i;var ident=r.identity_number?('No. KTP: '+r.identity_number):(r.user_email||r.email||'Identitas akun tidak dicatat');html+=`<div class='bl-card'><div class='bl-card-h'><div><b>${escapeHtml(r.display_name||r.name||((r.user_email||r.email)?String(r.user_email||r.email).split('@')[0]:'Pendaki'))}</b><small>${escapeHtml(ident)}</small></div><span class='bl-chip ${isOn?'danger':'ok'}'>${isOn?'Dilarang Naik':'Dicabut'}</span></div><div class='bl-reason'><b>Kesalahan:</b> ${escapeHtml(r.reason||r.note||'-')}</div><div class='bl-meta'><span class='bl-chip'>Sejak ${_blDate(r.blacklisted_at||r.created_at)}</span><span class='bl-chip'>${_blDuration(r)}</span></div>${isOn?`<div class='bl-actions'><button class='btn gh' onclick='blacklistRevoke(${ref},${cloud?'true':'false'})'>✓ Cabut Larangan</button></div>`:''}</div>`;});b.innerHTML=html;}
 function blacklistAdd(){var name=(document.getElementById('bl-name').value||'').trim(),ktp=(document.getElementById('bl-ktp').value||'').replace(/\D/g,''),email=(document.getElementById('bl-email').value||'').trim().toLowerCase(),reason=(document.getElementById('bl-reason').value||'').trim(),days=+(document.getElementById('bl-duration').value||0);if(!name||!reason){toast('Isi nama dan alasan larangan','err');return;}if(ktp.length!==16){toast('No. KTP harus terdiri dari 16 digit','err');return;}var expires=days?new Date(Date.now()+days*86400000).toISOString():null;var row={display_name:name,identity_number:ktp,user_email:email||null,reason:reason,blacklisted_at:new Date().toISOString(),expires_at:expires,active:true};var c=(typeof _sbClient==='function')?_sbClient():null;if(c){_sbUser().then(function(u){if(u)row.created_by=u.id;return c.from('user_blacklist').insert(row);}).then(function(res){if(res&&res.error)throw res.error;toast('Pendaki masuk daftar larangan mendaki','ok');renderAdmin('blacklist');}).catch(function(e){toast('Gagal simpan larangan: '+((e&&e.message)||''),'err');});}else{var a=_aArr('bwkBlacklist');a.unshift(Object.assign({id:'local-'+Date.now()},row));_lsSet('bwkBlacklist',a);toast('Blacklist tersimpan di perangkat','ok');renderAdmin('blacklist');}}
 function blacklistRevoke(ref,cloud){if(!confirm('Cabut larangan mendaki individu ini?'))return;var done=function(){toast('Larangan mendaki dicabut','ok');renderAdmin('blacklist');};if(cloud){var c=_sbClient();if(!c)return;c.from('user_blacklist').update({active:false}).eq('id',ref).then(function(res){if(res&&res.error){toast('Gagal mencabut larangan','err');return;}done();}).catch(function(){toast('Gagal mencabut larangan','err');});}else{var a=_aArr('bwkBlacklist');if(a[ref])a[ref].active=false;_lsSet('bwkBlacklist',a);done();}}
 function renderAdmin(k){k=k||_curAdmin;_curAdmin=k;var b=document.getElementById('adminBody');if(!b)return;try{refreshBellBadge();}catch(e){}if(k==='operasi'){if(typeof opsDashboard==='function'){opsDashboard();}else{b.innerHTML='<div class="aempty">Memuat dashboard operasi…</div>';}return;}if(k==='adopsi'){if(typeof renderAdoptionAdmin==='function'){renderAdoptionAdmin();}else{b.innerHTML='<div class="aempty">Memuat pengajuan adopsi…</div>';}return;}if(k==='donasi'){if(typeof renderDonasiAdmin==='function'){renderDonasiAdmin();}else{b.innerHTML='<div class="aempty">Memuat donasi…</div>';}return;}if(k==='blacklist'){var c=(typeof _sbClient==='function')?_sbClient():null;if(c){b.innerHTML='<div class="aempty">Memuat daftar larangan mendaki…</div>';c.from('user_blacklist').select('*').order('blacklisted_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat daftar larangan.<br><small>'+escapeHtml(res.error.message||'')+'</small><br>Jalankan supabase-security.sql versi terbaru.</div>';return;}_renderBlacklist(res.data||[],true);}).catch(function(){_renderBlacklist(_aArr('bwkBlacklist'),false);});}else{_renderBlacklist(_aArr('bwkBlacklist'),false);}return;}var tbl=_ADMIN_TBL[k];var c=(typeof _sbClient==='function')?_sbClient():null;if(c&&tbl){b.innerHTML='<div class="aempty">Memuat…</div>';c.from(tbl).select('*').order('created_at',{ascending:false}).then(function(res){if(res.error){b.innerHTML='<div class="aempty">Gagal memuat dari server.<br><small>'+(res.error.message||'')+'</small><br>Pastikan SQL Supabase sudah dijalankan.</div>';return;}_renderRows(k,res.data||[],true);}).catch(function(){_renderRows(k,_localRows(k),false);});}else{_renderRows(k,_localRows(k),false);}}

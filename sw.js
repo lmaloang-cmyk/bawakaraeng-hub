@@ -1,7 +1,7 @@
-const CACHE='bwk-v76-tts-sos-fix';
+const CACHE='bwk-v77-login-gate';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
-  '/logo-blessing.js','/sk.js','/sos.js','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
+  '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
@@ -49,5 +49,16 @@ self.addEventListener('notificationclick',function(e){
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
     for(var i=0;i<list.length;i++){var c=list[i];if('focus' in c){if(c.navigate){try{c.navigate(url);}catch(e3){}}return c.focus();}}
     if(self.clients.openWindow)return self.clients.openWindow(url);
+  }));
+});
+
+// --- Background Sync: kirim SOS antrean saat koneksi pulih, walau aplikasi
+// sedang di latar belakang. Token sesi tidak ada di SW, jadi SW meminta
+// halaman yang terbuka melakukan flush; bila tidak ada halaman, browser akan
+// mengirim event sync lagi saat aplikasi dibuka berikutnya.
+self.addEventListener('sync',function(e){
+  if(!e||e.tag!=='bwk-sos-outbox')return;
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
+    (list||[]).forEach(function(c){try{c.postMessage({type:'bwk-sos-flush'});}catch(err){}});
   }));
 });

@@ -1,35 +1,23 @@
-﻿/* Operasi Pendakian: SOS aman, dashboard petugas, QR SIMAKSI, dan check-in offline. */
+/* Operasi Pendakian: SOS aman, dashboard petugas, QR SIMAKSI, dan check-in offline. */
 
 /* =====================================================================
    PEMUAT MODUL SOS
+   Modul JS sudah dimuat lewat <script> di index.html. Loader lama menyuntikkan
+   duplikat karena memeriksa src "/sos-*.js" sedangkan index.html memakai
+   "sos-*.js" (tanpa slash) — dua instance outbox bisa flush bersamaan.
+   Yang tersisa di sini hanya CSS + konstanta radius.
    ===================================================================== */
 (function(){
   try{
-    if(window.__bwkSosKitLoaded)return;
-    window.__bwkSosKitLoaded=true;
-    if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=20000;
-    var CSS='/sos-ui.css';
+    // Radius alarm diatur di sos.js (SOS_RADIUS) dan disaring server di api/operations.js
+    // + api/sos-push.js (RADIUS). Konstanta lama BWK_SOS_RADIUS_M dihapus dari sini
+    // karena tidak pernah dibaca siapa pun — hanya menyesatkan.
     if(!document.querySelector('link[data-bwk-sos-css]')){
       var l=document.createElement('link');
-      l.rel='stylesheet';l.href=CSS;l.setAttribute('data-bwk-sos-css','1');
+      l.rel='stylesheet';l.href='/sos-ui.css';l.setAttribute('data-bwk-sos-css','1');
       (document.head||document.documentElement).appendChild(l);
     }
-    var MODS=['/sos-pluscode.js','/sos-context.js','/sos-auth.js','/sos-outbox.js','/sos-relay.js'];
-    var parsing=(document.readyState==='loading');
-    for(var i=0;i<MODS.length;i++){
-      var src=MODS[i];
-      if(document.querySelector('script[src="'+src+'"]'))continue;
-      if(parsing){
-        document.write('<script src="'+src+'"><\/script>');
-      }else{
-        var s=document.createElement('script');
-        s.src=src;s.async=false;
-        (document.head||document.documentElement).appendChild(s);
-      }
-    }
-  }catch(e){
-    try{console.error('[BWK] pemuat modul SOS gagal:',e);}catch(_){}
-  }
+  }catch(e){}
 })();
 
 (function(){
@@ -329,14 +317,29 @@
     document.body.appendChild(x);
   }
 
-  window._opsNearby=function(lat,lng){return api('/api/operations?action=sos-nearby',{method:'POST',body:JSON.stringify({lat:lat,lng:lng})}).then(function(x){return x.items||[];});};
+  // FIX: sos-nearby adalah endpoint PUBLIK di server. Jangan lewat api() yang
+  // mewajibkan token — kalau sesi belum siap, pemantauan alarm mati total.
+  window._opsNearby=function(lat,lng){
+    return fetch('/api/operations?action=sos-nearby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:lat,lng:lng})}).then(function(r){
+      var ra=Number(r.headers&&r.headers.get?r.headers.get('Retry-After'):0)||0;
+      return r.json().catch(function(){return {};}).then(function(d){
+        if(!r.ok)throw apiErr((d&&d.error)||'Permintaan gagal',r.status,{retryAfter:ra,data:d});
+        return (d&&d.items)||[];
+      });
+    },function(){throw apiErr('Jaringan tidak tersedia',0);});
+  };
 
   function ensureCheckin(){var host=document.getElementById('peta');if(!host||document.getElementById('trailCheckin'))return;var box=document.createElement('div');box.id='trailCheckin';box.style.cssText='margin-top:20px;padding:12px;background:var(--card,#fff);border:1px solid var(--line,#e6e9ef);border-radius:12px';box.innerHTML='<div style="font-size:13px;font-weight:700;margin-bottom:10px">\u270D\ufe0f Check-in Pos</div><div style="display:flex;gap:8px;margin-bottom:8px"><select id="ciPos" style="flex:1;padding:8px;border:1px solid var(--line,#e6e9ef);border-radius:6px;font-size:12px"></select><button onclick="window.opsCheckin()" style="padding:8px 12px;background:#2b6fff;color:#fff;border:0;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer">\u2705 Check-in</button></div><div id="ciStatus" style="font-size:11px;color:var(--sub,#69758a)"></div>';host.parentNode.insertBefore(box,host.nextSibling);var sel=document.getElementById('ciPos');POS.forEach(function(p){var opt=document.createElement('option');opt.value=p[0];opt.textContent=p[1];sel.appendChild(opt);});checkinStatus();}
   window.opsCheckin=function(){var u=user();if(!u||!u.google){toastx('Masuk dengan Google diperlukan untuk check-in','err');return;}var s=document.getElementById('ciPos'),pick=POS.filter(function(p){return p[0]===s.value;})[0];if(!pick){toastx('Pilih pos terlebih dahulu','err');return;}navigator.geolocation.getCurrentPosition(function(p){var q=getJson(QUEUE_KEY,[]);q.push({user_email:u.email,user_name:u.name||'',position_name:pick[1],position_id:pick[0],lat:p.coords.latitude,lng:p.coords.longitude,timestamp:new Date().toISOString()});setJson(QUEUE_KEY,q);checkinStatus();toastx('\u2705 Check-in tercatat (akan sinkron saat online)','ok');syncCheckins();},function(){toastx('GPS tidak dapat diakses','err');});}
   function checkinStatus(){var el=document.getElementById('ciStatus'),q=getJson(QUEUE_KEY,[]);if(el)el.textContent=q.length?('\u23f3 '+q.length+' check-in menunggu sinkronisasi.'):'\u2705 Semua check-in tersampaikan.'}
   function syncCheckins(){if(!navigator.onLine)return;var q=getJson(QUEUE_KEY,[]);if(!q.length)return;var first=q[0];api('/api/operations?action=checkin',{method:'POST',body:JSON.stringify(first)}).then(function(){q.shift();setJson(QUEUE_KEY,q);checkinStatus();if(q.length)setTimeout(syncCheckins,500);}).catch(function(e){if(e&&e.status===429)setTimeout(syncCheckins,Math.max(5000,(e.retryAfter||10)*1000));});}
 
-  function isAdminClient(){var u=user();return !!(u&&u.role==='Admin');}
+  // FIX: selaraskan dengan server (lib/ops.js isAdmin = daftar email ADMIN_EMAILS).
+  // Dulu klien hanya cek role==='Admin', jadi admin versi email tidak pernah melihat
+  // tab Dashboard SOS dan sebaliknya. Klien kini menerima keduanya; otorisasi
+  // sebenarnya tetap ditegakkan server (user_metadata.role tidak dipercaya di server
+  // karena bisa diubah sendiri oleh pengguna lewat auth.updateUser).
+  function isAdminClient(){var u=user();if(!u)return false;if(u.role==='Admin')return true;var em=String(u.email||'').toLowerCase();try{if(window.ROLE_MAP&&window.ROLE_MAP[em]==='Admin')return true;}catch(e){}return false;}
   function addOpsTab(){if(!isAdminClient())return;var tabs=document.querySelector('.admin-tabs');if(tabs&&!document.getElementById('opsSosTab')){var b=document.createElement('button');b.id='opsSosTab';b.onclick=window.opsDashboard;b.style.cssText='padding:8px 14px;margin:4px;background:0;border:1px solid var(--line,#e6e9ef);border-radius:6px;cursor:pointer;font-weight:700;font-size:12px';b.textContent='\uD83D\uDCCB Dashboard SOS';tabs.appendChild(b);}}
 
   function safeCoord(v){return String(v==null?'':v).replace(/[^0-9.\-]/g,'').slice(0,20);}
