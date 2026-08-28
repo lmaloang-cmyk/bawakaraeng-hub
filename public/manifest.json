@@ -1,0 +1,21 @@
+{
+  "name": "Pintu Angin - Live Tracking",
+  "short_name": "Tracking",
+  "description": "Live tracking lokasi pendakian Gunung Bawakaraeng",
+  "start_url": "/?utm_source=pwa",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1a5fb4",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
