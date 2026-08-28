@@ -43,7 +43,7 @@
   html.dark #sosMon.bad{background:#3d1a20;border-color:#8c3340;color:#ffc9d0}
   `;var s=document.createElement('style');s.textContent=css;document.head.appendChild(s);}catch(e){}
 
-  var SOS_RADIUS=20000; // 20 KM radius - Mode Production (sebelumnya Infinity untuk testing)
+  var SOS_RADIUS=Infinity; // Mode Percobaan: no limit / tanpa batas radius (sebelumnya 20000 meter / 20 KM)
   var MAX_AGE_MIN=30;      // hanya alarm untuk SOS <=30 menit terakhir
   var POLL_ALARM=15000;    // alarm sedang tampil: cepat, supaya status "selesai" cepat terdeteksi
   var POLL_ACTIVE=25000;   // aplikasi terlihat & baru disentuh
