@@ -451,7 +451,8 @@
   .signav-loading{text-align:center;font-size:13px;padding:10px}
   .signav .btn.alt{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff}
   .jhint{font-size:12px;color:var(--sub);margin:8px 4px 2px;text-align:center;line-height:1.5}
-  .trailwrap{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .trailwrap{display:flex;flex-direction:row;gap:12px;margin-top:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .trailwrap .tcard{min-width:270px;max-width:270px;scroll-snap-align:start}
   .tcard{background:var(--card);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid #d5803b}
   .tcard .th{display:flex;align-items:center;gap:10px}
   .tcard .tic{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;flex:0 0 auto}
@@ -1094,7 +1095,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <div id="signalNav" class="signav" style="display:none"></div>
       <div class="jhint" style="margin-top:6px">⚠️ Titik sinyal adalah PERKIRAAN dari pengalaman umum pendaki &amp; dapat berubah tergantung operator, cuaca, dan perangkat. GPS tetap berfungsi walau tidak ada sinyal seluler.</div>
     </div>
-    <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3></div>
+    <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3><span style="margin-left:auto;font-size:11px;color:var(--sub);font-weight:700">Geser →</span></div>
     <div class="trailwrap" id="jalurTrails"></div>
   </section>
 

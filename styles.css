@@ -352,7 +352,8 @@
   .evt .ebtn.done{background:#c7ccd6}
   #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
   .jhint{font-size:12px;color:var(--sub);margin:8px 4px 2px;text-align:center;line-height:1.5}
-  .trailwrap{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .trailwrap{display:flex;flex-direction:row;gap:12px;margin-top:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .trailwrap .tcard{min-width:270px;max-width:270px;scroll-snap-align:start}
   .tcard{background:var(--card);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);border-left:5px solid #d5803b}
   .tcard .th{display:flex;align-items:center;gap:10px}
   .tcard .tic{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;flex:0 0 auto}

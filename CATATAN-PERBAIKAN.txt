@@ -1,29 +1,34 @@
-PERBAIKAN v17.2 — 28 Agustus 2026
+PERBAIKAN v17.3 — 28 Agustus 2026
 ==================================
 
-Cukup timpa 2 file ini di repo, lalu push/deploy:
+Timpa 1 file ini di repo, lalu push/deploy:
 
-  ops.js              -> di folder utama (root)
-  api/operations.js   -> di folder api/
+  ops.js   -> di folder utama (root)
+
+PENTING: file ops.js ini SUDAH TERMASUK perbaikan v17.2 (panel admin
+tanpa responder + dark mode check-in). Kalau v17.2 belum sempat dipasang,
+langsung pasang yang ini saja untuk ops.js (api/operations.js dari v17.2
+tetap perlu dipasang bila belum).
 
 YANG BERUBAH
 ------------
-1. Panel Admin -> Operasi: bagian "Responder Aktif" dan tombol
-   "Instruksi" dihapus (fitur responder memang sudah dimatikan dari
-   sisi pendaki, jadi bagian ini tidak akan pernah terisi).
-2. Server: endpoint sos-report dan sos-instructions ditutup
-   (tidak ada lagi yang memakainya).
-3. Dark mode: dropdown check-in Pos dan kolom input QR sekarang
-   memakai warna tema (latar gelap, huruf terang) — sebelumnya putih
-   polos sehingga hurufnya tidak terbaca.
+Panel "Check-in Pos" dipindah MASUK ke dalam halaman Peta Jalur,
+tepat di bawah peta + tombol lokasi + hiking tracker.
 
-OPSIONAL (tidak wajib)
-----------------------
-Tabel sos_responders di Supabase boleh dihapus:
-  drop table if exists sos_responders;
+Sebelumnya panel itu disisipkan SETELAH section Peta Jalur sebagai
+elemen lepas, sehingga:
+- tampil di SEMUA halaman (Beranda, Peta Jalur, dll)
+- di Beranda posisinya di dasar dan tertutup nav bawah
+- terlihat dobel/membingungkan
+
+Sekarang:
+- hanya tampil di halaman Peta Jalur (ikut tersembunyi/tampil
+  bersama halaman)
+- tidak tertutup nav bawah
+- tidak lagi muncul di Beranda
 
 CEK CEPAT SETELAH DEPLOY
 ------------------------
-- Panel Admin -> Operasi: hanya ada SOS Aktif, Riwayat SOS,
-  Check-in Terakhir.
-- Dark mode -> bagian Check-in Pos: tulisan Pos 1..Puncak terbaca.
+- Beranda: panel Check-in Pos hilang.
+- Peta Jalur: panel Check-in Pos ada di bawah peta, huruf terbaca
+  di dark mode, dan bisa dipakai check-in normal.
