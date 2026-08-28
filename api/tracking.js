@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   res.setHeader('Surrogate-Key', 'family-tracking');
 
   const act = String(req.query?.act || '').toLowerCase();
-  const methods = ['get', 'post'];
+  const methods = ['GET', 'POST'];
   if (!secureApi(req, res, methods)) return;
   if (!bodyWithin(req, MAX_PAYLOAD)) {
     return res.status(413).json({ error: 'Payload terlalu besar' });
