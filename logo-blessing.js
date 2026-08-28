@@ -1,4 +1,4 @@
-/* Shared click blessing for every Reichas Chelebes logo. */
+/* Shared click blessing for every RCS.CBS logo. */
 (function(){
   const message='Dengan nama-MU Yang Maha Pengasih, Maha Penyayang.';
   const targetSelector='img[src*="rc-logo"], .logo, .login-ic, .intro-icon, .in-ic.g-brand, .circle.g-brand';

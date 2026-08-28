@@ -1,7 +1,7 @@
 {
   "name": "Pintu Angin",
   "short_name": "Pintu Angin",
-  "description": "Pantau cuaca, jalur, keselamatan, pelaporan, dan konservasi Gunung Bawakaraeng bersama Reichas Chelebes.",
+  "description": "Pantau cuaca, jalur, keselamatan, pelaporan, dan konservasi Gunung Bawakaraeng bersama RCS.CBS.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

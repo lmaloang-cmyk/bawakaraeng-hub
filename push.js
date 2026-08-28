@@ -2,6 +2,9 @@
    Butuh: kunci VAPID publik (di bawah) + env VAPID_PRIVATE di server, tabel push_subscriptions
    di Supabase (jalankan supabase-push.sql), dan endpoint /api/sos-push. */
 (function(){
+  // Nilai hardcoded ini HANYA dipakai bila server /api/push-subscribe tidak bisa dihubungi
+  // setelah dua percobaan. Nilai AKTIF diambil dari server (lihat _serverKey() di bawah).
+  // Pastikan nilai ini sama persis dengan env VAPID_PUBLIC di Vercel bila perlu rotasi kunci.
   var VAPID_PUBLIC='BNqs6g7alS1MYpCgK4wgLHadQXtcAF6hGfOKm6x3hVT2cUhI1P4GuZwDKI2KbFaS-tGuyP1u7305B3nY_yI8qoM';
   var SUPPORTED=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
 
@@ -10,25 +13,117 @@
   function _b64(base64){var pad='='.repeat((4-base64.length%4)%4);var b=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');var raw=atob(b);var arr=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;}
   function _pos(){return new Promise(function(res){if(!navigator.geolocation){res(null);return;}navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lng:p.coords.longitude});},function(){res(null);},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});});}
 
-  function _store(sub){
+  // Server memilih penerima push memakai kolom lat/lng di push_subscriptions.
+  // Dulu kolom itu hanya diisi sekali saat mendaftar, jadi HP yang mendaftar di kota
+  // lalu naik gunung punya koordinat basi dan selalu tersaring keluar dari radius 20 km.
+  // Sekarang koordinat disegarkan setiap aplikasi dibuka, dengan throttle agar hemat kuota.
+  var LOC_TTL=600000, LOC_MOVE=250, _lastPush=0;
+  function _lastLoc(){try{return JSON.parse(localStorage.getItem('bwkPushLoc')||'null');}catch(e){return null;}}
+  function _saveLoc(o){try{localStorage.setItem('bwkPushLoc',JSON.stringify(o));}catch(e){}}
+  function _far(a,b){var R=6371000,tr=Math.PI/180,dLa=(b.lat-a.lat)*tr,dLo=(b.lng-a.lng)*tr;
+    var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a.lat*tr)*Math.cos(b.lat*tr)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));}
+
+  function _store(sub,force){
     try{
-      var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return;
-      _pos().then(function(pos){
+      var j=sub.toJSON();if(!j||!j.endpoint||!j.keys)return Promise.resolve(false);
+      var prev=_lastLoc();
+      // Jangan membanjiri endpoint: cukup kirim kalau data lama, pindah >250 m, atau dipaksa.
+      if(!force&&prev&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&(Date.now()-_lastPush<LOC_TTL))return Promise.resolve(false);
+      return _pos().then(function(pos){
+        if(!force&&pos&&prev&&prev.lat!=null&&prev.t&&(Date.now()-prev.t<LOC_TTL)&&_far(prev,pos)<LOC_MOVE)return false;
         var row={endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:_dev(),name:_name(),active:true,updated_at:new Date().toISOString()};
         if(pos){row.lat=pos.lat;row.lng=pos.lng;}
-        try{fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)}).catch(function(){});}catch(e){}
+        _lastPush=Date.now();
+        return fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)})
+          .then(function(r){return r.json().catch(function(){return {};}).then(function(d){
+            window._pushStatus={ok:r.ok,at:Date.now(),code:(d&&d.code)||'',error:r.ok?'':((d&&d.error)||('HTTP '+r.status)),located:!!pos};
+            if(r.ok&&pos)_saveLoc({lat:pos.lat,lng:pos.lng,t:Date.now()});
+            return r.ok;
+          });})
+          .catch(function(){window._pushStatus={ok:false,at:Date.now(),error:'jaringan'};return false;});
       });
-    }catch(e){}
+    }catch(e){return Promise.resolve(false);}
   }
 
-  function _subscribe(){
-    return navigator.serviceWorker.ready.then(function(reg){
-      return reg.pushManager.getSubscription().then(function(existing){
-        if(existing)return existing;
-        return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)});
-      });
-    }).then(function(sub){if(sub)_store(sub);return sub;});
+  // BUG FIX #4: Nilai VAPID_PUBLIC dulu ditanam keras di sini sebagai satu-satunya sumber.
+  // Bila env VAPID_PUBLIC di Vercel dirotasi atau berbeda satu karakter pun, setiap push
+  // subscription ditolak 403 secara permanen dan semua alarm SOS gagal tanpa jejak.
+  //
+  // Solusi berlapis:
+  // 1. Selalu ambil kunci dari server (/api/push-subscribe GET) — sumber kebenaran tunggal.
+  // 2. Bila server gagal dihubungi (offline / cold-start), coba satu kali lagi setelah 5 detik.
+  // 3. Baru jatuh ke nilai hardcoded di bawah HANYA setelah dua percobaan server gagal.
+  // 4. Catat sumber kunci di window._pushKeySource untuk debugging (lihat di DevTools).
+  //
+  // Nilai di bawah hanya sebagai last-resort — harus sama persis dengan VAPID_PUBLIC di Vercel.
+  var VAPID_PUBLIC_FALLBACK='BNqs6g7alS1MYpCgK4wgLHadQXtcAF6hGfOKm6x3hVT2cUhI1P4GuZwDKI2KbFaS-tGuyP1u7305B3nY_yI8qoM';
+  var _srvKey=null;
+  function _serverKey(){
+    if(_srvKey)return Promise.resolve(_srvKey);
+    function attempt(retry){
+      return fetch('/api/push-subscribe',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var k=d&&d.key?String(d.key):null;
+          if(k&&k.length>20){
+            _srvKey=k;
+            window._pushKeySource='server';
+            return _srvKey;
+          }
+          // Server merespons tapi tidak punya key — berarti VAPID_PUBLIC env kosong.
+          // Jatuh ke fallback dan tandai sebagai peringatan.
+          _srvKey=VAPID_PUBLIC_FALLBACK;
+          window._pushKeySource='fallback-no-env';
+          console.warn('[push] VAPID_PUBLIC belum diset di server, memakai nilai hardcoded. Isi env lalu redeploy.');
+          return _srvKey;
+        })
+        .catch(function(e){
+          if(!retry){
+            // Satu retry setelah 5 detik untuk mengatasi cold-start Vercel.
+            return new Promise(function(res){setTimeout(res,5000);}).then(function(){return attempt(true);});
+          }
+          // Kedua percobaan gagal — offline atau server error. Pakai fallback.
+          _srvKey=VAPID_PUBLIC_FALLBACK;
+          window._pushKeySource='fallback-network-error';
+          return _srvKey;
+        });
+    }
+    return attempt(false);
   }
+  // Bandingkan kunci langganan lama dengan kunci server: kalau kunci sudah dirotasi,
+  // langganan lama permanen tidak bisa dikirimi dan harus didaftarkan ulang.
+  function _sameKey(sub,key){
+    try{
+      var a=sub&&sub.options&&sub.options.applicationServerKey;if(!a)return true;
+      var x=new Uint8Array(a),y=_b64(key);
+      if(x.length!==y.length)return false;
+      for(var i=0;i<x.length;i++){if(x[i]!==y[i])return false;}
+      return true;
+    }catch(e){return true;}
+  }
+
+  function _subscribe(force){
+    if(!SUPPORTED)return Promise.resolve(null);
+    return Promise.all([navigator.serviceWorker.ready,_serverKey()]).then(function(a){
+      var reg=a[0],key=a[1];
+      return reg.pushManager.getSubscription().then(function(existing){
+        if(existing&&_sameKey(existing,key))return existing;
+        var next=function(){return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(key)});};
+        if(!existing)return next();
+        return existing.unsubscribe().then(next,next);
+      });
+    }).then(function(sub){if(sub)_store(sub,force);return sub;}).catch(function(){
+      window._pushStatus={ok:false,at:Date.now(),error:'langganan push gagal dibuat'};
+      return null;
+    });
+  }
+
+  // Dipanggil ops.js sebelum mengirim SOS, dan setiap aplikasi kembali ke depan.
+  window._sosRefreshPush=function(force){
+    try{if(!SUPPORTED||Notification.permission!=='granted')return Promise.resolve(null);}catch(e){return Promise.resolve(null);}
+    return _subscribe(!!force);
+  };
 
   // Dipanggil dari tombol "Aktifkan" (butuh gesture pengguna untuk minta izin notifikasi).
   window._sosEnablePush=function(){
@@ -58,4 +153,7 @@
     }catch(e){}
   }
   window.addEventListener('load',function(){setTimeout(_showBanner,4500);});
+  // Setiap aplikasi dibuka kembali, perbarui koordinat langganan supaya radius push akurat.
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)window._sosRefreshPush(false);});
+  window.addEventListener('online',function(){window._sosRefreshPush(false);});
 })();
