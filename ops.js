@@ -139,9 +139,26 @@
 
   function _badCoord(la,ln){var a=Number(la),b=Number(ln);return !isFinite(a)||!isFinite(b)||(a===0&&b===0);}
   function _freshFix(){
+    // GPS berlapis 3 tahap: akurat tinggi → akurat rendah → cache terakhir
+    // Penting untuk HP dengan baterai rendah (Battery Saver matiin GPS akurasi tinggi)
+    var CACHE_KEY='bwkLastSosCoords';
+    var MAX_AGE=5*60*1000; // 5 menit cache masih valid
     return new Promise(function(res){
       if(!navigator.geolocation){res(null);return;}
-      try{navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lng:p.coords.longitude});},function(){res(null);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});}catch(e){res(null);}
+      var done=false;
+      function finish(p){if(done)return;done=true;res(p);}
+      // Tahap 1: GPS akurasi tinggi (normal mode)
+      try{navigator.geolocation.getCurrentPosition(function(p){finish({lat:p.coords.latitude,lng:p.coords.longitude});},{enableHighAccuracy:true,timeout:8000,maximumAge:20000});}catch(e){if(done)return;}
+      // Tahap 2: GPS akurasi rendah ( Battery Saver friendly)
+      setTimeout(function(){
+        if(done)return;
+        try{navigator.geolocation.getCurrentPosition(function(p){finish({lat:p.coords.latitude,lng:p.coords.longitude});},function(){
+          // Tahap 3: Pakai cache terakhir
+          try{var raw=localStorage.getItem(CACHE_KEY);if(raw){var c=JSON.parse(raw);if(c&&c.lat&&c.lng&&Date.now()-c.ts<MAX_AGE){finish({lat:c.lat,lng:c.lng});return;}}
+          }catch(e2){}
+          finish(null);
+        },{enableHighAccuracy:false,timeout:10000,maximumAge:120000});}catch(e){finish(null);}
+      },9000);
     });
   }
 
