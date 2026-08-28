@@ -1,3 +1,0 @@
-Ganti file ini dengan gambar QRIS GoPay resmi RCS.CBS.
-Nama file harus tepat: qris-gopay.png
-Jangan gunakan QR yang dibuat sendiri karena tidak dapat menerima pembayaran QRIS.
