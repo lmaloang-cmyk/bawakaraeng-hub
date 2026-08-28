@@ -116,7 +116,7 @@ function _skStepHtml(){
     return head+`<div class='form-card'><div class='fld'><label>Foto KTP / Identitas Ketua <span style='color:#e5484d'>*</span></label><label class='skdrop' for='sk-ktp-inp'>${kp}</label><input id='sk-ktp-inp' type='file' accept='image/*' style='display:none' onchange='skUpload(this,&#39;ktp&#39;)'/></div><div class='fld'><label>Surat Pengantar / Proposal (opsional)</label><label class='skdrop' for='sk-doc-inp'>${dp}</label><input id='sk-doc-inp' type='file' accept='image/*' style='display:none' onchange='skUpload(this,&#39;doc&#39;)'/><small class='fhint'>Foto/scan surat permohonan atau proposal kegiatan yang jelas dan terbaca.</small></div><div class='skbtns'><button class='btn gh' onclick='skPrev()'>‹ Kembali</button><button class='btn g-indigo' onclick='skNext()'>Lanjut ›</button></div></div>`;
   }
   var req=['KTP / identitas ketua rombongan','Nomor WhatsApp aktif untuk notifikasi','Kesediaan membayar PNBP sesuai jalur','Mematuhi kuota, jalur resmi dan tata tertib kawasan','Membawa turun kembali seluruh sampah','Melapor kondisi darurat melalui tombol SOS'];
-  return head+`<div class='form-card'><b style='font-size:13px'>Surat Pernyataan Pemohon</b><ul class='skreq'>${req.map(function(x){return `<li>${x}</li>`;}).join('')}</ul><label class='skchk'><input type='checkbox' id='sk-setuju'/> <span>Saya menyatakan data dan berkas yang saya isi benar, serta menyanggupi seluruh ketentuan di atas.</span></label><div class='skbtns'><button class='btn gh' onclick='skPrev()'>‹ Kembali</button><button class='btn g-indigo' id='skSubmitBtn' onclick='skSubmit()'>🎫 Kirim Pengajuan</button></div><p class='note'>Setelah dikirim, pengajuan diverifikasi Tim RCS.CBS. Kode pembayaran PNBP dikirim via WhatsApp sebelum dokumen resmi terbit.</p></div>`;
+  return head+`<div class='form-card'><b style='font-size:13px'>Surat Pernyataan Pemohon</b><ul class='skreq'>${req.map(function(x){return `<li>${x}</li>`;}).join('')}</ul><label class='skchk'><input type='checkbox' id='sk-setuju'/> <span>Saya menyatakan data dan berkas yang saya isi benar, serta menyanggupi seluruh ketentuan di atas.</span></label><div class='skbtns'><button class='btn gh' onclick='skPrev()'>‹ Kembali</button><button class='btn g-indigo' id='skSubmitBtn' onclick='skSubmit()'>🎫 Kirim Pengajuan</button></div><p class='note'>Setelah dikirim, pengajuan diverifikasi Tim Reichas Chelebes. Kode pembayaran PNBP dikirim via WhatsApp sebelum dokumen resmi terbit.</p></div>`;
 }
 
 function skSubmit(){
@@ -136,7 +136,7 @@ function skSubmit(){
     _skForm={};_skKtp='';_skDoc='';_skKtpReady=false;_skDocReady=false;_skStep=1;_skTab='status';
     ['ajukan','status','info'].forEach(function(x){var bb=document.getElementById('sktab-'+x);if(bb)bb.classList.toggle('on',x==='status');});
     var a=document.getElementById('skApp');if(!a)return;
-    var msg='Halo Tim RCS.CBS, saya mengajukan SIMAKSI. Kode: '+code+' - Ketua: '+f.nama+' - '+jml+' org - '+tar.label+' - Naik '+f.naik+' s/d '+f.turun+' - WA saya: '+_waNorm(f.wa)+'. Mohon verifikasi. Terima kasih.';
+    var msg='Halo Tim Reichas Chelebes, saya mengajukan SIMAKSI. Kode: '+code+' - Ketua: '+f.nama+' - '+jml+' org - '+tar.label+' - Naik '+f.naik+' s/d '+f.turun+' - WA saya: '+_waNorm(f.wa)+'. Mohon verifikasi. Terima kasih.';
     var waAdmin='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent(msg);
     var sync=ok?`<div class='sknotice ok'>✅ Pengajuan berhasil tersimpan di server. Kami akan mengirim pembaruan ke WhatsApp ${_skEsc(_waNorm(f.wa))}.</div>`:`<div class='sknotice warn'>⚠️ Pengajuan tersimpan di perangkat ini, tetapi belum tersinkron ke server${err?': '+_skEsc(err):''}. Kirim detail ke petugas via WhatsApp agar tetap diproses.</div>`;
     a.innerHTML=`<div class='permit sk-ok'><h4>${ok?'✅ Pengajuan Berhasil Dikirim':'⚠️ Pengajuan Belum Tersinkron'}</h4><small>Nomor pengajuan — simpan atau screenshot</small><div class='code'>${_skEsc(code)}</div><div class='pdet'><span>Status awal</span><b>Menunggu Verifikasi</b></div><div class='pdet'><span>Ketua</span><b>${_skEsc(f.nama)}</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(tar.label)}</b></div><div class='pdet'><span>Estimasi PNBP</span><b>${_skEsc(_rupiah(amount))}</b></div></div>${sync}<a class='btn' style='background:#25D366;color:#fff;display:block;text-decoration:none;text-align:center;margin-top:10px' href='${waAdmin}' target='_blank' rel='noopener'>📲 Kirim Detail ke Petugas via WhatsApp</a><p class='note'>Verifikasi maksimal 1×24 jam pada hari kerja. Kode PNBP dan dokumen terbit dapat dilihat di menu SIMAKSI Saya.</p><button class='btn gh' onclick='skGo(&#39;status&#39;)'>👤 Buka SIMAKSI Saya</button>`;
@@ -188,10 +188,10 @@ function _skStatusCard(r){
   var statusText=rej?'Ditolak':(stage==='terbit'?'Dokumen Terbit':(stage==='dibayar'?'Pembayaran Dikonfirmasi':(stage==='menunggu_konfirmasi'?'Bukti Sedang Dicek':(stage==='diverifikasi'?'Menunggu Pembayaran':'Menunggu Verifikasi'))));
   var statusClass=rej?'no':(stage==='terbit'?'ok':(stage==='diverifikasi'||stage==='menunggu_konfirmasi'||stage==='dibayar'?'wait':''));
   if(rej){body=`<div class='sknotice err'>❌ Pengajuan belum dapat disetujui. Hubungi petugas via WhatsApp untuk mengetahui dokumen atau data yang perlu diperbaiki.</div>`;}
-  else if(stage==='diverifikasi'){var draft=_skPaymentDraft[r.code||''];var preview=draft?`<img class='skproof-preview' src='${_skEsc(draft)}' alt='Pratinjau bukti pembayaran'/>`:'';var inputId='sk-pay-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');body=`<div class='skbox pay'><b>💰 Menunggu Pembayaran PNBP</b><div class='pdet'><span>Kode Pembayaran</span><b>${_skEsc(r.pnbp_code||'-')}</b></div><div class='pdet'><span>Jumlah</span><b>${_skEsc(amt)}</b></div><div class='pdet'><span>Tujuan</span><b>GoPay 082320124040 a.n RCS.CBS</b></div><small>Transfer sesuai jumlah dan kode pembayaran. Setelah itu, unggah bukti di bawah agar petugas dapat memeriksa pembayaran.</small></div><div class='skproof'><b>📎 Unggah Bukti Pembayaran</b><p>Gunakan screenshot atau foto bukti transfer yang jelas. Format JPEG, PNG, atau WebP · maksimal 5 MB.</p>${preview}<label class='skproof-label' for='${inputId}'>${draft?'↻ Ganti Foto Bukti':'📷 Pilih Foto Bukti'}</label><input id='${inputId}' type='file' accept='image/jpeg,image/png,image/webp' onchange='skPaymentPick(this,${JSON.stringify(String(r.code||''))})'/><button class='btn g-indigo' ${draft?'':'disabled'} onclick='skPaymentSubmit(${JSON.stringify(String(r.code||''))})'>${draft?'📤 Kirim Bukti ke Petugas':'Pilih Foto Terlebih Dahulu'}</button></div>`;}
+  else if(stage==='diverifikasi'){var draft=_skPaymentDraft[r.code||''];var preview=draft?`<img class='skproof-preview' src='${_skEsc(draft)}' alt='Pratinjau bukti pembayaran'/>`:'';var inputId='sk-pay-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');body=`<div class='skbox pay'><b>💰 Menunggu Pembayaran PNBP</b><div class='pdet'><span>Kode Pembayaran</span><b>${_skEsc(r.pnbp_code||'-')}</b></div><div class='pdet'><span>Jumlah</span><b>${_skEsc(amt)}</b></div><div class='pdet'><span>Tujuan</span><b>GoPay 082320124040 a.n Reichas Chelebes</b></div><small>Transfer sesuai jumlah dan kode pembayaran. Setelah itu, unggah bukti di bawah agar petugas dapat memeriksa pembayaran.</small></div><div class='skproof'><b>📎 Unggah Bukti Pembayaran</b><p>Gunakan screenshot atau foto bukti transfer yang jelas. Format JPEG, PNG, atau WebP · maksimal 5 MB.</p>${preview}<label class='skproof-label' for='${inputId}'>${draft?'↻ Ganti Foto Bukti':'📷 Pilih Foto Bukti'}</label><input id='${inputId}' type='file' accept='image/jpeg,image/png,image/webp' onchange='skPaymentPick(this,${JSON.stringify(String(r.code||''))})'/><button class='btn g-indigo' ${draft?'':'disabled'} onclick='skPaymentSubmit(${JSON.stringify(String(r.code||''))})'>${draft?'📤 Kirim Bukti ke Petugas':'Pilih Foto Terlebih Dahulu'}</button></div>`;}
   else if(stage==='menunggu_konfirmasi'){var proof=_skAsset(r.payment_proof||'');body=`<div class='sknotice warn'>🔎 Bukti pembayaran sudah dikirim dan sedang diperiksa petugas. Dokumen SIMAKSI akan tersedia di kartu ini setelah pembayaran dikonfirmasi.</div>${proof?`<img class='skproof-preview' src='${_skEsc(proof)}' alt='Bukti pembayaran terkirim'/>`:''}`;}
   else if(stage==='dibayar'){body=`<div class='sknotice ok'>✅ Pembayaran telah dikonfirmasi. Petugas sedang menyiapkan dokumen SIMAKSI resmi Anda.</div>`;}
-  else if(stage==='terbit'){var safeCode=_skEsc(r.code||'');var docId='sk-doc-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');var qrPayload=(typeof window.simaksiQrPayload==='function')?window.simaksiQrPayload(r):('SIMAKSI '+r.code);var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent(qrPayload);body=`<div id='${docId}'><div class='permit'><h4>🎫 Dokumen SIMAKSI Resmi</h4><small>Gunung Bawakaraeng · RCS.CBS</small><div class='code'>${safeCode}</div><div class='qr'><img src='${qurl}' onerror='this.parentNode.innerHTML=&#39;📄&#39;'/></div><div class='pdet'><span>Ketua</span><b>${_skEsc(r.nama||'')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'')} orang</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Berlaku</span><b>${_skEsc(r.naik||'')} s/d ${_skEsc(r.turun||'')}</b></div><div class='tag ok'>✅ Sah dan Terverifikasi</div></div></div><button class='pdf-btn' onclick='printCard(&#39;${docId}&#39;)'>⬇️ Simpan / Cetak Dokumen</button>`;}
+  else if(stage==='terbit'){var safeCode=_skEsc(r.code||'');var docId='sk-doc-'+String(r.code||'x').replace(/[^a-zA-Z0-9_-]/g,'');var qrPayload=(typeof window.simaksiQrPayload==='function')?window.simaksiQrPayload(r):('SIMAKSI '+r.code);var qurl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent(qrPayload);body=`<div id='${docId}'><div class='permit'><h4>🎫 Dokumen SIMAKSI Resmi</h4><small>Gunung Bawakaraeng · Reichas Chelebes</small><div class='code'>${safeCode}</div><div class='qr'><img src='${qurl}' onerror='this.parentNode.innerHTML=&#39;📄&#39;'/></div><div class='pdet'><span>Ketua</span><b>${_skEsc(r.nama||'')}</b></div><div class='pdet'><span>Anggota</span><b>${_skEsc(r.jml||'')} orang</b></div><div class='pdet'><span>Jalur</span><b>${_skEsc(r.jalur||'-')}</b></div><div class='pdet'><span>Berlaku</span><b>${_skEsc(r.naik||'')} s/d ${_skEsc(r.turun||'')}</b></div><div class='tag ok'>✅ Sah dan Terverifikasi</div></div></div><button class='pdf-btn' onclick='printCard(&#39;${docId}&#39;)'>⬇️ Simpan / Cetak Dokumen</button>`;}
   else{body=`<div class='sknotice ok'>📨 Pengajuan diterima. Petugas akan memverifikasi maksimal 1×24 jam pada hari kerja. Pembaruan dikirim ke WhatsApp ${_skEsc(r.wa||'-')}.</div>`;}
   var wa='https://wa.me/'+_rcWA()+'?text='+encodeURIComponent('Halo, saya menanyakan status SIMAKSI kode '+(r.code||'')+' a.n '+(r.nama||'')+'.');
   return `<div class='skstat'><div class='skstat-h'><div><b>Nomor Pengajuan</b><div style='font-size:16px;margin-top:2px'>${_skEsc(r.code||'-')}</div></div><span class='skstat-badge ${statusClass}'>${statusText}</span></div><div class='skstat-meta'><div><small>Status</small><b>${statusText}</b></div><div><small>Kode PNBP</small><b>${_skEsc(r.pnbp_code||'Belum tersedia')}</b></div><div><small>Jalur</small><b>${_skEsc(r.jalur||'-')}</b></div><div><small>Jadwal</small><b>${_skEsc(r.naik||'-')} – ${_skEsc(r.turun||'-')}</b></div></div>${tl}${body}<a class='btn gh' style='text-decoration:none;text-align:center;display:block;margin-top:8px' href='${wa}' target='_blank' rel='noopener'>💬 Tanya Petugas via WhatsApp</a></div>`;
@@ -233,7 +233,7 @@ function _skAdminCard(r,ref,cloud){
 function skAdminAct(ref,cloud,action){
   var r=_skFindRow(ref,cloud);if(!r){toast('Data tidak ditemukan','err');return;}
   var patch={};var stageMsg='';
-  if(action==='verif'){var pc='PNBP'+Math.random().toString().slice(2,12);patch={stage:'diverifikasi',pnbp_code:pc};r.pnbp_code=pc;r.stage='diverifikasi';var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';stageMsg='Pengajuan SIMAKSI '+r.code+' a.n '+r.nama+' TERVERIFIKASI. Silakan bayar PNBP sejumlah '+amt+' dengan KODE PEMBAYARAN: '+pc+' ke GoPay 082320124040 a.n RCS.CBS. Kirim bukti transfer ke chat ini. Dokumen resmi terbit setelah pembayaran dikonfirmasi.';}
+  if(action==='verif'){var pc='PNBP'+Math.random().toString().slice(2,12);patch={stage:'diverifikasi',pnbp_code:pc};r.pnbp_code=pc;r.stage='diverifikasi';var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';stageMsg='Pengajuan SIMAKSI '+r.code+' a.n '+r.nama+' TERVERIFIKASI. Silakan bayar PNBP sejumlah '+amt+' dengan KODE PEMBAYARAN: '+pc+' ke GoPay 082320124040 a.n Reichas Chelebes. Kirim bukti transfer ke chat ini. Dokumen resmi terbit setelah pembayaran dikonfirmasi.';}
   else if(action==='bayar'){patch={stage:'dibayar'};r.stage='dibayar';stageMsg='Pembayaran PNBP untuk SIMAKSI '+r.code+' sedang kami konfirmasi. Dokumen akan segera diterbitkan. Terima kasih.';}
   else if(action==='terbit'){patch={stage:'terbit',astatus:'disetujui'};r.stage='terbit';r.astatus='disetujui';stageMsg='SELAMAT! Dokumen SIMAKSI '+r.code+' a.n '+r.nama+' telah TERBIT dan sah. Tunjukkan kode '+r.code+' saat registrasi di pos jalur. Salam lestari!';}
   else if(action==='tolak'){patch={stage:'ditolak',astatus:'ditolak'};r.stage='ditolak';r.astatus='ditolak';stageMsg='Mohon maaf, pengajuan SIMAKSI '+r.code+' belum dapat disetujui. Silakan balas chat ini untuk info perbaikan berkas.';}
@@ -251,41 +251,16 @@ function skAdminDelete(ref,cloud){
   if(!confirm('Hapus '+label+' SIMAKSI '+(r.code||'')+' secara permanen?'))return;
   var done=function(){try{renderAdmin('simaksi');}catch(e){}toast('Aktivitas SIMAKSI dihapus','ok');};
   if(cloud&&typeof _sbClient==='function'){
-    var c=_sbClient();if(c){
-      // BUG FIX #5: sebelumnya `ref` dipakai langsung sebagai Supabase row ID.
-      // Bila cloud=false, ref adalah index array numerik (mis. 0, 1, 2), bukan UUID.
-      // Bila jalur cloud diambil dengan ref numerik, query .eq('id', 0) tidak menemukan
-      // apa pun atau — lebih berbahaya — mencocokkan baris yang salah.
-      // Solusi: selalu pakai r.id (UUID dari database) untuk operasi cloud,
-      // dan r.code sebagai fallback identifikasi bila r.id tidak ada.
-      var rowId=r.id||r.code;
-      if(!rowId){toast('ID baris tidak ditemukan, tidak bisa menghapus','err');return;}
-      var col=r.id?'id':'code';
-      c.from('simaksi').delete().eq(col,rowId).then(function(res){
-        if(res&&res.error){toast('Gagal menghapus aktivitas','err');return;}
-        done();
-      }).catch(function(){toast('Gagal menghapus aktivitas','err');});
-      return;
-    }
+    var c=_sbClient();if(c){c.from('simaksi').delete().eq('id',ref).then(function(res){if(res&&res.error){toast('Gagal menghapus aktivitas','err');return;}done();}).catch(function(){toast('Gagal menghapus aktivitas','err');});return;}
   }
-  // Mode lokal: ref adalah index numerik array localStorage.
-  try{
-    var arr=_lsGet('bwkSimaksi',[]);
-    var idx=typeof ref==='number'?ref:-1;
-    if(idx<0){
-      // ref bukan angka (mis. UUID string dari card lokal) — cari lewat code.
-      for(var i=0;i<arr.length;i++){if(arr[i]&&(arr[i].id===ref||arr[i].code===ref)){idx=i;break;}}
-    }
-    if(idx>=0)arr.splice(idx,1);
-    _lsSet('bwkSimaksi',arr);
-  }catch(e){}
+  try{var arr=_lsGet('bwkSimaksi',[]);arr.splice(ref,1);_lsSet('bwkSimaksi',arr);}catch(e){}
   done();
 }
 
 function skWA(ref,cloud){
   var r=_skFindRow(ref,cloud);if(!r){toast('Data tidak ditemukan','err');return;}
   var stage=r.stage||'diajukan';var m='';
-  if(stage==='diverifikasi'){var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';m='Pengajuan SIMAKSI '+r.code+' terverifikasi. Kode pembayaran PNBP: '+(r.pnbp_code||'-')+' sejumlah '+amt+'. Bayar ke GoPay 082320124040 a.n RCS.CBS lalu kirim bukti ke sini.';}
+  if(stage==='diverifikasi'){var amt=r.pnbp_amount?_rupiah(r.pnbp_amount):'-';m='Pengajuan SIMAKSI '+r.code+' terverifikasi. Kode pembayaran PNBP: '+(r.pnbp_code||'-')+' sejumlah '+amt+'. Bayar ke GoPay 082320124040 a.n Reichas Chelebes lalu kirim bukti ke sini.';}
   else if(stage==='terbit'){m='Dokumen SIMAKSI '+r.code+' a.n '+r.nama+' sudah TERBIT dan sah. Tunjukkan kode '+r.code+' saat registrasi di pos jalur.';}
   else{m='Halo '+r.nama+', terkait pengajuan SIMAKSI '+r.code+'.';}
   var wa='https://wa.me/'+_waNorm(r.wa)+'?text='+encodeURIComponent(m);try{window.open(wa,'_blank');}catch(e){}
