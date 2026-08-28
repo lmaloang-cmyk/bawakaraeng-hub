@@ -1246,7 +1246,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
       <div class="pli" onclick="switchGoogleAccount()"><div class="pi g-blue">🔄</div><b>Ganti akun Google</b><span class="chev">›</span></div>
       <div class="pli" onclick="logoutUser()"><div class="pi g-brand">🚪</div><b>Keluar</b><span class="chev">›</span></div>
     </div>
-    <div class="appver">Pintu Angin · Versi 17</div>
+    <div class="appver">Pintu Angin · Versi 17.1</div>
   </section>
 
   <!-- PANTAU POHON -->
@@ -1819,7 +1819,7 @@ function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 var holdTimer=null,holdStart=0,holdFired=false,holdPointer=null,holdOrigin=null;
 var HOLD_MS=2000,HOLD_SLOP=48;
 function sosGuard(){document.getElementById('sheetBody').innerHTML='<h2 style="margin:0 0 8px;color:#b83232">🆘 Konfirmasi keadaan darurat</h2><p style="color:#59627a;line-height:1.55">SOS hanya untuk ancaman keselamatan nyata: cedera serius, tersesat, hipotermia, atau kondisi yang membutuhkan bantuan segera.</p><div class="sknotice warn" style="margin:12px 0"><b>Setelah dibuka, tahan tombol SOS selama 2 detik</b><br>Lokasi GPS akan diminta sebelum pesan bantuan disiapkan.</div><button class="btn" style="background:#c9443a;color:#fff" onclick="closeSheet();openSOS()">Saya dalam keadaan darurat</button><button class="btn" style="margin-top:8px" onclick="closeSheet()">Batal</button>';openSheet();}
-function openSOS(){document.getElementById('sos').classList.add('show');var s=document.getElementById('sosStatus');if(s){s.removeAttribute('data-locked');s.textContent='';}holdFired=false;holdStart=0;_holdFill(0);try{if(window._sosRefreshPush)window._sosRefreshPush(true);}catch(e){}}
+function openSOS(){document.getElementById('sos').classList.add('show');var s=document.getElementById('sosStatus');if(s){s.removeAttribute('data-locked');s.textContent='';}holdFired=false;holdStart=0;_holdFill(0);try{if(window._sosRefreshPush)window._sosRefreshPush(true);}catch(e){}try{if(window.BWKSosAuth&&window.BWKSosAuth.ensureSession){window.BWKSosAuth.ensureSession();}}catch(e){}}
 function openDontPanic(){try{sessionStorage.setItem('pintuReturn','sos');}catch(e){}window.location.href='dont-panic.html';}
 function closeDontPanic(){var box=document.getElementById('dontPanic');if(box)box.classList.remove('show');}
 function closeSOS(){document.getElementById('sos').classList.remove('show');cancelHold();}
@@ -2546,7 +2546,7 @@ function subnavFor(id){if(!NAV_SEQ.length){buildNavSeq();}var view=document.getE
     </div>
     <button class="login-google" onclick="loginGoogle()"><span class="gg">G</span> Masuk dengan Google</button>
     <p class="login-hint">Pintu Angin khusus pengguna terdaftar. Masuk dengan akun Google untuk melanjutkan.</p>
-    <div class="login-ver">Versi 17</div>
+    <div class="login-ver">Versi 17.1</div>
   </div>
 </div>
 <div id="profChip" class="prof-chip" onclick="logoutUser()"></div>
@@ -2604,7 +2604,7 @@ function openGuestGate(feature){
   openSheet();
 }
 function selRole(el,r){BWK_ROLE=r;var cs=document.querySelectorAll('.role-chip');for(var i=0;i<cs.length;i++){cs[i].classList.remove('on');}el.classList.add('on');}
-function enterApp(){closeIntro();var u=bwkUser();if(u&&u.google){applyUser(u);}else{try{localStorage.removeItem('bwkUser');}catch(e){}setTimeout(openLogin,460);}}
+function enterApp(){closeIntro();var u=bwkUser();if(u&&u.google&&u.email){applyUser(u);}else{try{localStorage.removeItem('bwkUser');}catch(e){}setTimeout(openLogin,460);}}
 function triToggle(node){var a=node.parentNode;if(a){a.classList.toggle('open');}}
 function openLogin(){var o=document.getElementById('loginOverlay');if(o){o.style.display='flex';o.classList.remove('hide');}try{var l=document.querySelector('.tri .node .circle img');if(l){var t=document.getElementById('loginLogo');if(t){t.src=l.src;}}}catch(e){}}
 function hideLogin(){var o=document.getElementById('loginOverlay');if(o){o.classList.add('hide');setTimeout(function(){o.style.display='none';},400);}}
@@ -2632,7 +2632,7 @@ function logoutUser(){if(confirm('Keluar dari akun ini?')){try{var _c=_sbClient(
   // Bersihkan semua data SOS & device agar akun baru tidak mewarisi data lama
   try{localStorage.removeItem('bwkDev');localStorage.removeItem('bwkSosQueue');localStorage.removeItem('bwkActiveSos');localStorage.removeItem('bwkLastSosLat');localStorage.removeItem('bwkLastSosLng');localStorage.removeItem('bwkMyAlertIds');localStorage.removeItem('bwkMySos');localStorage.removeItem('bwkSosDone');localStorage.removeItem('bwkSosSnooze');localStorage.removeItem('bwkSosCount');}catch(e){}
   localStorage.removeItem('bwkUser');localStorage.removeItem('bwkAiHistory');var c=document.getElementById('profChip');if(c){c.style.display='none';}location.reload();}}
-window.addEventListener('load',function(){var u=bwkUser();if(u){applyUser(u);}try{renderProfile();}catch(e){}});
+window.addEventListener('load',function(){var u=bwkUser();if(u&&u.google&&u.email){applyUser(u);}try{renderProfile();}catch(e){}});
 (function(){try{var r=_lsGet('bwkReports',null);if(r&&r.length){reports=r;if(typeof renderFeed==='function')renderFeed();}var j=_lsGet('bwkJurnal',null);if(j&&j.length){jurnalLogs=j;if(typeof renderJurnal==='function')renderJurnal();}var z=_lsGet('bwkZones',null);if(z&&z.length){for(var i=0;i<zones.length&&i<z.length;i++){if(typeof z[i]==='number')zones[i].planted=z[i];}if(typeof renderPantauStats==='function')renderPantauStats();if(typeof renderZones==='function')renderZones();}var e=_lsGet('bwkEvts',null);if(e&&e.length){for(var k=0;k<_evts.length&&k<e.length;k++){if(typeof e[k]==='number')_evts[k].reg=e[k];}if(typeof renderAgenda==='function')renderAgenda();}}catch(err){}})();
 </script>
 <script>
@@ -2890,9 +2890,16 @@ window.sbInsert=sbInsert;
 function _mapRole(email){email=(email||'').toLowerCase();return ROLE_MAP[email]||'Warga';}
 window.loginGoogle=function(pilihAkun){var c=_sbClient();if(!c){if(window.toast){toast('Butuh koneksi internet untuk login Google','err');}else{alert('Butuh internet untuk login Google');}return;}var opt={redirectTo:location.origin+location.pathname};if(pilihAkun)opt.queryParams={prompt:'select_account'};c.auth.signInWithOAuth({provider:'google',options:opt});};
 function _fromGoogle(su){try{
+  if(!su)return;
+  // Sesi anonim dari sos-auth.js (cadangan jalur SOS) BUKAN login aplikasi.
+  // Dulu sesi ini ikut diproses sebagai login: bwkUser ditulis dengan google:true
+  // padahal anonim → orang masuk tanpa Google. Sekarang ditolak tegas.
+  var _prov=(su.app_metadata&&su.app_metadata.provider)||'';
+  if(su.is_anonymous===true||_prov==='anonymous')return;
   var m=su.user_metadata||{};
   var email=(su.email||m.email||(su.identities&&su.identities[0]&&su.identities[0].identity_data&&su.identities[0].identity_data.email)||'').toLowerCase().trim();
-  var name=m.full_name||m.name||(email?email.split('@')[0]:'Pendaki');
+  if(!email)return; // tanpa email = bukan akun Google yang valid, abaikan
+  var name=m.full_name||m.name||email.split('@')[0];
   var owner='';try{owner=(localStorage.getItem('bwkOwner')||'').toLowerCase().trim();}catch(e){}
   if(email&&owner&&owner!==email){
     /* Data tampilan lama dibersihkan, tetapi progres akun tersimpan di kunci per-email. */
@@ -2973,7 +2980,7 @@ function adminDelX(k,ref,cloud){if(!confirm('Hapus item ini?'))return;if(cloud){
 <script src="chat.js"></script>
 <script src="hike.js"></script>
 <script src="lens-extras.js" defer></script>
-<script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">💚</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px;background:#e8f3ee;color:#1f6a4d;border:1px solid #cfe3d8;box-shadow:none" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script>
+<script>function openSupportHub(){document.getElementById('sheetBody').innerHTML='<div style="text-align:center;padding:4px 0 8px"><div style="font-size:38px">����</div><h2 style="margin:4px 0 5px">Dukung Gunung</h2><p style="margin:0;color:#667;font-size:13px">Pilih kontribusimu untuk konservasi Bawakaraeng.</p></div><button class="btn" style="background:linear-gradient(135deg,#26705a,#0f8765);color:#fff;margin-top:12px" onclick="closeSheet();go(\'adopsi\')">🌱 Adopsi Pohon <small style="opacity:.8">· Rawat hutan</small></button><button class="btn" style="background:linear-gradient(135deg,#d58b21,#b96a16);color:#fff;margin-top:9px" onclick="closeSheet();go(\'donasi\')">💛 Donasi Konservasi <small style="opacity:.8">· Dukung aksi lapangan</small></button><button class="btn" style="margin-top:9px;background:#e8f3ee;color:#1f6a4d;border:1px solid #cfe3d8;box-shadow:none" onclick="closeSheet();go(\'adopsi\')">📜 Unduh sertifikat adopsi</button>';openSheet();}</script>
 <style id="profcss">
 /* Profil: lanskap Bawakaraeng statis agar tetap ringan di ponsel. */
 #profil .phead{min-height:236px;box-sizing:border-box;padding:28px 20px 24px;background:radial-gradient(circle at 77% 18%,rgba(255,221,137,.96) 0 15px,rgba(255,221,137,.18) 16px 26px,transparent 27px),radial-gradient(circle at 15% 17%,rgba(255,255,255,.21) 0 1px,transparent 2px),radial-gradient(circle at 31% 30%,rgba(255,255,255,.20) 0 1px,transparent 2px),radial-gradient(circle at 51% 12%,rgba(255,255,255,.16) 0 1px,transparent 2px),linear-gradient(150deg,#123a57 0%,#176c75 47%,#259678 100%);box-shadow:0 14px 30px rgba(20,83,86,.28);isolation:isolate}

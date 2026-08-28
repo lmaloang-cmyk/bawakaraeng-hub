@@ -137,9 +137,20 @@
     setDisplayName: setDisplayName
   };
 
-  // Siapkan sesi lebih awal supaya tombol SOS tidak perlu menunggu jaringan
-  // pada detik-detik kritis.
+  // JANGAN membuat sesi anonim saat load: sesi anon memicu onAuthStateChange dan
+  // dulu sempat dianggap "login" oleh index.html (masuk tanpa Google). Sesi anonim
+  // kini dibuat malas — hanya saat jalur SOS benar-benar membutuhkannya (openSOS
+  // di index.html memanggil ensureSession, dan token() tetap bisa membuatnya).
+  // Di sini hanya menyegarkan catatan mode BILA sesi memang sudah ada.
   window.addEventListener('load', function () {
-    setTimeout(function () { ensureSession(); }, 4000);
+    setTimeout(function () {
+      currentSession().then(function (s) {
+        if (s && s.access_token) {
+          var isAnon = !!(s.user && (s.user.is_anonymous === true ||
+            (s.user.app_metadata && s.user.app_metadata.provider === 'anonymous')));
+          writeMode(isAnon ? 'anon' : 'google');
+        }
+      });
+    }, 4000);
   });
 })();
