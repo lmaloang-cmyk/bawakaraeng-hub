@@ -42,14 +42,18 @@
     try{
       var c=(typeof _sbClient==='function')?_sbClient():null;
       if(!c)return Promise.resolve('');
+      // PERBAIKAN: getSession() bisa return {data:{session:null}} tanpa throw.
+      // Dalam kasus itu, token kosong TETAP HARUS fallback ke anonim.
       return c.auth.getSession().then(function(r){
         var t=(r&&r.data&&r.data.session&&r.data.session.access_token)||null;
         if(t)return t;
+        // Sesi Google kosong/kedaluwarsa → WAJIB coba anonim
         if(typeof window.BWKSosAuth==='object'&&window.BWKSosAuth&&window.BWKSosAuth.token){
           return window.BWKSosAuth.token().catch(function(){return '';});
         }
         return '';
       }).catch(function(e){
+        // Timeout atau error koneksi → fallback ke anonim, jangan throw
         try{console.warn('[BWK] token() gagal ('+String(e.message||e)+'), coba anonim...');}catch(_){}
         if(typeof window.BWKSosAuth==='object'&&window.BWKSosAuth&&window.BWKSosAuth.token){
           return window.BWKSosAuth.token().catch(function(){return '';});
@@ -230,27 +234,25 @@
   function _bootOutbox(){
     try{
       if(!window.BWKSosOutbox)return;
-      if(window.BWKSosOutbox.setTokenProvider&&!window.__bwkOutboxTokenSet){
-        window.__bwkOutboxTokenSet=true;
-        window.BWKSosOutbox.setTokenProvider(function(){
-          return token().then(function(t){
-            if(t)return t;
-            if(window.BWKSosAuth&&window.BWKSosAuth.token)return window.BWKSosAuth.token();
-            return '';
-          }).catch(function(){return '';});
-        });
-      }
+      // PERBAIKAN: Jangan kunci __bwkOutboxTokenSet. Setel ulang setiap kali
+      // _bootOutbox dipanggil (load, online, visibility) supaya token provider
+      // selalu fresh — terutama bila sesi Google baru saja berhasil di-recovery.
+      window.BWKSosOutbox.setTokenProvider(function(){
+        return token().then(function(t){
+          if(t)return t;
+          // Fallback eksplisit ke anonim jika token() kosong
+          if(window.BWKSosAuth&&window.BWKSosAuth.token)return window.BWKSosAuth.token();
+          return '';
+        }).catch(function(){return '';});
+      });
       _migrateOldQueue();
+      // PENTING: Harus di-await supaya SOS benar-benar dikirim sebelum halaman tutup
       if(navigator.onLine){
         Promise.resolve(window.BWKSosOutbox.flush())
-          .catch(function(e){
-            try{console.warn('[BWK] flush() gagal:',e);}catch(_){}
-          })
+          .catch(function(){}) // Tetap lanjut meski error
           .then(function(){
-            try{
-              var act=getJson(ACTIVE_KEY,null);
-              if(act&&act.id&&window._pushWave)window._pushWave(act.id,'retry');
-            }catch(e){}
+            // Tambahkan delay kecil untuk memastikan request tersampaikan
+            try{if(window._pushWave&&_sosActive){window._pushWave(_sosActive.id,'retry');}}catch(e){}
           });
       }
     }catch(e){}

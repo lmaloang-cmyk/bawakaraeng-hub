@@ -175,7 +175,14 @@
         var c = window._sbClient();
         if (c && c.auth) {
           return c.auth.getSession().then(function (r) {
-            return (r && r.data && r.data.session && r.data.session.access_token) || '';
+            var t = (r && r.data && r.data.session && r.data.session.access_token) || null;
+            if (t) return t;
+            // PERBAIKAN: Jika getSession() return null (sesi kosong/kedaluwarsa),
+            // coba fallback ke BWKSosAuth jika tersedia.
+            if (window.BWKSosAuth && typeof window.BWKSosAuth.token === 'function') {
+              return window.BWKSosAuth.token().catch(function () { return ''; });
+            }
+            return '';
           }).catch(function () { return ''; });
         }
       }
