@@ -2,33 +2,18 @@
 
 /* =====================================================================
    PEMUAT MODUL SOS
-   ---------------------------------------------------------------------
-   Blok ini sengaja diletakkan di ops.js supaya index.html (1 MB) TIDAK
-   perlu diubah sama sekali. Saat ops.js sedang diurai oleh browser,
-   document.write menyisipkan tag <script> tepat setelah tag ops.js,
-   sehingga modul-modul di bawah dijamin selesai dieksekusi SEBELUM
-   sos.js berjalan. Bila ops.js dimuat dengan defer/async (readyState
-   bukan 'loading'), kita jatuh ke penambahan elemen dengan async=false
-   yang tetap menjaga urutan eksekusi.
-
-   Urutan wajib: pluscode -> context -> auth -> outbox -> relay
-   sos-mesh.js sengaja TIDAK dimuat (masih eksperimental).
    ===================================================================== */
 (function(){
   try{
     if(window.__bwkSosKitLoaded)return;
     window.__bwkSosKitLoaded=true;
-    // Default radius SOS harus sama dengan server (20 km). Mode uji coba Infinity
-    // membuat alarm/penyaringan jadi tidak konsisten dan mudah membingungkan.
     if(window.BWK_SOS_RADIUS_M==null)window.BWK_SOS_RADIUS_M=20000;
-
     var CSS='/sos-ui.css';
     if(!document.querySelector('link[data-bwk-sos-css]')){
       var l=document.createElement('link');
       l.rel='stylesheet';l.href=CSS;l.setAttribute('data-bwk-sos-css','1');
       (document.head||document.documentElement).appendChild(l);
     }
-
     var MODS=['/sos-pluscode.js','/sos-context.js','/sos-auth.js','/sos-outbox.js','/sos-relay.js'];
     var parsing=(document.readyState==='loading');
     for(var i=0;i<MODS.length;i++){
@@ -53,8 +38,6 @@
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function toastx(m,t){try{if(window.toast)window.toast(m,t||'ok');}catch(e){}}
   function user(){try{return typeof bwkUser==='function'?bwkUser():null;}catch(e){return null;}}
-  // PERBAIKAN 1: Sesi Google yang mati (refresh token gagal di sinyal buruk) tidak boleh
-  // mematikan tombol "Saya Aman" maupun pemantauan alarm: jatuh ke sesi anonim.
   function token(){
     try{
       var c=(typeof _sbClient==='function')?_sbClient():null;
@@ -62,13 +45,11 @@
       return c.auth.getSession().then(function(r){
         var t=(r&&r.data&&r.data.session&&r.data.session.access_token)||null;
         if(t)return t;
-        // Coba sesi anonim sebagai fallback
         if(typeof window.BWKSosAuth==='object'&&window.BWKSosAuth&&window.BWKSosAuth.token){
           return window.BWKSosAuth.token().catch(function(){return '';});
         }
         return '';
       }).catch(function(e){
-        // Timeout atau error koneksi → fallback ke anonim, jangan throw
         try{console.warn('[BWK] token() gagal ('+String(e.message||e)+'), coba anonim...');}catch(_){}
         if(typeof window.BWKSosAuth==='object'&&window.BWKSosAuth&&window.BWKSosAuth.token){
           return window.BWKSosAuth.token().catch(function(){return '';});
@@ -77,8 +58,6 @@
       });
     }catch(e){return Promise.resolve('');}
   }
-  // Error kini membawa kode status + Retry-After supaya pemanggil bisa membedakan
-  // "belum login" (401), "kuota penuh" (429), dan gangguan jaringan biasa.
   function apiErr(msg,status,extra){var e=new Error(msg);e.status=status||0;if(extra)Object.keys(extra).forEach(function(k){e[k]=extra[k];});return e;}
   function api(path,opt){opt=opt||{};return token().then(function(t){
     if(!t)throw apiErr('Login Google diperlukan',401);
@@ -96,9 +75,6 @@
   function _sosName(){try{var raw=localStorage.getItem('bwkUser');if(raw){var o=JSON.parse(raw);if(o&&o.name)return o.name;}var n=localStorage.getItem('bwkSosName');if(n)return n;return 'Pendaki';}catch(e){return 'Pendaki';}}
 
   // ===== Gelombang push berulang =====
-  // Satu tembakan push hanya menjangkau perangkat yang online pada detik itu.
-  // Selama SOS masih aktif, pengirim memicu gelombang ulang berkala sehingga HP yang
-  // tadinya mati sinyal / layar mati tetap kebagian notifikasi saat kembali online.
   var WAVE_EVERY=150000, WAVE_MAX=10, _waveTimer=null, _waveCount=0;
   function _pushWave(id,tag){
     if(id==null)return Promise.resolve(null);
@@ -157,10 +133,6 @@
     });
   }
 
-  // Koordinat kosong/nol (GPS belum terkunci saat tombol selesai ditahan, atau
-  // uji dari laptop tanpa GPS): dulu SOS seperti ini tersimpan sebagai baris 0,0
-  // bernama "Pendaki" yang tidak pernah membunyikan alarm siapa pun dan hanya
-  // memenuhi dashboard admin.
   function _badCoord(la,ln){var a=Number(la),b=Number(ln);return !isFinite(a)||!isFinite(b)||(a===0&&b===0);}
   function _freshFix(){
     return new Promise(function(res){
@@ -171,8 +143,6 @@
 
   window._sosPublish=function(lat,lng,name){
     if(!_badCoord(lat,lng))return _sosPublishSend(Number(lat),Number(lng),name);
-    // Coba kunci GPS satu kali lagi sebelum menyerah. SOS tanpa lokasi tidak
-    // diantrekan: ia tidak bisa ditolong dan hanya menjadi baris 0,0 di server.
     toastx('Mengunci GPS dulu\u2026','ok');
     return _freshFix().then(function(f){
       if(f&&!_badCoord(f.lat,f.lng))return _sosPublishSend(f.lat,f.lng,name);
@@ -220,12 +190,7 @@
   window._sosResolveMy=function(){
     var a=getJson(ACTIVE_KEY,null);
     if(!a||!a.id){toastx('Tidak ada SOS aktif pada perangkat ini','err');return;}
-    // Umpan balik langsung supaya pengguna tahu ketukannya teregister. Dulu tombol
-    // terasa "tidak bisa dipencet" karena tidak ada respons apa pun saat sesi atau
-    // jaringan sedang bermasalah.
     toastx('Menutup sinyal SOS\u2026','ok');
-    // Sertakan device + client_id terakhir: kalau sesi anonim sudah berganti,
-    // server tetap mengenali perangkat pengirim (lihat sos-resolve di server).
     var dev='';try{dev=localStorage.getItem('bwkDev')||'';}catch(e){}
     var cid='';try{var ids=JSON.parse(localStorage.getItem('bwkMyClientIds')||'[]');cid=ids[ids.length-1]||'';}catch(e){}
     api('/api/operations?action=sos-resolve',{method:'POST',body:JSON.stringify({id:a.id,device:dev,client_id:cid})}).then(function(){
@@ -254,7 +219,6 @@
       q.forEach(function(item){
         if(!item||!item.payload)return;
         if(item.ts&&(now-item.ts)>86400000)return;
-        // SOS lama tanpa koordinat hanya akan menjadi baris 0,0 baru — buang saja.
         if(_badCoord(item.payload.lat,item.payload.lng))return;
         try{window.BWKSosOutbox.enqueue(item.payload);moved++;}catch(e){}
       });
@@ -263,7 +227,6 @@
     }catch(e){}
   }
 
-  // PERBAIKAN 2: _bootOutbox() harus await flush() untuk memastikan SOS terkirim
   function _bootOutbox(){
     try{
       if(!window.BWKSosOutbox)return;
@@ -278,14 +241,12 @@
         });
       }
       _migrateOldQueue();
-      // PERBAIKAN KRITIS: Harus flush agar SOS benar terkirim sebelum halaman tutup
       if(navigator.onLine){
         Promise.resolve(window.BWKSosOutbox.flush())
           .catch(function(e){
             try{console.warn('[BWK] flush() gagal:',e);}catch(_){}
           })
           .then(function(){
-            // Tambahkan delay kecil untuk memastikan request tersampaikan
             try{
               var act=getJson(ACTIVE_KEY,null);
               if(act&&act.id&&window._pushWave)window._pushWave(act.id,'retry');
@@ -307,11 +268,7 @@
   window.addEventListener('bwk:sos-outbox',function(ev){
     var d=(ev&&ev.detail)||{};
     try{
-      // Event memakai properti "type", bukan "status" — dulu pengecekan d.status
-      // tidak pernah cocok sehingga pill ini tidak pernah tampil.
       if(d.type==='sent'){
-        // Adopsi SOS sudah dilakukan flush() memakai d.sosId (id server). Jangan
-        // mengadopsi d.id di sini: itu id antrean lokal, bukan id SOS di server.
         _outboxPill('SOS terkirim ke pusat',false);
         setTimeout(function(){_outboxPill('');},6000);
         return;
@@ -330,11 +287,26 @@
     }catch(e){}
   });
 
-  window.addEventListener('online',function(){_bootOutbox();});
+  window.addEventListener('online',function(){
+    try{console.log('[BWK] Status online terdeteksi, flush outbox...');}catch(e){}
+    _bootOutbox();
+    syncCheckins();
+  });
 
   window.addEventListener('load',function(){setTimeout(_bootOutbox,3000);});
 
-  function showActiveSos(){var old=document.getElementById('mySosActive');if(old)old.remove();var a=getJson(ACTIVE_KEY,null);if(!a||!a.id)return;var x=document.createElement('div');x.id='mySosActive';x.style.cssText='position:fixed;top:10px;right:10px;background:#e0154a;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:800;z-index:99997';x.textContent='\uD83D\uDE98 SOS AKTIF - '+new Date(a.created_at).toLocaleTimeString('id-ID');document.body.appendChild(x);}
+  // FIX: showActiveSos() harus buat tombol "Saya Aman", bukan hanya display
+  function showActiveSos(){
+    var old=document.getElementById('mySosActive');
+    if(old)old.remove();
+    var a=getJson(ACTIVE_KEY,null);
+    if(!a||!a.id)return;
+    var x=document.createElement('div');
+    x.id='mySosActive';
+    x.style.cssText='position:fixed;top:10px;right:10px;background:#e0154a;color:#fff;padding:12px;border-radius:8px;font-size:12px;font-weight:800;z-index:99997;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:180px';
+    x.innerHTML='<div>\uD83D\uDE98 SOS AKTIF</div><div style="font-size:10px;opacity:0.9">'+new Date(a.created_at).toLocaleTimeString('id-ID')+'</div><button onclick="window._sosResolveMy()" style="background:#fff;color:#e0154a;border:0;padding:8px 12px;border-radius:6px;font-weight:800;font-size:11px;cursor:pointer;width:100%">\u2713 Saya Aman</button>';
+    document.body.appendChild(x);
+  }
 
   window._opsNearby=function(lat,lng){return api('/api/operations?action=sos-nearby',{method:'POST',body:JSON.stringify({lat:lat,lng:lng})}).then(function(x){return x.items||[];});};
 
@@ -385,13 +357,7 @@
   function addPermitVerify(){if(!isAdminClient())return;var p=document.getElementById('adminPanel');if(!p||document.getElementById('opsPermitVerifier'))return;var el=document.createElement('div');el.id='opsPermitVerifier';el.style.cssText='margin-top:20px;padding:12px;background:var(--card,#fff);border:1px solid var(--line,#e6e9ef);border-radius:12px';el.innerHTML='<div style="font-size:13px;font-weight:700;margin-bottom:10px">\uD83D\uDD10 Verifikasi SIMAKSI (QR)</div><div style="display:flex;gap:8px"><input type="text" id="qrCode" placeholder="Scan atau paste kode QR..." style="flex:1;padding:8px;border:1px solid var(--line,#e6e9ef);border-radius:6px;font-size:12px" /><button onclick="window.opsVerifyPermit()" style="padding:8px 12px;background:#2b6fff;color:#fff;border:0;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer">Cek</button></div><div id="qrStatus" style="margin-top:8px;font-size:11px;color:var(--sub,#69758a)"></div>';p.appendChild(el);}
   window.opsVerifyPermit=function(code){if(!isAdminClient())return;var c=(code||document.getElementById('qrCode')||{}).value||prompt('Masukkan kode SIMAKSI dari QR / kartu:');if(!c||typeof c!=='string')c=String(code||'');c=c.trim().toUpperCase();if(!c)return;var qrSt=document.getElementById('qrStatus');if(qrSt)qrSt.textContent='Mengecek...';api('/api/operations?action=permit-verify',{method:'POST',body:JSON.stringify({code:c})}).then(function(d){if(qrSt)qrSt.innerHTML='<span style="color:#20c997">\u2705 '+esc(d.name||'Izin Sah')+' ('+esc(d.route||'rute')+', '+esc(d.naik||'?')+' - '+esc(d.turun||'?')+')</span>';if(document.getElementById('qrCode'))document.getElementById('qrCode').value='';}).catch(function(e){if(qrSt)qrSt.innerHTML='<span style="color:#e0154a">\u274c '+esc(e.message||'Izin tidak valid')+'</span>';});};
 
-  // PERBAIKAN 3: Reset backoff + recovery saat online kembali
   function boot(){showActiveSos();ensureCheckin();addOpsTab();addPermitVerify();syncCheckins();_bootOutbox();}
-  window.addEventListener('online',function(){
-    try{console.log('[BWK] Status online terdeteksi, reset backoff + percobaan ulang');}catch(e){}
-    _bootOutbox();
-    syncCheckins();
-  });
   window.addEventListener('load',function(){setTimeout(boot,1200);});
   document.addEventListener('visibilitychange',function(){if(!document.hidden){ensureCheckin();}});
 })();
