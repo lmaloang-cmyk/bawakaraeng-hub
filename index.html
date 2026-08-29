@@ -432,6 +432,8 @@
   .evt .ebtn{border:none;background:var(--g-green);color:#fff;font-weight:800;border-radius:10px;padding:10px 12px;font-family:var(--font);cursor:pointer;font-size:13px}
   .evt .ebtn.done{background:#c7ccd6}
   #jalurMap{height:300px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  #offMap{height:320px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);background:#dbe6ef}
+  .off-status{margin-top:10px;font-size:12px;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
   .sig-dot{width:12px;height:12px;border-radius:50%;align-self:center;flex:0 0 auto;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
   .sigmark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #2ecc71;border-radius:50%;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
   .signav{margin-top:12px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#0b1f3a,#132e4d);color:#eaf2ff;border:1px solid rgba(120,180,255,.25)}
@@ -886,9 +888,9 @@ html.dark .home-action{background:#202a3d;border-color:#34405a}html.dark .home-a
 .home-action:hover{transform:translateY(-3px);box-shadow:0 13px 22px rgba(16,36,61,.16)}.home-action:hover::after{transform:translateX(2px);background:rgba(255,255,255,.76)}.home-action:active{transform:scale(.97)}
 .home-action span{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 0 auto;font-size:21px;background:rgba(255,255,255,.62);box-shadow:0 5px 12px rgba(16,36,61,.10)}
 .home-action b{font-size:14px;line-height:1.15;margin-top:7px}.home-action small{font-size:11.5px;line-height:1.2;margin-top:3px;padding-right:22px}
-.home-action.permit{background:linear-gradient(145deg,#e7f8ee,#d9eee3);border-color:#bfdfcb}.home-action.route{background:linear-gradient(145deg,#e7f5ff,#d7eafb);border-color:#bdd9ef}.home-action.tracking{background:linear-gradient(145deg,#e3f2fd,#d0e8f7);border-color:#a8d4f0}.home-action.report{background:linear-gradient(145deg,#fff0e1,#f8dfc7);border-color:#eed0b1}.home-action.emergency{background:linear-gradient(145deg,#ffebe9,#f9d9d5);border-color:#efc1bb}
+.home-action.permit{background:linear-gradient(145deg,#e7f8ee,#d9eee3);border-color:#bfdfcb}.home-action.route{background:linear-gradient(145deg,#e7f5ff,#d7eafb);border-color:#bdd9ef}.home-action.tracking{background:linear-gradient(145deg,#e3f2fd,#d0e8f7);border-color:#a8d4f0}.home-action.report{background:linear-gradient(145deg,#fff0e1,#f8dfc7);border-color:#eed0b1}.home-action.emergency{background:linear-gradient(145deg,#ffebe9,#f9d9d5);border-color:#efc1bb}.home-action.offline{background:linear-gradient(145deg,#e3f6ee,#d2ecdf);border-color:#bcd9cc}.home-action.offline b{color:#1f7a5c}
 html.dark .home-action{border-color:rgba(255,255,255,.10);box-shadow:0 8px 18px rgba(0,0,0,.22)}html.dark .home-action::before{background:radial-gradient(circle,rgba(255,255,255,.16),transparent 68%)}html.dark .home-action::after{background:rgba(255,255,255,.12);color:#e8effa}html.dark .home-action span{background:rgba(255,255,255,.11);box-shadow:none}html.dark .home-action small{color:#bdc9dc}
-html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)}html.dark .home-action.permit b{color:#61d09b}html.dark .home-action.route{background:linear-gradient(145deg,#163a55,#152b46)}html.dark .home-action.route b{color:#78bdf0}html.dark .home-action.tracking{background:linear-gradient(145deg,#1c3052,#162845)}html.dark .home-action.tracking b{color:#8ec0f0}html.dark .home-action.report{background:linear-gradient(145deg,#4a2e1c,#382319)}html.dark .home-action.report b{color:#ffa858}html.dark .home-action.emergency{background:linear-gradient(145deg,#4b2426,#371b22)}html.dark .home-action.emergency b{color:#ff7770}
+html.dark .home-action.permit{background:linear-gradient(145deg,#163c31,#132e29)}html.dark .home-action.permit b{color:#61d09b}html.dark .home-action.route{background:linear-gradient(145deg,#163a55,#152b46)}html.dark .home-action.route b{color:#78bdf0}html.dark .home-action.tracking{background:linear-gradient(145deg,#1c3052,#162845)}html.dark .home-action.tracking b{color:#8ec0f0}html.dark .home-action.report{background:linear-gradient(145deg,#4a2e1c,#382319)}html.dark .home-action.report b{color:#ffa858}html.dark .home-action.emergency{background:linear-gradient(145deg,#4b2426,#371b22)}html.dark .home-action.emergency b{color:#ff7770}html.dark .home-action.offline{background:linear-gradient(145deg,#16332a,#12271f)}html.dark .home-action.offline b{color:#5fd3a2}
 @media(min-width:900px){
   body{background:#eef1f0}
   .phone{max-width:1180px;box-shadow:0 0 40px rgba(16,36,61,.12)}
@@ -1019,6 +1021,7 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         <div class="home-actions">
           <button class="home-action permit" onclick="go('simaksi')"><span>🎫</span><b>SIMAKSI</b><small>AJUKAN IZIN</small></button>
           <button class="home-action route" onclick="go('peta')"><span>🗺️</span><b>PETA JALUR</b><small>POS & SUMBER AIR</small></button>
+          <button class="home-action offline" onclick="go('petaoffline')"><span>📥</span><b>PETA OFFLINE</b><small>SIMPAN UNTUK GUNUNG</small></button>
           <button class="home-action report" onclick="go('lapor')"><span>📷</span><b>BUAT LAPORAN</b><small>KONDISI LAPANGAN</small></button>
           <button class="home-action tracking" onclick="openTrackingHub()"><span>📡</span><b>LIVE TRACKING</b><small>Pantau posisi aman</small></button>
           <button class="home-action emergency neon-breathe" onclick="sosGuard()"><span>🆘</span><b>DARURAT</b><small>TAHAN 2 DTK · DARURAT</small></button>
@@ -1101,6 +1104,16 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
     </div>
     <div class="sh" style="margin-top:18px"><span class="bar" style="background:var(--g-teal)"></span><h3>Pilihan Jalur Pendakian</h3><span style="margin-left:auto;font-size:11px;color:var(--sub);font-weight:700">Geser →</span></div>
     <div class="trailwrap" id="jalurTrails"></div>
+  </section>
+
+  <!-- PETA OFFLINE (STANDALONE) -->
+  <section id="petaoffline" class="view">
+    <div class="sec-title">Peta Offline 📡</div>
+    <div class="sec-sub">Simpan area peta & file jalur saat ada sinyal — buka lagi di gunung tanpa internet.</div>
+    <div id="offMap"></div>
+    <button class="locate-btn" onclick="offLocateMe()">📍 Lokasi Saya (GPS)</button>
+    <div class="off-status" id="offStatus">Menghitung penyimpanan…</div>
+    <div class="jhint">📥 <b>Simpan area</b> mengunduh tile peta yang terlihat (plus 3 level zoom) ke penyimpanan perangkat. 📂 <b>Unggah</b> membuka file .gpx / .kml / .geojson dan menyimpannya di perangkat. Setelah disimpan, peta &amp; file tetap terbuka saat offline — mirip Avenza, tapi langsung dari Pintu Angin.</div>
   </section>
 
   <!-- REGULASI -->
@@ -1517,7 +1530,7 @@ function go(id){
   document.getElementById(id).classList.add('active');
   var primary=['beranda','eksplor','komunitas','profil'];
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===id)});
-  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='donasi'){setTimeout(function(){try{if(typeof renderDonation==='function')renderDonation();}catch(e){}},60);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);setTimeout(function(){try{renderSignal();}catch(e){}},140);}else{try{if(typeof signalStopNav==='function')signalStopNav();}catch(e){}}if(id==='eksplor'){setTimeout(function(){try{enrichSpecies();}catch(e){}},40);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
+  if(id==='pantau'){setTimeout(initPantau,80);}if(id==='petaoffline'){setTimeout(initOffMap,80);}if(id==='donasi'){setTimeout(function(){try{if(typeof renderDonation==='function')renderDonation();}catch(e){}},60);}if(id==='lapor'){setTimeout(function(){updateGPS(document.querySelector('.gps button'));},120);}if(id==='profil'){setTimeout(renderProfile,20);}if(id==='peta'){setTimeout(initJalur,80);setTimeout(function(){try{renderElevProfile();}catch(e){}},100);setTimeout(function(){try{renderWater();}catch(e){}},130);setTimeout(function(){try{renderSignal();}catch(e){}},140);}else{try{if(typeof signalStopNav==='function')signalStopNav();}catch(e){}}if(id==='eksplor'){setTimeout(function(){try{enrichSpecies();}catch(e){}},40);}if(id==='jurnal'){renderJurnal();}if(id==='checklist'){renderChecklist();}if(id==='survival'){renderSurvival();}if(id==='biodiv'){renderBiodiv();}if(id==='arsip'){renderArsip();setTimeout(certSync,20);}if(id==='ekosistem'){renderEkosistem();}if(id==='simaksi'){setTimeout(renderSimaksi,20);}if(id==='beranda'){setTimeout(renderCat,20);}   try{subnavFor(id);}catch(e){}window.scrollTo({top:0,behavior:document.documentElement.classList.contains('perf-lite')?'auto':'smooth'});
 }
 function tick(){var d=new Date();document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' WITA';}
 
@@ -2135,6 +2148,53 @@ window.renderSignal=renderSignal;window.openSignal=openSignal;window.signalFindN
 var _jzc={ok:'#08a35f',warn:'#d5803b',danger:'#ff2d55'};
 var _jzt={ok:'Aman',warn:'Waspada',danger:'Bahaya'};
 function initJalur(){if(typeof ensureLeaflet==='function'){ensureLeaflet(_initJalur);}else{_initJalur();}}
+
+/* ===== Peta Offline Standalone ===== */
+var offMap=null;
+function initOffMap(){if(typeof ensureLeaflet==='function'){ensureLeaflet(_initOffMap);}else{_initOffMap();}}
+function _initOffMap(){
+  if(offMap||!document.getElementById('offMap'))return;
+  offMap=L.map('offMap',{scrollWheelZoom:false}).setView([-5.293,119.923],14);
+  var osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'\u00a9 OpenStreetMap',maxZoom:19,keepBuffer:3});
+  var topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'\u00a9 OpenTopoMap (CC-BY-SA)',maxZoom:17});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'\u00a9 Esri',maxZoom:19});
+  osm.addTo(offMap);
+  L.control.layers({'Peta':osm,'Topografi':topo,'Satelit':sat},{},{position:'topright'}).addTo(offMap);
+  L.control.scale({imperial:false,position:'bottomleft'}).addTo(offMap);
+  if(window.bwkMapOffline){
+    window.bwkMapOffline.addSaveAreaControl(offMap,{position:'topright'}).addTo(offMap);
+    window.bwkMapOffline.addUploadControl(offMap,{position:'topright'}).addTo(offMap);
+  }
+  try{_offRestoreFiles();}catch(e){}
+  try{_offStorageInfo();}catch(e){}
+}
+function _offRestoreFiles(){
+  if(!window.bwkMapFiles)return;
+  var items=bwkMapFiles.list()||[];
+  items.forEach(function(it){
+    try{bwkMapFiles.render(offMap,it.data||it.parsed||it,it.name||it.filename||'file');}catch(e){}
+  });
+}
+function _offStorageInfo(){
+  var el=document.getElementById('offStatus');if(!el)return;
+  if(navigator.storage&&navigator.storage.estimate){
+    navigator.storage.estimate().then(function(est){
+      var used=(est.usage||0)/1048576,quota=(est.quota||0)/1073741824;
+      el.innerHTML='\ud83d\udcbe Penyimpanan perangkat: <b>'+used.toFixed(1)+' MB</b> terpakai'+(quota?' dari ~'+quota.toFixed(1)+' GB':'')+' &mdash; tile &amp; file peta offline tersimpan aman di HP ini.';
+    }).catch(function(){el.textContent='\ud83d\udcbe Tile & file peta offline tersimpan di perangkat ini.';});
+  }else{el.textContent='\ud83d\udcbe Tile & file peta offline tersimpan di perangkat ini.';}
+}
+function offLocateMe(){
+  if(!offMap)return;
+  if(!navigator.geolocation){if(window.toast)toast('GPS tidak tersedia di perangkat ini','warn');return;}
+  if(window.toast)toast('Mencari posisi GPS\u2026','ok');
+  navigator.geolocation.getCurrentPosition(function(p){
+    var ll=[p.coords.latitude,p.coords.longitude];
+    if(offLocateMe._m){offMap.removeLayer(offLocateMe._m);}
+    offLocateMe._m=L.marker(ll,{icon:L.divIcon({className:'off-me',html:'<div style="width:18px;height:18px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(offMap).bindPopup('\ud83d\udccd Posisi Anda (\u00b1'+Math.round(p.coords.accuracy||0)+' m)').openPopup();
+    offMap.setView(ll,16,{animate:true});
+  },function(){if(window.toast)toast('GPS belum mendapat posisi. Coba di tempat terbuka.','warn');},{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
 function _initJalur(){
   if(!window.L){return;}
   if(!jalurMap){
@@ -2407,7 +2467,7 @@ function openNotif(){var items=[];
     fresh.forEach(function(r){
       items.push({ic:'📍',t:r.title||'Laporan',d:(r.desc||r.description||'').slice(0,70),tm:r.time||(r.created_at?r.created_at.slice(0,10):'')});
     });
-  }
+  }}catch(e){}
   // Tandai semua laporan sudah dilihat setelah user buka panel ini
   try{if(typeof reports!=='undefined'&&reports){reports.forEach(function(r){r._seen=Date.now();});}}catch(e){}
   // --- Empty state jujur (gak ada placeholder palsu) ---
@@ -2480,7 +2540,8 @@ var catData=[
    {a:"go('survival')",ic:'g-sunset',e:'shield',l:'Survival Kit'},
    {a:"go('checklist')",ic:'g-green',e:'backpack',l:'Checklist'},
    {a:"go('kompas')",ic:'g-teal',e:'compass',l:'Kompas'},
-   {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'},
+    {a:"go('peta')",ic:'g-blue',e:'map',l:'Peta Jalur'},
+    {a:"go('petaoffline')",ic:'g-brand',e:'map',l:'Peta Offline'},
    {a:"go('baro')",ic:'g-indigo',e:'mountain',l:'Baro & Altimeter'},
    {a:"go('jurnal')",ic:'g-blue',e:'compass',l:'Jurnal Pendaki'},
    {a:"go('agenda')",ic:'g-amber',e:'calendar',l:'Agenda'},
