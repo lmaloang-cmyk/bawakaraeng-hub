@@ -3234,5 +3234,7 @@ function renderAdoptionAdmin(){var b=document.getElementById('adminBody');if(!b)
 function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah benar. Terbitkan kode adopsi?'))return;var code=_rid('POH-'),c=_sbClient(),phone=_adPhone(wa);var waUrl=phone?('https://wa.me/'+phone+'?text='+encodeURIComponent(_adWaMessage(name,code))):null;c.from('adoption_requests').update({status:'terverifikasi',adoption_code:code,verified_at:new Date().toISOString()}).eq('id',id).then(function(r){if(r&&r.error)throw r.error;toast('Kode '+code+' diterbitkan','ok');renderAdoptionAdmin();if(waUrl){try{window.open(waUrl,'_blank','noopener');}catch(e){window.location.href=waUrl;}}}).catch(function(){toast('Gagal menerbitkan kode','err');});}
 </script>
 <script src="tracking-message-owner.js"></script>
+<script src="tracking-session-resume.js"></script>
+<script src="tracking-live-recovery.js"></script>
 </body>
 </html>

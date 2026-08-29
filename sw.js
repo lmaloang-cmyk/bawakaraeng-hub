@@ -1,7 +1,7 @@
-const CACHE='bwk-v78-netfirst';
+const CACHE='bwk-v80-tracking-gap';
 // Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
-  '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/tracker.html','/family-tracking.js'];
+  '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/tracker.html','/family-tracking.js','/tracking-session-resume.js','/tracking-live-recovery.js','/tracking-message-owner.js','/tracking-message-viewer.js','/tracking-plus.js','/tracking-sos.js'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));

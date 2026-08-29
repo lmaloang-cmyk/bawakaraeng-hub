@@ -338,7 +338,7 @@
       let map = null, marker = null, polyline = null, popupMarker = null;
       let sessionData = null, positions = [], watchTimer = null;
       let lastPosition = null;
-      let accuracyCircle = null, startMarker = null;
+      let accuracyCircle = null, startMarker = null, gapLayer = null;
       let _tkFollow = true, _tkRecenterBtn = null;
 
       // ===== HELPERS =====
@@ -903,38 +903,35 @@
       // ===== UPDATE POLYLINE =====
       function updatePolyline(positionsList) {
         if (!positionsList || positionsList.length < 2) return;
-
         positions = positionsList;
-        var _pts = document.getElementById('statPoints');
-        if (_pts) _pts.textContent = positions.length;
-
-        // API mengirim terbaru lebih dulu; dibalik agar animasi mengalir
-        // dari titik awal menuju posisi terkini.
-        var latlngs = positions.map(function (p) { return [p.lat, p.lng]; }).reverse();
-
-        if (polyline) { map.removeLayer(polyline); polyline = null; }
-
-        var opts = {
-          color: '#168a78', weight: 5, opacity: .9, smoothFactor: 1.15,
-          lineCap: 'round', lineJoin: 'round'
-        };
-
-        // Garis solid mempertahankan seluruh jejak yang telah dilalui dan lebih
-        // mudah dibaca daripada animasi putus-putus pada medan/topografi ramai.
-        polyline = L.polyline(latlngs, opts);
-        polyline.addTo(map);
-        if (polyline.bringToBack) polyline.bringToBack();
-
-        // Penanda titik awal perjalanan
-        var first = latlngs[0];
-        if (!startMarker) {
-          startMarker = L.circleMarker(first, {
-            radius: 5, color: '#fff', weight: 2,
-            fillColor: '#08b96f', fillOpacity: 1
-          }).addTo(map).bindPopup('Awal jejak');
-        } else {
-          startMarker.setLatLng(first);
+        var pts = document.getElementById('statPoints'); if (pts) pts.textContent = positions.length;
+        var ordered = positions.slice().reverse();
+        var segments = [[]], gaps = [];
+        for (var i=0;i<ordered.length;i++) {
+          if (i>0) {
+            var prevT=new Date(ordered[i-1].sent_at||ordered[i-1].at).getTime();
+            var curT=new Date(ordered[i].sent_at||ordered[i].at).getTime();
+            if (isFinite(prevT)&&isFinite(curT)&&curT-prevT>90000) {
+              gaps.push({lost:ordered[i-1],resumed:ordered[i],minutes:Math.round((curT-prevT)/60000)});
+              segments.push([]);
+            }
+          }
+          segments[segments.length-1].push([ordered[i].lat,ordered[i].lng]);
         }
+        segments=segments.filter(function(x){return x.length>1;});
+        if (polyline) { map.removeLayer(polyline); polyline=null; }
+        polyline=L.polyline(segments,{color:'#168a78',weight:5,opacity:.9,smoothFactor:1.15,lineCap:'round',lineJoin:'round'}).addTo(map);
+        if (polyline.bringToBack) polyline.bringToBack();
+        if (gapLayer) map.removeLayer(gapLayer);
+        gapLayer=L.layerGroup();
+        gaps.forEach(function(g){
+          L.circleMarker([g.lost.lat,g.lost.lng],{radius:7,color:'#fff',weight:2,fillColor:'#e0524d',fillOpacity:1}).bindTooltip('Sinyal/GPS hilang di sini · jeda '+g.minutes+' menit').addTo(gapLayer);
+          L.circleMarker([g.resumed.lat,g.resumed.lng],{radius:7,color:'#fff',weight:2,fillColor:'#2783de',fillOpacity:1}).bindTooltip('GPS tersambung kembali di sini').addTo(gapLayer);
+        });
+        gapLayer.addTo(map);
+        var first=[ordered[0].lat,ordered[0].lng];
+        if (!startMarker) startMarker=L.circleMarker(first,{radius:5,color:'#fff',weight:2,fillColor:'#08b96f',fillOpacity:1}).addTo(map).bindPopup('Awal jejak');
+        else startMarker.setLatLng(first);
       }
 
       // ===== UPDATE STATS =====
@@ -1109,6 +1106,7 @@
   </script>
   <script src="/tracking-plus.js"></script>
   <script src="/tracking-message-viewer.js"></script>
+  <script src="/tracking-live-recovery.js"></script>
   <script src="/tracking-sos.js"></script>
 </body>
 </html>
