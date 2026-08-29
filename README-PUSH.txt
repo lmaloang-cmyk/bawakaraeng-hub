@@ -1,18 +1,16 @@
-PATCH LIVE TRACKING + PESAN DI PETA
+OPTIMASI LIVE TRACKING RELIABLE
 
-1. WAJIB jalankan SQL ini satu kali di Supabase SQL Editor:
-   supabase/migrations/002_tracking_message.sql
+Push/timpa semua file dalam paket sesuai struktur. Tidak ada SQL baru.
 
-2. Setelah SQL sukses, push/timpa file:
-   - index.html
-   - tracker.html
-   - tracking-plus.js
-   - tracking-sos.js
-   - tracking-message-owner.js
-   - tracking-message-viewer.js
-   - api/tracking.js
+Peningkatan utama:
+- Heartbeat posisi+baterai foreground setiap 30 detik.
+- Antrean lokal maksimal 100 titik saat offline/gagal server.
+- Antrean dikirim ulang saat internet kembali, maksimal 10 titik per batch.
+- Waktu asli rekaman GPS dipertahankan saat antrean dikirim.
+- GPS watchdog me-restart pemantauan jika tidak ada fix >90 detik.
+- Status kecil menunjukkan live, akurasi, baterai, offline, atau antrean.
+- Sesi tetap pulih setelah refresh.
+- Celah GPS tetap ditandai dan tidak disambung palsu.
+- Sanitasi note/device pada tracker.
 
-3. Jangan ubah/hapus file SOS lama aplikasi.
-4. Deploy lalu hard refresh browser.
-
-Pesan maksimal 120 karakter. Hanya pemilik sesi aktif yang bisa memperbarui pesan.
+Setelah deploy: hard refresh atau tutup-buka PWA.

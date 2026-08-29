@@ -818,10 +818,10 @@
         // Meta info
         const metaLines = [];
         if (sessionData.note) {
-          metaLines.push(`📝 ${sessionData.note}`);
+          metaLines.push(`📝 ${escapeHtml(sessionData.note)}`);
         }
         if (sessionData.device_name) {
-          metaLines.push(`📱 ${sessionData.device_name}`);
+          metaLines.push(`📱 ${escapeHtml(sessionData.device_name)}`);
         }
         if (sessionData.mins_ago != null) {
           metaLines.push(`⏱️ ${sessionData.mins_ago} menit lalu`);

@@ -328,6 +328,7 @@ async function sendPosition(req, res, user) {
   const accuracy = b.accuracy == null ? NaN : Number(b.accuracy);
   const altitude = b.altitude == null ? NaN : Number(b.altitude);
   const batteryPct = b.battery_pct == null ? NaN : Number(b.battery_pct);
+  const requestedSentAt = b.sent_at ? new Date(b.sent_at).getTime() : NaN;
   const clientId = clean(String(b.client_id || ''), 64);
 
   if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId)) {
@@ -364,7 +365,9 @@ async function sendPosition(req, res, user) {
       accuracy_m: isFinite(accuracy) ? Math.max(0, Math.min(100000, Math.round(accuracy))) : null,
       altitude_m: isFinite(altitude) ? Math.max(-500, Math.min(12000, Math.round(altitude))) : null,
       battery_pct: isFinite(batteryPct) ? Math.max(0, Math.min(100, Math.round(batteryPct))) : null,
-      sent_at: new Date().toISOString(),
+      // Titik antrean offline tetap memakai waktu saat GPS merekamnya.
+      sent_at: isFinite(requestedSentAt) && requestedSentAt >= Date.now() - 7 * 86400000 && requestedSentAt <= Date.now() + 300000
+        ? new Date(requestedSentAt).toISOString() : new Date().toISOString(),
       client_id: clientId || null
     };
 
