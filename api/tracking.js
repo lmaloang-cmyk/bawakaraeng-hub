@@ -534,7 +534,9 @@ async function getLatestPosition(req, res) {
 // ===========================================================================
 async function getHistory(req, res) {
   const sessionId = req.query?.id;
-  const limit = Math.min(500, Math.max(1, parseInt(req.query?.limit) || 100));
+  // Sesi standar empat jam dapat menghasilkan sekitar 720 titik pada interval
+  // 20 detik. Batas lama 500 memotong bagian awal jejak di peta keluarga.
+  const limit = Math.min(2000, Math.max(1, parseInt(req.query?.limit) || 100));
   const hours = Math.min(168, Math.max(1, parseInt(req.query?.hours) || 24));
 
   if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId)) {

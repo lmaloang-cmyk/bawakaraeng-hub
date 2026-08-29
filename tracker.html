@@ -197,26 +197,28 @@
     }
     .leaflet-control-layers-expanded { padding:10px 14px 10px 10px; font-size:13px; }
 
-    /* Titik hidup: denyut halus supaya terlihat bergerak, bukan gambar mati */
-    .tk-dot { position:relative; width:24px; height:24px; }
-    .tk-dot i {
-      position:absolute; inset:0; border-radius:50%;
-      background:linear-gradient(135deg,#2b6fff,#5e9dff);
-      border:3px solid #fff; box-shadow:0 4px 14px rgba(43,111,255,.45);
+    /* Penanda posisi: hati hidup lebih mudah dikenali keluarga daripada dot GPS. */
+    .tk-heart { position:relative; width:36px; height:36px; display:grid; place-items:center; }
+    .tk-heart::before {
+      content:''; position:absolute; inset:-7px; border-radius:50%;
+      background:rgba(229,48,76,.2); animation:tkHeartPing 1.8s ease-out infinite;
     }
-    .tk-dot b {
-      position:absolute; inset:-11px; border-radius:50%;
-      background:rgba(43,111,255,.25);
-      animation:tkPing 2.2s cubic-bezier(.2,.7,.4,1) infinite;
+    .tk-heart i {
+      position:relative; z-index:2; width:32px; height:32px; display:grid; place-items:center;
+      border:2px solid #fff; border-radius:11px; background:linear-gradient(145deg,#ff5b70,#d9143f);
+      color:#fff; font-size:18px; font-style:normal; line-height:1;
+      box-shadow:0 5px 16px rgba(217,20,63,.4); animation:tkHeartBeat 1.35s ease-in-out infinite;
     }
-    @keyframes tkPing {
-      0% { transform:scale(.45); opacity:.85 }
-      70% { opacity:0 }
-      100% { transform:scale(1.65); opacity:0 }
+    .tk-heart em {
+      position:absolute; z-index:1; bottom:-7px; width:10px; height:10px;
+      background:#d9143f; border-right:2px solid #fff; border-bottom:2px solid #fff;
+      transform:rotate(45deg); border-radius:1px;
     }
+    @keyframes tkHeartBeat { 0%,58%,100%{transform:scale(1)} 66%{transform:scale(1.16)} 74%{transform:scale(.96)} 82%{transform:scale(1.08)} }
+    @keyframes tkHeartPing { 0%{transform:scale(.55);opacity:.8} 78%,100%{transform:scale(1.45);opacity:0} }
     /* Data basi lebih dari 15 menit: denyut berhenti, warna meredup */
-    .tk-stale .tk-dot i { background:linear-gradient(135deg,#94a3b8,#cbd5e1); box-shadow:none; }
-    .tk-stale .tk-dot b { animation:none; background:rgba(148,163,184,.2); }
+    .tk-stale .tk-heart i { background:linear-gradient(135deg,#94a3b8,#64748b); box-shadow:none; animation:none; }
+    .tk-stale .tk-heart::before { animation:none; background:rgba(148,163,184,.2); }
 
     /* Tombol pusatkan ulang di dalam peta */
     .tk-recenter {
@@ -225,7 +227,7 @@
       font-size:16px; cursor:pointer; border:none; line-height:1;
     }
     .tk-recenter.off { background:var(--g-brand); color:#fff; }
-    @media (prefers-reduced-motion:reduce) { .tk-dot b { animation:none; } }
+    @media (prefers-reduced-motion:reduce) { .tk-heart::before,.tk-heart i { animation:none; } }
 
     /* Buttons */
     .btn-row { display:flex; gap:10px; margin-bottom:14px; }
@@ -729,7 +731,9 @@
           // dari data siklus ini, bukan siklus sebelumnya.
           let hist = [];
           try {
-            const histRes = await fetch(`${API}?act=history&id=${SESSION_ID}&token=${TOKEN}&limit=100&hours=4`);
+            // Ambil seluruh jejak sesi (hingga 7 hari / 2.000 titik), bukan hanya
+            // cuplikan empat jam, agar jalur yang sudah dilalui tetap terlihat.
+            const histRes = await fetch(`${API}?act=history&id=${SESSION_ID}&token=${TOKEN}&limit=2000&hours=168`);
             const histData = await histRes.json();
             if (histData.ok && Array.isArray(histData.positions) && histData.positions.length) {
               hist = histData.positions;
@@ -849,9 +853,9 @@
         if (!marker) {
           const icon = L.divIcon({
             className: 'tk-marker',
-            html: '<div class="tk-dot"><b></b><i></i></div>',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+            html: '<div class="tk-heart" aria-label="Posisi pendaki"><i>♥</i><em></em></div>',
+            iconSize: [36, 42],
+            iconAnchor: [18, 42]
           });
           marker = L.marker(latLng, { icon: icon, zIndexOffset: 1000 }).addTo(map).bindPopup(popupHtml);
           map.setView(latLng, 16);
@@ -907,14 +911,13 @@
         if (polyline) { map.removeLayer(polyline); polyline = null; }
 
         var opts = {
-          color: '#2b6fff', weight: 5, opacity: .85, smoothFactor: 1.4,
-          dashArray: [12, 22], delay: 1000, pulseColor: '#ffffff'
+          color: '#e5304c', weight: 5, opacity: .9, smoothFactor: 1.15,
+          lineCap: 'round', lineJoin: 'round'
         };
 
-        // leaflet-ant-path membuat jejak mengalir seperti arus.
-        // Kalau CDN-nya gagal dimuat, garis biasa tetap tampil.
-        var antPath = (L.polyline && L.polyline.antPath) ? L.polyline.antPath : (L.antPath || null);
-        polyline = antPath ? antPath(latlngs, opts) : L.polyline(latlngs, opts);
+        // Garis solid mempertahankan seluruh jejak yang telah dilalui dan lebih
+        // mudah dibaca daripada animasi putus-putus pada medan/topografi ramai.
+        polyline = L.polyline(latlngs, opts);
         polyline.addTo(map);
         if (polyline.bringToBack) polyline.bringToBack();
 
