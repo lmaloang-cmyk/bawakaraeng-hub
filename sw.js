@@ -14,6 +14,8 @@ const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   // Modul peta offline (parser GPX/KML/GeoJSON + tile downloader UI)
   '/map-files.js',
   '/map-offline.js',
+  // Halaman tim & transparansi
+  '/tim.html',
   // Hotspot tile satelit (area Basecamp Lembanna + Puncak Bawakaraeng, zoom 15).
   // 8 tile × ~20KB = ~160KB pre-cache. Pendaki langsung punya map Lembanna + puncak
   // tanpa harus download manual. Tile tambahan di-fetch saat runtime via cache-first.
