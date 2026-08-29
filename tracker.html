@@ -320,6 +320,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.js"></script>
+  <script src="/map-files.js" defer></script>
+  <script src="/map-offline.js" defer></script>
   <script>
     (function () {
       'use strict';
@@ -532,6 +534,11 @@
         L.control.layers({ 'Peta': osm, 'Topografi': topo, 'Satelit': satellite },
                          {}, { position: 'topright' }).addTo(map);
         L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+        // Kontrol offline: simpan tile & upload file geospasial
+        if(window.bwkMapOffline){
+          window.bwkMapOffline.addSaveAreaControl(map,{position:'topright'}).addTo(map);
+          window.bwkMapOffline.addUploadControl(map,{position:'topright'}).addTo(map);
+        }
 
         // Berhenti mengikuti begitu keluarga menggeser peta sendiri
         map.on('dragstart', function () { _tkFollow = false; _tkSyncRecenter(); });

@@ -1,4 +1,4 @@
-const CACHE='bwk-v82-offline-panduan-jalur';
+const CACHE='bwk-v83-offline-tiles';
 // Pre-cached app shell. Keep install small; guide-assets images are cached
 // at runtime via cache-first fetch strategy so first install stays fast.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
@@ -10,7 +10,21 @@ const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   '/og.jpg','/og-tracking.png',
   '/icon-192.png','/icon-512.png','/apple-touch-icon.png',
   // Fallback untuk navigasi offline
-  '/offline.html'];
+  '/offline.html',
+  // Modul peta offline (parser GPX/KML/GeoJSON + tile downloader UI)
+  '/map-files.js',
+  '/map-offline.js',
+  // Hotspot tile satelit (area Basecamp Lembanna + Puncak Bawakaraeng, zoom 15).
+  // 8 tile × ~20KB = ~160KB pre-cache. Pendaki langsung punya map Lembanna + puncak
+  // tanpa harus download manual. Tile tambahan di-fetch saat runtime via cache-first.
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13105/16383',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13106/16383',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13105/16384',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13106/16384',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13101/16386',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13102/16386',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13101/16387',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/15/13102/16387'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));

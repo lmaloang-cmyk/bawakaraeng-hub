@@ -1892,6 +1892,11 @@ function _initPantau(){
       b.push(z.c);
     });
     pantauMap.fitBounds(b,{padding:[34,34]});
+    // Kontrol offline: simpan tile & upload file geospasial
+    if(window.bwkMapOffline){
+      window.bwkMapOffline.addSaveAreaControl(pantauMap,{position:'topright'}).addTo(pantauMap);
+      window.bwkMapOffline.addUploadControl(pantauMap,{position:'topright'}).addTo(pantauMap);
+    }
   }
   setTimeout(function(){pantauMap.invalidateSize();},130);
 }
@@ -3261,6 +3266,8 @@ function adoptionSendCode(btn){var card=btn.closest('.adoption-admin-card'),wa=_
 function renderAdoptionAdmin(){var b=document.getElementById('adminBody');if(!b)return;b.innerHTML='<div class="aempty">Memuat pengajuan adopsi…</div>';var c=(typeof _sbClient==='function')?_sbClient():null;if(!c){b.innerHTML='<div class="aempty">Sambungkan Supabase untuk memverifikasi pembayaran dan menerbitkan kode.</div>';return;}c.from('adoption_requests').select('*').order('created_at',{ascending:false}).then(function(r){if(r.error)throw r.error;var a=r.data||[];if(!a.length){b.innerHTML='<div class="aempty">Belum ada pengajuan adopsi.</div>';return;}b.innerHTML=a.map(function(x){var ok=x.status==='terverifikasi',phone=_adPhone(x.whatsapp),name=_adEsc(x.customer_name),id=_adEsc(x.id),code=_adEsc(x.adoption_code||'');var meta=_adEsc(x.package_name)+' · '+x.quantity+' bibit · '+_rupiah(+x.amount||0);var send='<input class="ad-wa-send" inputmode="tel" placeholder="Nomor WhatsApp penerima, contoh 081234567890" value="'+_adEsc(phone)+'"/><button class="btn g-green" style="margin-top:8px" data-id="'+id+'" data-code="'+code+'" data-name="'+name+'" onclick="adoptionSendCode(this)">📲 Kirim Kode via WhatsApp</button>';var del='<button class="btn" style="margin-top:8px;background:#fde8e8;color:#b3261e;border:1px solid #f3c2bb;box-shadow:none" data-id="'+id+'" data-name="'+name+'" onclick="adoptionDelete(this.dataset.id,this.dataset.name)">🗑️ Hapus Permintaan (Selesai)</button>';return '<div class="adoption-admin-card"><span class="adstatus '+(ok?'ok':'')+'">'+(ok?'✓ TERVERIFIKASI':'MENUNGGU BUKTI')+'</span><b style="display:block">'+name+'</b><small>'+meta+'</small>'+(ok?'<div class="code">Kode adopsi: '+code+'</div>'+send+del:'<button class="btn g-green" style="margin-top:10px" data-adoption-id="'+id+'" data-whatsapp="'+_adEsc(phone)+'" data-customer-name="'+name+'" onclick="adoptionIssue(this.dataset.adoptionId,this.dataset.whatsapp,this.dataset.customerName)">✅ Verifikasi & Kirim Kode WA</button>')+'</div>';}).join('');}).catch(function(){b.innerHTML='<div class="aempty">Gagal memuat pengajuan. Jalankan file SQL Adopsi QRIS versi terbaru.</div>';});}
 function adoptionIssue(id,wa,name){if(!confirm('Pastikan bukti pembayaran sudah benar. Terbitkan kode adopsi?'))return;var code=_rid('POH-'),c=_sbClient(),phone=_adPhone(wa);var waUrl=phone?('https://wa.me/'+phone+'?text='+encodeURIComponent(_adWaMessage(name,code))):null;c.from('adoption_requests').update({status:'terverifikasi',adoption_code:code,verified_at:new Date().toISOString()}).eq('id',id).then(function(r){if(r&&r.error)throw r.error;toast('Kode '+code+' diterbitkan','ok');renderAdoptionAdmin();if(waUrl){try{window.open(waUrl,'_blank','noopener');}catch(e){window.location.href=waUrl;}}}).catch(function(){toast('Gagal menerbitkan kode','err');});}
 </script>
+<script src="map-files.js" defer></script>
+<script src="map-offline.js" defer></script>
 <script src="tracking-message-owner.js"></script>
 <script src="tracking-session-resume.js"></script>
 <script src="tracking-live-recovery.js"></script>
