@@ -1,7 +1,16 @@
-const CACHE='bwk-v81-tracking-reliable';
-// Only the minimum app shell is pre-cached. This keeps first install quick on mountain/mobile networks.
+const CACHE='bwk-v82-offline-panduan-jalur';
+// Pre-cached app shell. Keep install small; guide-assets images are cached
+// at runtime via cache-first fetch strategy so first install stays fast.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
-  '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/tracker.html','/family-tracking.js','/tracking-session-resume.js','/tracking-live-recovery.js','/tracking-message-owner.js','/tracking-message-viewer.js','/tracking-plus.js','/tracking-sos.js'];
+  '/logo-blessing.js','/sk.js','/sos.js','/sos-auth.js','/sos-context.js','/sos-outbox.js','/sos-relay.js','/sos-pluscode.js','/sos-ui.css','/ops.js','/push.js','/chat.js','/hike.js','/lens-extras.js','/tracker.html','/family-tracking.js','/tracking-session-resume.js','/tracking-live-recovery.js','/tracking-message-owner.js','/tracking-message-viewer.js','/tracking-plus.js','/tracking-sos.js',
+  // Konten survival (offline-first): pendaki di gunung butuh ini tanpa internet
+  '/PANDUAN.html',
+  '/jalur/lembanna.html',
+  '/jalur/lembang-bune.html',
+  '/og.jpg','/og-tracking.png',
+  '/icon-192.png','/icon-512.png','/apple-touch-icon.png',
+  // Fallback untuk navigasi offline
+  '/offline.html'];
 self.addEventListener('install',function(e){
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS).catch(function(){});}));
@@ -18,14 +27,44 @@ self.addEventListener('fetch',function(e){
   if(url.origin!==location.origin || url.pathname.indexOf('/api/')===0)return;
   if(req.mode==='navigate'){
     e.respondWith(fetch(req).then(function(res){
-      const copy=res.clone();caches.open(CACHE).then(function(c){c.put('/index.html',copy);});return res;
-    }).catch(function(){return caches.match('/index.html');}));
+      if(res&&res.status===200){
+        const copy=res.clone();
+        caches.open(CACHE).then(function(c){c.put(req,copy);});
+      }
+      return res;
+    }).catch(function(){
+      // Offline fallback berlapis:
+      // 1) Coba halaman yang persis diminta (mungkin pernah dibuka online)
+      return caches.match(req).then(function(cached){
+        if(cached)return cached;
+        // 2) Untuk halaman jalur, arahkan ke PANDUAN (konten survival)
+        if(req.url.indexOf('/jalur/')!==-1){
+          return caches.match('/PANDUAN.html');
+        }
+        // 3) Fallback terakhir: beranda, atau offline.html kalau beranda
+        //    juga belum pernah dibuka.
+        return caches.match('/index.html').then(function(home){
+          return home||caches.match('/offline.html');
+        });
+      });
+    }));
     return;
   }
   // v17.6: file aplikasi (JS/CSS/HTML) NETWORK-FIRST — dulu cache-first, sehingga HP
   // terus memakai salinan lama (mis. ops.js/hike.js) dan perbaikan baru tidak pernah
   // tampil. Offline tetap aman: bila jaringan gagal, jatuh ke cache. Aset gambar
   // (logo/ikon, jarang berubah) tetap cache-first supaya hemat kuota.
+  var isImage=/\.(png|jpe?g|webp|gif|svg)$/i.test(url.pathname);
+  if(isImage){
+    e.respondWith(caches.match(req).then(function(hit){
+      if(hit)return hit;
+      return fetch(req).then(function(res){
+        if(res&&res.status===200){const copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
+        return res;
+      });
+    }));
+    return;
+  }
   var isAppFile=/\.(js|css|html?)$/i.test(url.pathname);
   if(isAppFile){
     e.respondWith(fetch(req).then(function(res){
