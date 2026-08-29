@@ -14,24 +14,20 @@ package-lock.json
 .DS_Store
 Thumbs.db
 
-# Database
+# Database lokal (jangan commit)
 knowledge.db
 knowledge.db-shm
 knowledge.db-wal
 
-# Images (keep originals, ignore duplicates)
+# Duplikat hasil upload browser, mis. "file (2).js" atau "01-login (2).png"
+* (*).*
+
+# Ekstensi ganda yang tidak disengaja
 *.png.jpeg
 *.png.txt
 *.png.json
 *.jpg.jpeg
-
-# Screenshots (large, not needed in repo)
-screenshots/
-
-# Exclude PWA icons from PNG ignore rule
-!icon-192.png
-!icon-512.png
-*.png
+*.json.json
 
 # Temporary
 *.tmp
