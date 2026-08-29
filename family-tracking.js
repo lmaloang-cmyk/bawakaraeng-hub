@@ -259,11 +259,7 @@
       var shareUrl = shareUrlFor(s, t);
       var sessName = state?.name || 'Pelacakan';
 
-      var msg = '*📍 Lokasi Saya — Pintu Angin*\n\n' +
-        'Saya sedang melakukan pelacakan keluarga di Gunung Bawakaraeng.\n' +
-        'Klik link ini untuk melihat posisi saya secara real-time:\n' +
-        shareUrl + '\n\n' +
-        '_Dikirim dari MAPS Pintu Angin_';
+      var msg = '🥾 *Live Tracking — Pintu Angin*\n\nAku lagi mendaki *Gunung Bawakaraeng* 🏔️\nPantau posisiku real-time di sini:\n👉 ' + shareUrl + '\n\n_Link aman & otomatis berhenti saat sesi berakhir_';
 
       // Tampilkan pilihan bagikan
       var html = '<div style="padding:16px">';

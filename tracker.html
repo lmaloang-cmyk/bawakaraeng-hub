@@ -16,6 +16,18 @@
         onerror="var l=document.createElement('link');l.rel='stylesheet';l.href='/leaflet.css';document.head.appendChild(l);" />
   <meta name="theme-color" content="#10243D" />
   <meta name="description" content="Lihat lokasi pendaki secara realtime di Gunung Bawakaraeng." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Pintu Angin" />
+  <meta property="og:title" content="Live Tracking Keluargaku — Pintu Angin" />
+  <meta property="og:description" content="Pantau posisi pendaki Gunung Bawakaraeng secara real-time. Aman — hanya lewat link khusus ini." />
+  <meta property="og:image" content="https://www.pintuangin.my.id/og-tracking.png" />
+  <meta property="og:image:secure_url" content="https://www.pintuangin.my.id/og-tracking.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://www.pintuangin.my.id/tracker.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -1013,9 +1025,8 @@
 
       // ===== ACTIONS =====
       window.shareWA = function() {
-        const msg = `📍 Lacak posisi saya di Gunung Bawakaraeng:\n${window.location.href}`;
-        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        window.open(url, '_blank');
+        const msg = '📍 *Live Tracking — Pintu Angin*\nPantau posisi pendaki real-time:\n👉 ' + window.location.href;
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
       };
 
       window.copyLink = function() {
@@ -1035,8 +1046,7 @@
 
       window.openInMaps = function() {
         if (lastPosition) {
-          const url = `https://www.google.com/maps?q=${lastPosition.lat},${lastPosition.lng}`;
-          window.open(url, '_blank');
+          window.open('https://www.google.com/maps?q=' + lastPosition.lat + ',' + lastPosition.lng, '_blank');
         } else {
           toast('⚠️ Lokasi belum tersedia');
         }
