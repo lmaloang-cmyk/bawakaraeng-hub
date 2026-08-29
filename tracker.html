@@ -784,6 +784,10 @@
             }
           }
 
+          window.dispatchEvent(new CustomEvent('bwk:tracker-update', { detail: {
+            map: map, latest: cur, positions: positions, session: sessionData
+          }}));
+
         } catch (err) {
           console.error('[TRACKER] Refresh error:', err);
           _tkFail('Gagal menghubungi server: ' + (err && err.message ? err.message : err));
@@ -911,7 +915,7 @@
         if (polyline) { map.removeLayer(polyline); polyline = null; }
 
         var opts = {
-          color: '#e5304c', weight: 5, opacity: .9, smoothFactor: 1.15,
+          color: '#168a78', weight: 5, opacity: .9, smoothFactor: 1.15,
           lineCap: 'round', lineJoin: 'round'
         };
 
@@ -1056,6 +1060,19 @@
       };
 
       window.refresh = refresh;
+      window.BWKTrackingView = {
+        getMap: function () { return map; },
+        getMarker: function () { return marker; },
+        getLatest: function () { return lastPosition; },
+        getPositions: function () { return positions.slice(); },
+        getSession: function () { return sessionData; },
+        follow: function () {
+          _tkFollow = true;
+          _tkSyncRecenter();
+          if (lastPosition && map) map.setView([lastPosition.lat, lastPosition.lng], Math.max(map.getZoom(), 16), { animate:true });
+        }
+      };
+      window.dispatchEvent(new CustomEvent('bwk:tracker-ready', { detail: { map: map } }));
 
       // ===== INIT =====
       function init() {
@@ -1090,5 +1107,8 @@
       init();
     })();
   </script>
+  <script src="/tracking-plus.js"></script>
+  <script src="/tracking-message-viewer.js"></script>
+  <script src="/tracking-sos.js"></script>
 </body>
 </html>

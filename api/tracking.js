@@ -77,6 +77,13 @@ export default async function handler(req, res) {
     return sendPosition(req, res, user);
   }
 
+  // --- UPDATE MAP MESSAGE (owner only) ---
+  if (act === 'message') {
+    if (!user) return res.status(401).json({ error: 'Login diperlukan' });
+    if (!rateLimit(req, res, { prefix: 'track-message', id: user.id, limit: 30, windowMs: 60000 })) return;
+    return updateTrackingMessage(req, res, user);
+  }
+
   // --- VIEW: STATUS ---
   if (act === 'status') {
     if (!rateLimit(req, res, { prefix: 'track-status', limit: 120, windowMs: 60000 })) return;
@@ -117,6 +124,42 @@ export default async function handler(req, res) {
   }
 
   return res.status(404).json({ error: 'Action tidak ditemukan' });
+}
+
+// ===========================================================================
+// UPDATE MESSAGE SHOWN BESIDE THE LIVE MARKER (owner only)
+// ===========================================================================
+async function updateTrackingMessage(req, res, user) {
+  const b = req.body || {};
+  const sessionId = String(b.session_id || '');
+  const message = cleanText(b.message, 120);
+  const status = cleanText(b.status, 24).toLowerCase();
+  const allowed = new Set(['aman', 'berjalan', 'istirahat', 'camp', 'hujan', 'sinyal', 'baterai', 'turun', 'custom', '']);
+  if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return res.status(400).json({ error: 'ID sesi tidak valid' });
+  if (!allowed.has(status)) return res.status(400).json({ error: 'Status tidak valid' });
+  if (!message && status) return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
+  try {
+    const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/tracking_sessions?id=eq.${sessionId}&created_by=eq.${user.id}&active=eq.true`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': process.env.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        tracking_message: message || null,
+        tracking_status: message ? (status || 'custom') : null,
+        tracking_message_updated_at: message ? new Date().toISOString() : null
+      })
+    });
+    const data = await r.json().catch(() => []);
+    if (!r.ok) return res.status(502).json({ error: 'Gagal menyimpan pesan tracking' });
+    if (!Array.isArray(data) || !data.length) return res.status(404).json({ error: 'Sesi aktif tidak ditemukan' });
+    return res.json({ ok:true, message: data[0].tracking_message, status: data[0].tracking_status, updated_at: data[0].tracking_message_updated_at });
+  } catch (e) {
+    return res.status(502).json({ error: 'Gagal menghubungi server' });
+  }
 }
 
 // ===========================================================================
@@ -282,9 +325,9 @@ async function sendPosition(req, res, user) {
   const sessionId = b.session_id;
   const lat = Number(b.lat);
   const lng = Number(b.lng);
-  const accuracy = Number(b.accuracy);
-  const altitude = Number(b.altitude);
-  const batteryPct = Number(b.battery_pct);
+  const accuracy = b.accuracy == null ? NaN : Number(b.accuracy);
+  const altitude = b.altitude == null ? NaN : Number(b.altitude);
+  const batteryPct = b.battery_pct == null ? NaN : Number(b.battery_pct);
   const clientId = clean(String(b.client_id || ''), 64);
 
   if (!sessionId || !/^[0-9a-f-]{36}$/i.test(sessionId)) {
@@ -448,6 +491,9 @@ async function getSessionStatus(req, res) {
         last_seen: session.last_seen,
         mins_ago: minsAgo,
         position_count: session.position_count || 0
+        ,tracking_message: session.tracking_message || null
+        ,tracking_status: session.tracking_status || null
+        ,tracking_message_updated_at: session.tracking_message_updated_at || null
       }
     });
   } catch (e) {
