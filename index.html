@@ -2159,7 +2159,7 @@ function _initOffMap(){
   var topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'\u00a9 OpenTopoMap (CC-BY-SA)',maxZoom:17});
   var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'\u00a9 Esri',maxZoom:19});
   osm.addTo(offMap);
-  L.control.layers({'Peta':osm,'Topografi':topo,'Satelit':sat},{},{position:'topright'}).addTo(offMap);
+  offMap._bwkLayersCtrl=L.control.layers({'Peta':osm,'Topografi':topo,'Satelit':sat},{},{position:'topright'}).addTo(offMap);
   L.control.scale({imperial:false,position:'bottomleft'}).addTo(offMap);
   if(window.bwkMapOffline){
     window.bwkMapOffline.addSaveAreaControl(offMap,{position:'topright'}).addTo(offMap);
@@ -2172,7 +2172,10 @@ function _offRestoreFiles(){
   if(!window.bwkMapFiles)return;
   var items=bwkMapFiles.list()||[];
   items.forEach(function(it){
-    try{bwkMapFiles.render(offMap,it.data||it.parsed||it,it.name||it.filename||'file');}catch(e){}
+    try{
+      var r=bwkMapFiles.render(offMap,it.data||it.parsed||it,it.name||it.filename||'file');
+      if(r&&window.bwkMapOffline&&window.bwkMapOffline.addToLayerControl)window.bwkMapOffline.addToLayerControl(offMap,r);
+    }catch(e){}
   });
 }
 function _offStorageInfo(){

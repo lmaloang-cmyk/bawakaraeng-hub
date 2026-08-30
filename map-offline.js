@@ -188,10 +188,17 @@
       _toast('Module map-files belum dimuat','err');
       return;
     }
+    var parsed,rendered;
     try{
       var content=await file.text();
-      var parsed=window.bwkMapFiles.parse(file.name,content);
-      var rendered=window.bwkMapFiles.render(map,parsed,file.name);
+      parsed=window.bwkMapFiles.parse(file.name,content);
+    }catch(e){
+      _toast('Gagal parse: '+e.message,'err');
+      console.error('bwkMapFiles parse error:',e);
+      return;
+    }
+    try{
+      rendered=window.bwkMapFiles.render(map,parsed,file.name);
       if(!rendered){
         _toast('File tidak punya data yang bisa ditampilkan','err');
         return;
@@ -202,19 +209,19 @@
       // Tambah ke layer control
       _addToLayerControl(map,rendered);
     }catch(e){
-      _toast('Gagal parse: '+e.message,'err');
-      console.error('bwkMapFiles upload error:',e);
+      _toast('Gagal memproses file: '+e.message,'err');
+      console.error('bwkMapFiles render error:',e);
     }
   }
   function _addToLayerControl(map,rendered){
-    // Cari atau buat L.control.layers
-    var layersControl=null;
-    map.eachControl(function(c){if(c instanceof L.Control.Layers)layersControl=c;});
-    if(layersControl){
-      try{
+    // Kontrol layer distash saat peta dibuat (map._bwkLayersCtrl) —
+    // Leaflet Map tidak punya map.eachControl()
+    try{
+      var layersControl=map._bwkLayersCtrl;
+      if(layersControl&&typeof layersControl.addOverlay==='function'){
         layersControl.addOverlay(rendered.layer,'📂 '+rendered.name);
-      }catch(e){}
-    }
+      }
+    }catch(e){}
   }
 
   // ====== Tombol: Export trek ke GPX ======
@@ -272,6 +279,7 @@
     addSaveAreaControl:buildSaveAreaButton,
     addUploadControl:buildUploadButton,
     addExportControl:buildExportButton,
+    addToLayerControl:_addToLayerControl,
     injectCSS:injectCSS,
     _saveAreaFlow:saveAreaFlow,
     _uploadFlow:uploadFlow

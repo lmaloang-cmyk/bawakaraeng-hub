@@ -531,7 +531,7 @@
         });
 
         osm.addTo(map);
-        L.control.layers({ 'Peta': osm, 'Topografi': topo, 'Satelit': satellite },
+        map._bwkLayersCtrl = L.control.layers({ 'Peta': osm, 'Topografi': topo, 'Satelit': satellite },
                          {}, { position: 'topright' }).addTo(map);
         L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
         // Kontrol offline: simpan tile & upload file geospasial
