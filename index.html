@@ -1823,19 +1823,48 @@ function pickCat(c){chosenCat=c;document.getElementById('cat-flora').classList.t
 function previewPhoto(inp){if(inp.files&&inp.files[0]){var f=inp.files[0];var ok=['image/jpeg','image/png','image/webp'].indexOf((f.type||'').toLowerCase())>=0;if(!ok){inp.value='';toast('Format foto harus JPEG, PNG, atau WebP','err');return;}if(f.size>5*1024*1024){inp.value='';toast('Ukuran foto maksimal 5 MB','err');return;}photoFile=f;var url=URL.createObjectURL(f);var drop=document.getElementById('drop');drop.textContent='';var im=document.createElement('img');im.src=url;im.alt='Pratinjau foto laporan';drop.appendChild(im);hasPhoto=true;photoData='';photoReady=false;_compressImg(f,function(d){URL.revokeObjectURL(url);photoData=d||'';photoReady=true;if(!photoData){hasPhoto=false;toast('Foto tidak dapat diproses','err');}});}}
 function _ensurePhoto(cb){if(photoReady){cb();return;}if(photoFile){_compressImg(photoFile,function(d){photoData=d||'';photoReady=true;cb();});}else{cb();}}
 var _reportGps=null;
+var _reportGpsTimer=null;
+function _reportGpsFinish(p,name,coord,btn,source){
+  var lat=p.coords?p.coords.latitude:p.lat;
+  var lng=p.coords?p.coords.lng:p.lng;
+  var acc=p.coords?Math.round(p.coords.accuracy||0):(p.accuracy||0);
+  _reportGps={lat:lat,lng:lng,accuracy:acc,at:Date.now(),source:source||'gps'};
+  if(name)name.textContent=source==='cache'?'Lokasi dari cache (≤5 menit)':'Lokasi GPS Anda';
+  if(coord)coord.textContent='Lat: '+lat.toFixed(5)+', Long: '+lng.toFixed(5)+(acc?' · akurasi ±'+acc+' m':'')+(source?' · sumber: '+source:'');
+  if(btn){btn.disabled=false;btn.textContent='Update';}
+  try{localStorage.setItem('bwkLastGps',JSON.stringify({lat:lat,lng:lng,accuracy:acc,at:Date.now()}));}catch(e){}
+}
+function _reportGpsError(code,name,coord,btn){
+  _reportGps=null;
+  if(name)name.textContent='Lokasi belum tersedia';
+  var msg='Aktifkan GPS dan izin Lokasi, lalu tekan Update.';
+  if(code===1)msg='Izin lokasi ditolak. Buka Settings browser → Situs → Izin Lokasi, lalu izinkan untuk aplikasi ini.';
+  else if(code===3)msg='Waktu habis. Coba di tempat terbuka atau dekat jendela.';
+  else if(code===2)msg='Lokasi tidak dapat ditentukan. Coba lagi sebentar.';
+  if(coord)coord.textContent=msg;
+  if(btn){btn.disabled=false;btn.textContent='Update';}
+  toast('Tidak dapat mengambil lokasi. '+msg,'err');
+}
 function updateGPS(btn){
   var name=document.getElementById('loc-name'),coord=document.getElementById('loc-coord');
   if(btn){btn.disabled=true;btn.textContent='Mencari…';}
+  if(_reportGpsTimer){clearTimeout(_reportGpsTimer);_reportGpsTimer=null;}
   if(!navigator.geolocation){if(name)name.textContent='GPS tidak tersedia';if(coord)coord.textContent='Perangkat atau browser ini tidak mendukung lokasi.';if(btn){btn.disabled=false;btn.textContent='Update';}toast('GPS tidak tersedia di perangkat ini','err');return;}
   if(name)name.textContent='Mendapatkan posisi sebenarnya…';if(coord)coord.textContent='Pastikan izin lokasi sudah diaktifkan.';
-  navigator.geolocation.getCurrentPosition(function(p){
-    var lat=p.coords.latitude,lng=p.coords.longitude,acc=Math.round(p.coords.accuracy||0);_reportGps={lat:lat,lng:lng,accuracy:acc,at:Date.now()};
-    if(name)name.textContent='Lokasi GPS Anda';if(coord)coord.textContent='Lat: '+lat.toFixed(5)+', Long: '+lng.toFixed(5)+(acc?' · akurasi ±'+acc+' m':'');
-    if(btn){btn.disabled=false;btn.textContent='Update';}toast('Lokasi sebenarnya berhasil diperbarui','ok');
-  },function(){
-    _reportGps=null;if(name)name.textContent='Lokasi belum tersedia';if(coord)coord.textContent='Aktifkan GPS dan izin Lokasi, lalu tekan Update.';
-    if(btn){btn.disabled=false;btn.textContent='Update';}toast('Tidak dapat mengambil lokasi. Periksa izin GPS.','err');
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  var done=false;
+  function finish(p,src){if(done)return;done=true;_reportGpsTimer=null;_reportGpsFinish(p,name,coord,btn,src);toast('Lokasi berhasil diperbarui ('+src+')','ok');}
+  // Tahap 1: GPS akurasi tinggi (8 detik)
+  try{navigator.geolocation.getCurrentPosition(function(p){finish(p,'satelit');},function(){},{enableHighAccuracy:true,timeout:8000,maximumAge:20000});}catch(e){}
+  // Tahap 2: fallback WiFi/cell (10 detik) — dijadwalkan 9 detik setelah tahap 1
+  _reportGpsTimer=setTimeout(function(){
+    if(done)return;
+    try{navigator.geolocation.getCurrentPosition(function(p){finish(p,'jaringan');},function(err){
+      // Tahap 3: pakai cache terakhir kalau ada
+      try{var raw=localStorage.getItem('bwkLastGps');if(raw){var c=JSON.parse(raw);if(c&&c.lat&&c.lng&&Date.now()-c.at<5*60*1000){finish(c,'cache');return;}}
+      }catch(e2){}
+      _reportGpsError(err&&err.code,name,coord,btn);
+    },{enableHighAccuracy:false,timeout:10000,maximumAge:120000});}catch(e){_reportGpsError(2,name,coord,btn);}
+  },9000);
 }
 function countChars(){document.getElementById('cc').textContent=document.getElementById('desc').value.length;}
 function submitReport(){if(typeof isGuest==='function'&&isGuest()){openGuestGate('mengirim laporan');return;}var desc=_cleanText(document.getElementById('desc').value,500);if(!hasPhoto){toast('Foto wajib diunggah','err');return;}if(desc.length<5){toast('Deskripsi minimal 5 huruf','err');return;}var loc=_cleanText(document.getElementById('loc-name').textContent,120);var gpsDetail=_reportGps?(' · GPS '+_reportGps.lat.toFixed(5)+', '+_reportGps.lng.toFixed(5)+( _reportGps.accuracy?' (±'+_reportGps.accuracy+' m)':'')):' · GPS belum tersedia';var _btn=document.getElementById('submitReportBtn');if(_btn){_btn.disabled=true;}_ensurePhoto(function(){if(!photoData){if(_btn){_btn.disabled=false;}toast('Foto belum siap, coba lagi sebentar','err');return;}reports.unshift({name:'Anda',role:'Pendaki',color:'#08b96f',title:chosenCat==='flora'?'Temuan Flora/Fauna':'Laporan Insiden Jalur',desc:desc+' ('+loc+gpsDetail+')',time:'Baru',status:'pending',photo:photoData});_lsSet('bwkReports',reports);try{if(typeof sbInsert==='function'){var _r=reports[0];var _pl={title:_r.title,description:_r.desc,category:(typeof chosenCat!=='undefined'?chosenCat:''),astatus:'baru'};if(photoData)_pl.photo=photoData;sbInsert('reports',_pl).then(function(res){if(res&&res.error&&(''+(res.error.message||'')).toLowerCase().indexOf('photo')>=0){toast('Kolom foto belum ada di database. Jalankan SQL: alter table reports add column photo text;','err');delete _pl.photo;sbInsert('reports',_pl);}});}}catch(e){}_incStat('bwkMyReports');renderFeed();document.getElementById('desc').value='';countChars();document.getElementById('drop').innerHTML='<span class="di">📸</span><small>Ketuk untuk ambil / pilih foto</small><input type="file" accept="image/*" style="display:none" onchange="previewPhoto(this)"/>';hasPhoto=false;photoData='';photoFile=null;photoReady=true;if(_btn){_btn.disabled=false;}toast('Laporan terkirim! Menunggu verifikasi','ok');setTimeout(function(){go('beranda')},900);});}
