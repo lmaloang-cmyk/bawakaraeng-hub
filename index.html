@@ -767,6 +767,20 @@ html.dark .nt-card,html.dark .rcard,html.dark .feature,html.dark .info-card,html
 .hx-dots{position:absolute;z-index:3;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
 .hx-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:all .25s}
 .hx-dots i.on{background:#fff;width:20px;border-radius:5px}
+/* Shortcut Radio PTT — chip mengambang di pojok kanan-bawah hero, mengikuti carousel */
+.ptt-chip{position:absolute;z-index:4;right:11px;bottom:11px;display:inline-flex;align-items:center;gap:7px;padding:7px 11px 7px 8px;border-radius:999px;background:rgba(8,8,25,.46);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);color:#fff;text-decoration:none;font:inherit;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease;box-shadow:0 6px 16px rgba(0,0,0,.28);max-width:calc(100% - 60px)}
+.ptt-chip:hover{background:rgba(8,8,25,.62);border-color:rgba(255,255,255,.36);transform:translateY(-1px)}
+.ptt-chip:active{transform:scale(.97)}
+.ptt-chip-ic{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.18);font-size:14px;line-height:1;flex:none}
+.ptt-chip-tx{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+.ptt-chip-tx b{font-size:11.5px;font-weight:800;letter-spacing:.1px}
+.ptt-chip-tx small{font-size:9.5px;opacity:.82;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:420px){
+  .ptt-chip{right:9px;bottom:9px;padding:6px 10px 6px 7px;gap:6px}
+  .ptt-chip-ic{width:24px;height:24px;font-size:13px}
+  .ptt-chip-tx b{font-size:11px}
+  .ptt-chip-tx small{font-size:9px}
+}
 @media (prefers-reduced-motion:reduce){.hx-slide.on{animation:none}}
 .pjoin{font-size:12px;font-weight:600;opacity:.85;margin-top:5px}
 .badges .bdg2.locked{opacity:.4;filter:grayscale(.9)}
@@ -1019,6 +1033,10 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
         </div>
         <div class="hx-quake" id="wQuake" style="display:none"><span class="qk-ic">📍</span><div><b id="wqMag">—</b><small id="wqLoc">—</small></div></div>
         <div class="hx-dots"><i class="on" onclick="hxGo(0,event)"></i><i onclick="hxGo(1,event)"></i><i onclick="hxGo(2,event)"></i></div>
+        <a class="ptt-chip" href="radio.html" aria-label="Buka Radio PTT Offline (Tanpa Sinyal)" title="Radio PTT Offline — bicara ala HT tanpa sinyal">
+          <span class="ptt-chip-ic" aria-hidden="true">📻</span>
+          <span class="ptt-chip-tx"><b>Radio PTT</b><small>Tanpa sinyal · WiFi HP</small></span>
+        </a>
       </div>
 
       <aside class="home-status" aria-label="Kondisi dan tindakan cepat">
