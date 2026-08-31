@@ -764,6 +764,7 @@ html.dark .nt-card,html.dark .rcard,html.dark .feature,html.dark .info-card,html
 .hx-quake .qk-ic{font-size:15px}
 .hx-quake b{font-weight:800}
 .hx-quake small{display:block;opacity:.85;font-size:12px}
+/* (gempa di hero dihapus; info gempa cukup di section Kondisi Kawasan) */
 .hx-dots{position:absolute;z-index:3;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
 .hx-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:all .25s}
 .hx-dots i.on{background:#fff;width:20px;border-radius:5px}
@@ -1031,7 +1032,6 @@ html.perf-lite .brand .logo,html.perf-lite .intro-icon,html.perf-lite .login-ic,
             <div class="hx-src" id="wSrc">Sumber: BMKG</div>
           </div>
         </div>
-        <div class="hx-quake" id="wQuake" style="display:none"><span class="qk-ic">📍</span><div><b id="wqMag">—</b><small id="wqLoc">—</small></div></div>
         <div class="hx-dots"><i class="on" onclick="hxGo(0,event)"></i><i onclick="hxGo(1,event)"></i><i onclick="hxGo(2,event)"></i></div>
         <a class="ptt-chip" href="radio.html" aria-label="Buka Radio PTT Offline (Tanpa Sinyal)" title="Radio PTT Offline — bicara ala HT tanpa sinyal">
           <span class="ptt-chip-ic" aria-hidden="true">📻</span>
@@ -2356,10 +2356,8 @@ async function enrichSpecies(){
         if(hc&&hc[1]&&c.temp!=null)hc[1].textContent='🌡️ '+c.temp+'° · '+(c.desc||'');
       }
       if(g){
-        var q=document.getElementById('wQuake');
-        if(q){q.style.display='flex';
-          document.getElementById('wqMag').textContent='Gempa terkini · M '+(g.mag||'-');
-          document.getElementById('wqLoc').textContent=g.wilayah||'-';}
+        // Info gempa cukup tampil di section Kondisi Kawasan di bawah hero,
+        // supaya tidak menutupi shortcut PTT di pojok hero pada layar kecil.
       }
     }catch(e){
       if(card)card.classList.remove('loading');
@@ -2903,6 +2901,11 @@ async function loadAlerts(){
   }catch(e){}
   try{var ra=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=-5.31694&longitude=119.94444&current=us_aqi&timezone=Asia%2FMakassar');var da=await ra.json();var aqi=da.current?da.current.us_aqi:null;if(aqi!=null&&aqi>100)al.push({lv:(aqi>150?'danger':'warn'),ic:'😷',t:'Kualitas udara buruk (AQI '+aqi+')',d:'Bisa indikasi asap/kebakaran. Batasi aktivitas berat.'});}catch(e){}
   try{var stt=new Date(Date.now()-86400000).toISOString().slice(0,10);var rq=await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime='+stt+'&minmagnitude=4&latitude=-5.31694&longitude=119.94444&maxradiuskm=350&orderby=time&limit=1');var dq=await rq.json();if(dq.features&&dq.features.length){var q=dq.features[0];var m=q.properties.mag||0;al.push({lv:(m>=5?'danger':'warn'),ic:'📳',t:'Gempa M'+m.toFixed(1)+' terkini',d:(q.properties.place||'dekat kawasan')+'. Tetap waspada saat mendaki.'});}}catch(e){}
+  // Fallback dari proxy BMKG (kalau USGS gagal / offline, info gempa dari BMKG tetap muncul)
+  try{
+    var rb=await fetch((window.API_BASE||'')+'/api/bmkg',{cache:'no-store'});
+    if(rb.ok){var db=await rb.json();var gb=db&&db.gempa?db.gempa:null;if(gb&&!al.some(function(a){return/^Gempa/i.test(a.t);}))al.push({lv:(Number(gb.mag)>=5?'danger':'warn'),ic:'📳',t:'Gempa terkini M '+(gb.mag||'-'),d:(gb.wilayah||'dekat kawasan')+'. Tetap waspada saat mendaki.'});}
+  }catch(e){}
   if(!al.length){box.innerHTML='<div class="alert ok"><span class="ai">✅</span><div><b>Kondisi relatif aman</b><small>Belum ada peringatan cuaca BMKG, gempa, atau kualitas udara yang signifikan.</small></div></div>';return;}
   box.innerHTML=al.map(function(a){return '<div class="alert '+a.lv+'"><span class="ai">'+a.ic+'</span><div><b>'+a.t+'</b><small>'+a.d+'</small></div></div>';}).join('');
 }
