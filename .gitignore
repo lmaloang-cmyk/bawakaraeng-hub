@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+package-lock.json
+
+# Build
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database lokal (jangan commit)
+knowledge.db
+knowledge.db-shm
+knowledge.db-wal
+
+# Duplikat hasil upload browser, mis. "file (2).js" atau "01-login (2).png"
+* (*).*
+
+# Ekstensi ganda yang tidak disengaja
+*.png.jpeg
+*.png.txt
+*.png.json
+*.jpg.jpeg
+*.json.json
+
+# Temporary
+*.tmp
+*.bak

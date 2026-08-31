@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+  <title>Pelacakan Keluarga — Pintu Angin</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+
+  <!-- Tanpa stylesheet ini, Leaflet kehilangan position:absolute untuk tile,
+       kontrol, dan penanda. Tile lalu mengalir seperti teks biasa sehingga
+       peta tampak terpotong. Versinya wajib sama dengan leaflet.js di bawah.
+       Cadangan /leaflet.css dipakai bila CDN tidak terjangkau. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        onerror="var l=document.createElement('link');l.rel='stylesheet';l.href='/leaflet.css';document.head.appendChild(l);" />
+  <meta name="theme-color" content="#10243D" />
+  <meta name="description" content="Lihat lokasi pendaki secara realtime di Gunung Bawakaraeng." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Pintu Angin" />
+  <meta property="og:title" content="Live Tracking Keluargaku — Pintu Angin" />
+  <meta property="og:description" content="Pantau posisi pendaki Gunung Bawakaraeng secara real-time. Aman — hanya lewat link khusus ini." />
+  <meta property="og:image" content="https://www.pintuangin.my.id/og-tracking.png" />
+  <meta property="og:image:secure_url" content="https://www.pintuangin.my.id/og-tracking.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://www.pintuangin.my.id/tracker.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink:#141a2c; --sub:#565f78; --line:#eceef4; --canvas:#f4f6fb; --card:#ffffff;
+      --brand:#26705a; --brand2:#2f8a70;
+      --g-brand:linear-gradient(135deg,#2f8a70,#26705a);
+      --g-sunset:linear-gradient(135deg,#ff9a44,#ff2d6f);
+      --g-green:linear-gradient(135deg,#2af598,#08b96f);
+      --g-teal:linear-gradient(135deg,#43e8d8,#12b6c9);
+      --g-amber:linear-gradient(135deg,#fbbf24,#f59e0b);
+      --shadow:0 4px 14px rgba(30,40,90,.08);
+      --shadow-lg:0 10px 30px rgba(30,40,90,.14);
+      --radius:22px;
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+    body { background:#c9cede; font-family:var(--font); color:var(--ink); line-height:1.5; font-size:16px; }
+    button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+    img { display:block; max-width:100%; }
+
+    .phone {
+      max-width:480px; margin:0 auto; background:var(--canvas);
+      min-height:100vh; position:relative; overflow:hidden;
+      box-shadow:0 0 50px rgba(0,0,0,.2);
+    }
+
+    /* Header */
+    .topbar {
+      position:sticky; top:0; z-index:40;
+      background:var(--g-sunset); color:#fff;
+      padding:14px 18px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      border-radius:0 0 22px 22px;
+      box-shadow:0 6px 20px rgba(255,45,111,.28);
+    }
+    .topbar { overflow:hidden; isolation:isolate; }
+    .topbar::before,.topbar::after {
+      content:''; position:absolute; pointer-events:none; z-index:-1;
+      filter:blur(14px); opacity:.34; border-radius:50%;
+      background:rgba(214,246,232,.5);
+    }
+    .topbar::before {
+      width:150px; height:54px; left:-70px; bottom:-31px;
+      animation:headerMist 8s ease-in-out infinite alternate;
+    }
+    .topbar::after {
+      width:128px; height:44px; right:14%; top:-27px;
+      background:rgba(142,220,196,.34);
+      animation:headerMist 10s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes headerMist {
+      to { transform:translateX(38px) translateY(-5px) scale(1.12); opacity:.5; }
+    }
+    .brand {
+      display:flex; align-items:center; gap:11px;
+      position:relative; z-index:1;
+    }
+    .brand .logo {
+      width:42px; height:42px; border-radius:50%; overflow:visible;
+      background:#fff; padding:2px; flex:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.15); position:relative;
+      animation:logoRise .7s cubic-bezier(.2,.85,.35,1) both;
+    }
+    .brand .logo::before {
+      content:''; position:absolute; inset:-5px; border-radius:50%;
+      padding:1.5px;
+      background:conic-gradient(from 0deg,transparent 0 58%,rgba(237,255,244,.96) 70%,transparent 86%);
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude;
+      animation:compassSpin 1.15s ease-out both; pointer-events:none;
+    }
+    .brand .logo::after {
+      content:''; position:absolute; inset:-8px; border-radius:50%;
+      background:radial-gradient(circle,rgba(232,255,244,.32),transparent 67%);
+      z-index:-1; animation:logoGlow 1.45s ease-out both; pointer-events:none;
+    }
+    .brand .logo img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; animation:logoFocus .7s cubic-bezier(.2,.85,.35,1) both; }
+    .brand>div:last-child { position:relative; overflow:hidden; animation:brandReveal .65s .15s ease-out both; }
+    .brand>div:last-child::after {
+      content:''; position:absolute; inset:-25% -35%;
+      background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.68) 50%,transparent 62%);
+      transform:translateX(-120%);
+      animation:titleGleam .7s .64s ease-out both; pointer-events:none;
+    }
+    .brand small { display:block; font-size:12px; font-weight:700; opacity:.95; letter-spacing:.1em; }
+    .brand h1 { font-size:15px; font-weight:800; letter-spacing:.01em; }
+    @keyframes logoRise { from{opacity:0;transform:translateY(6px) scale(.86)} to{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes logoFocus { from{transform:scale(1.14)} to{transform:scale(1)} }
+    @keyframes compassSpin { from{opacity:0;transform:rotate(-175deg) scale(.72)} 70%{opacity:1} to{opacity:.78;transform:rotate(0) scale(1)} }
+    @keyframes logoGlow { from{opacity:0;transform:scale(.55)} to{opacity:1;transform:scale(1)} }
+    @keyframes brandReveal { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes titleGleam { to{transform:translateX(120%)} }
+    @media (prefers-reduced-motion:reduce) {
+      .topbar::before,.topbar::after,.brand .logo,.brand .logo::before,.brand .logo::after,.brand .logo img,.brand>div:last-child,.brand>div:last-child::after { animation:none!important; }
+    }
+
+    /* Views */
+    .view { display:none; padding:16px 16px 120px; animation:fade .35s ease; }
+    .view.active { display:block; }
+    @keyframes fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    /* Status badges */
+    .status-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 12px; border-radius:20px;
+      font-size:12px; font-weight:700;
+    }
+    .status-badge.online { background:rgba(8,163,95,.15); color:#08a35f; }
+    .status-badge.offline { background:rgba(255,68,68,.15); color:#ff4444; }
+    .status-badge.paused { background:rgba(245,158,11,.15); color:#f59e0b; }
+    .status-dot {
+      width:8px; height:8px; border-radius:50%;
+    }
+    .status-badge.online .status-dot { background:#08a35f; animation:pulse 1.5s infinite; }
+    .status-badge.offline .status-dot { background:#ff4444; }
+    .status-badge.paused .status-dot { background:#f59e0b; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* Info card */
+    .info-card {
+      background:var(--card); border-radius:18px; padding:16px;
+      box-shadow:var(--shadow); margin-bottom:14px;
+    }
+    .info-name {
+      font-size:18px; font-weight:800; color:var(--ink); margin-bottom:4px;
+    }
+    .info-meta {
+      font-size:13px; color:var(--sub); line-height:1.7;
+    }
+    .info-meta b { color:var(--brand); }
+
+    /* Stats row */
+    .stats-row {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px;
+    }
+    .stat-box {
+      background:var(--card); border-radius:14px; padding:12px;
+      text-align:center; box-shadow:var(--shadow);
+    }
+    .stat-box .label {
+      font-size:11px; color:var(--sub); font-weight:600; margin-bottom:4px;
+    }
+    .stat-box .value {
+      font-size:16px; font-weight:800; color:var(--ink);
+    }
+    .stat-box .value.good { color:#08a35f; }
+    .stat-box .value.warn { color:#f59e0b; }
+    .stat-box .value.bad { color:#ff4444; }
+
+    /* Map container */
+    .map-wrap {
+      position:relative; border-radius:18px; overflow:hidden;
+      box-shadow:var(--shadow-lg); margin-bottom:14px;
+    }
+    #map {
+      width:100%; height:min(62vh,520px); min-height:300px;
+      background:#e9e5df;
+    }
+    .leaflet-container { font-family:var(--font); background:#e9e5df; }
+    .leaflet-container .leaflet-control-attribution {
+      background:rgba(255,255,255,.82); font-size:10px; color:var(--sub);
+      padding:2px 8px; border-radius:8px 0 0 0;
+    }
+    .leaflet-popup-content-wrapper { border-radius:14px; box-shadow:var(--shadow-lg); }
+    .leaflet-popup-content { margin:10px 14px; font-size:13px; line-height:1.6; }
+    .leaflet-control-layers, .leaflet-bar {
+      border:none !important; border-radius:12px !important; box-shadow:var(--shadow) !important;
+    }
+    .leaflet-control-layers-expanded { padding:10px 14px 10px 10px; font-size:13px; }
+
+    /* Penanda posisi: hati hidup lebih mudah dikenali keluarga daripada dot GPS. */
+    .tk-heart { position:relative; width:36px; height:36px; display:grid; place-items:center; }
+    .tk-heart::before {
+      content:''; position:absolute; inset:-7px; border-radius:50%;
+      background:rgba(229,48,76,.2); animation:tkHeartPing 1.8s ease-out infinite;
+    }
+    .tk-heart i {
+      position:relative; z-index:2; width:32px; height:32px; display:grid; place-items:center;
+      border:2px solid #fff; border-radius:11px; background:linear-gradient(145deg,#ff5b70,#d9143f);
+      color:#fff; font-size:18px; font-style:normal; line-height:1;
+      box-shadow:0 5px 16px rgba(217,20,63,.4); animation:tkHeartBeat 1.35s ease-in-out infinite;
+    }
+    .tk-heart em {
+      position:absolute; z-index:1; bottom:-7px; width:10px; height:10px;
+      background:#d9143f; border-right:2px solid #fff; border-bottom:2px solid #fff;
+      transform:rotate(45deg); border-radius:1px;
+    }
+    @keyframes tkHeartBeat { 0%,58%,100%{transform:scale(1)} 66%{transform:scale(1.16)} 74%{transform:scale(.96)} 82%{transform:scale(1.08)} }
+    @keyframes tkHeartPing { 0%{transform:scale(.55);opacity:.8} 78%,100%{transform:scale(1.45);opacity:0} }
+    /* Data basi lebih dari 15 menit: denyut berhenti, warna meredup */
+    .tk-stale .tk-heart i { background:linear-gradient(135deg,#94a3b8,#64748b); box-shadow:none; animation:none; }
+    .tk-stale .tk-heart::before { animation:none; background:rgba(148,163,184,.2); }
+
+    /* Tombol pusatkan ulang di dalam peta */
+    .tk-recenter {
+      background:var(--card); border-radius:10px; box-shadow:var(--shadow);
+      width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+      font-size:16px; cursor:pointer; border:none; line-height:1;
+    }
+    .tk-recenter.off { background:var(--g-brand); color:#fff; }
+    @media (prefers-reduced-motion:reduce) { .tk-heart::before,.tk-heart i { animation:none; } }
+
+    /* Buttons */
+    .btn-row { display:flex; gap:10px; margin-bottom:14px; }
+    .btn {
+      flex:1; padding:14px; border-radius:14px;
+      font-size:14px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      transition:transform .15s, box-shadow .15s;
+    }
+    .btn:active { transform:scale(.97); }
+    .btn-wa { background:#25D366; color:#fff; }
+    .btn-copy { background:rgba(43,111,255,.1); color:#2b6fff; border:1px solid rgba(43,111,255,.2); }
+    .btn-map { background:var(--g-brand); color:#fff; }
+    .btn-reload { background:rgba(8,163,95,.1); color:#08a35f; border:1px solid rgba(8,163,95,.2); }
+
+    /* Duration bar */
+    .duration-bar {
+      background:var(--card); border-radius:14px; padding:14px;
+      box-shadow:var(--shadow); margin-bottom:14px;
+    }
+    .duration-header {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+    }
+    .duration-title {
+      font-size:13px; font-weight:700; color:var(--ink);
+    }
+    .duration-time {
+      font-size:14px; font-weight:800; color:var(--brand);
+    }
+    .duration-time.danger { color:#ff4444; animation:pulse 1s infinite; }
+    .duration-bar-fill {
+      height:8px; background:var(--line); border-radius:4px; overflow:hidden;
+    }
+    .duration-bar-fill-inner {
+      height:100%; background:var(--g-green); border-radius:4px;
+      transition:width 1s linear;
+    }
+    .duration-bar-fill-inner.warning { background:var(--g-amber); }
+    .duration-bar-fill-inner.danger { background:#ff4444; }
+
+    /* Error / Loading */
+    .error-screen {
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center; min-height:60vh; padding:32px; text-align:center;
+    }
+    .error-icon { font-size:56px; margin-bottom:16px; }
+    .error-title { font-size:18px; font-weight:800; color:var(--ink); margin-bottom:8px; }
+    .error-msg { font-size:14px; color:var(--sub); margin-bottom:24px; line-height:1.6; max-width:320px; }
+    .loading-screen {
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center; min-height:60vh; gap:16px;
+    }
+    .spinner {
+      width:44px; height:44px; border:4px solid var(--line);
+      border-top-color:var(--brand2); border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .loading-text { font-size:14px; color:var(--sub); }
+
+    /* Leaflet overrides */
+    .leaflet-control-zoom { border:none !important; box-shadow:var(--shadow) !important; }
+    .leaflet-control-zoom a {
+      background:var(--card) !important; color:var(--ink) !important;
+      border:none !important; width:32px !important; height:32px !important;
+      line-height:32px !important; font-size:16px !important;
+    }
+    .leaflet-control-zoom a:first-child { border-radius:10px 10px 0 0 !important; }
+    .leaflet-control-zoom a:last-child { border-radius:0 0 10px 10px !important; }
+    /* Saat belum ada titik GPS, peta memakai titik tampilan bawaan.
+       Tanpa penjelasan, area bawaan itu terlihat seperti posisi pendaki. */
+    .tk-nogps {
+      position: absolute; inset: 0; z-index: 450;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 16px;
+      background: rgba(244, 246, 251, .82);
+      color: var(--ink); font-family: var(--font);
+    }
+    .tk-nogps b { display: block; margin-bottom: 4px; font-size: 15px; }
+    .tk-nogps small { color: var(--sub); font-size: 12px; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="phone" id="app">
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <div class="loading-text">Memuat lokasi...</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.js"></script>
+  <script src="/map-files.js" defer></script>
+  <script src="/map-offline.js" defer></script>
+  <script>
+    (function () {
+      'use strict';
+
+      // ===== CONFIG =====
+      const API = '/api/tracking';
+      const REFRESH_MS = 20000; // 20 detik — lebih responsif
+      const DEFAULT_DURATION = 4; // jam
+
+      // ===== PARSE URL =====
+      const params = new URLSearchParams(window.location.search);
+      const SESSION_ID = params.get('session') || '';
+      const TOKEN = params.get('token') || '';
+
+      // ===== STATE =====
+      let map = null, marker = null, polyline = null, popupMarker = null;
+      let sessionData = null, positions = [], watchTimer = null;
+      let lastPosition = null;
+      let accuracyCircle = null, startMarker = null, gapLayer = null;
+      let _tkFollow = true, _tkRecenterBtn = null;
+
+      // ===== HELPERS =====
+      function escapeHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function toast(msg, duration = 2500) {
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = `
+          position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+          background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px;
+          font-size:13px; font-weight:600; z-index:9999;
+          box-shadow:0 8px 24px rgba(0,0,0,.2);
+          animation:fade .3s ease;
+        `;
+        document.body.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, duration);
+      }
+
+      // ===== HELPER NORMALISASI FIELD API =====
+      function _tkAcc(p) {
+        if (!p) return null;
+        if (p.accuracy_m != null) return p.accuracy_m;
+        if (p.accuracy != null) return p.accuracy;
+        return null;
+      }
+
+      function _tkBat(p) {
+        if (!p) return null;
+        if (p.battery_pct != null) return p.battery_pct;
+        if (p.battery != null) return p.battery;
+        return null;
+      }
+
+      function _tkSpeedKmh(prev, cur) {
+        if (!prev || !cur) return null;
+        var t1 = new Date(prev.sent_at || prev.at).getTime();
+        var t2 = new Date(cur.sent_at || cur.at).getTime();
+        var dt = (t2 - t1) / 1000;
+        if (!isFinite(dt) || dt < 5) return null;
+        var R = 6371000, rad = Math.PI / 180;
+        var dLat = (cur.lat - prev.lat) * rad;
+        var dLng = (cur.lng - prev.lng) * rad;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(prev.lat * rad) * Math.cos(cur.lat * rad) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        var d = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+        var kmh = (d / dt) * 3.6;
+        if (!isFinite(kmh) || kmh < 0 || kmh > 200) return null;
+        return Math.round(kmh * 10) / 10;
+      }
+
+      // ===== KECEPATAN DARI RIWAYAT =====
+      // Cari pasangan titik terbaru yang selisih waktunya layak. Nol km/j
+      // adalah jawaban sah: pendaki sedang tidak bergerak.
+      function _tkSpeedFromHist(list) {
+        if (!list || list.length < 2) return null;
+        var newest = list[0];
+        var t0 = new Date(newest.sent_at || newest.at).getTime();
+        if (!isFinite(t0)) return null;
+        for (var i = 1; i < list.length && i < 25; i++) {
+          var prev = list[i];
+          var t = new Date(prev.sent_at || prev.at).getTime();
+          if (!isFinite(t)) continue;
+          var dt = (t0 - t) / 1000;
+          if (dt < 8) continue;
+          if (dt > 1200) break;
+          var kmh = _tkSpeedKmh(prev, newest);
+          if (kmh != null) return kmh;
+        }
+        return null;
+      }
+
+      // ===== TAMPILKAN KEGAGALAN (tidak lagi diam-diam) =====
+      function _tkFail(msg) {
+        var badge = document.getElementById('statusBadge');
+        var statusText = document.getElementById('statusText');
+        var meta = document.getElementById('infoMeta');
+        var name = document.getElementById('trackName');
+        if (badge) badge.className = 'status-badge paused';
+        if (statusText) statusText.textContent = 'Gagal';
+        if (name && name.textContent === 'Memuat...') name.textContent = 'Tidak terhubung';
+        if (meta) {
+          meta.innerHTML = '\u26a0\ufe0f ' + escapeHtml(String(msg)) +
+            '<br><small>Tekan \ud83d\udd04 Perbarui Lokasi untuk mencoba lagi.</small>';
+        }
+      }
+
+      // ===== BELUM ADA TITIK GPS =====
+      function _tkWaiting() {
+        const meta = document.getElementById('infoMeta');
+        if (meta) meta.textContent = 'Menunggu titik GPS pertama dari perangkat pendaki';
+
+        const box = document.getElementById('map');
+        if (box && !document.getElementById('tkNoGps')) {
+          const ov = document.createElement('div');
+          ov.id = 'tkNoGps';
+          ov.className = 'tk-nogps';
+          ov.innerHTML = '<div><b>Belum ada titik GPS</b>' +
+            '<small>Peta menampilkan area umum, bukan posisi pendaki.</small></div>';
+          box.appendChild(ov);
+        }
+        const last = document.getElementById('statLast');
+        if (last) {
+          last.textContent = 'Menunggu';
+          last.className = 'value warn';
+        }
+      }
+
+      function _tkClearWaiting() {
+        const ov = document.getElementById('tkNoGps');
+        if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+      }
+
+      // ===== SHOW ERROR =====
+      function showError(title, msg) {
+        document.getElementById('app').innerHTML = `
+          <div class="error-screen">
+            <div class="error-icon">🔒</div>
+            <div class="error-title">${escapeHtml(title || 'Akses Ditolak')}</div>
+            <div class="error-msg">${escapeHtml(msg || 'Link tidak valid.')}</div>
+            <a href="/" class="btn btn-map" style="width:auto;padding:14px 28px">← Kembali ke Pintu Angin</a>
+          </div>
+        `;
+      }
+
+      // ===== INIT MAP =====
+      function _tkSyncRecenter() {
+        if (!_tkRecenterBtn) return;
+        _tkRecenterBtn.className = 'tk-recenter' + (_tkFollow ? '' : ' off');
+        _tkRecenterBtn.title = _tkFollow ? 'Peta mengikuti pendaki' : 'Pusatkan lagi ke pendaki';
+      }
+
+      function _tkAddRecenter() {
+        var Ctl = L.Control.extend({
+          options: { position: 'topleft' },
+          onAdd: function () {
+            var b = L.DomUtil.create('button', 'tk-recenter');
+            b.type = 'button';
+            b.innerHTML = '\ud83c\udfaf';
+            L.DomEvent.disableClickPropagation(b);
+            L.DomEvent.on(b, 'click', function (ev) {
+              L.DomEvent.stop(ev);
+              _tkFollow = true;
+              _tkSyncRecenter();
+              if (lastPosition) {
+                map.setView([lastPosition.lat, lastPosition.lng],
+                            Math.max(map.getZoom() || 0, 16), { animate: true });
+              }
+            });
+            _tkRecenterBtn = b;
+            return b;
+          }
+        });
+        map.addControl(new Ctl());
+        _tkSyncRecenter();
+      }
+
+      function initMap() {
+        map = L.map('map', {
+          zoomControl: true,
+          attributionControl: true,
+          zoomSnap: 0.5
+        }).setView([-5.29, 119.92], 14);
+
+        map.attributionControl.setPrefix('');
+
+        // OSM tidak menyediakan tile @2x, dan tanpa crossOrigin galat tile
+        // tidak berubah menjadi galat CORS yang mengosongkan peta
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '\u00a9 OpenStreetMap',
+          maxZoom: 19,
+          keepBuffer: 3
+        });
+
+        // Topografi: kontur dan punggungan Bawakaraeng terbaca jelas
+        var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          attribution: '\u00a9 OpenTopoMap (CC-BY-SA)',
+          maxZoom: 17,
+        });
+
+        // Satelit jadi lapisan dasar penuh, bukan overlay tempelan
+        var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '\u00a9 Esri',
+          maxZoom: 19,
+        });
+
+        osm.addTo(map);
+        map._bwkLayersCtrl = L.control.layers({ 'Peta': osm, 'Topografi': topo, 'Satelit': satellite },
+                         {}, { position: 'topright' }).addTo(map);
+        L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+        // Kontrol offline: simpan tile & upload file geospasial
+        if(window.bwkMapOffline){
+          window.bwkMapOffline.addSaveAreaControl(map,{position:'topright'}).addTo(map);
+          window.bwkMapOffline.addUploadControl(map,{position:'topright'}).addTo(map);
+        }
+
+        // Berhenti mengikuti begitu keluarga menggeser peta sendiri
+        map.on('dragstart', function () { _tkFollow = false; _tkSyncRecenter(); });
+
+        _tkAddRecenter();
+
+        _tkWatchSize();
+      }
+
+      // ===== JAGA UKURAN PETA =====
+      // Leaflet mengukur kotak peta sekali saat dibuat. Kalau layout masih
+      // bergerak (animasi .view, font baru dimuat, browser di-zoom, layar
+      // diputar), ukuran itu jadi basi dan tile hanya mengisi sebagiannya.
+      var _tkLastSize = '';
+
+      function _tkFixSize() {
+        if (!map) return;
+        var el = document.getElementById('map');
+        if (!el) return;
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+        var key = el.clientWidth + 'x' + el.clientHeight;
+        if (key === _tkLastSize) return;
+        _tkLastSize = key;
+        // invalidateSize tidak meminta ulang tile yang gagal saat ukuran masih
+        // basi, jadi setiap lapisan digambar ulang. Hanya ketika ukuran berubah,
+        // supaya server tile tidak dibanjiri permintaan.
+        map.eachLayer(function (l) {
+          if (l && typeof l.redraw === 'function') l.redraw();
+        });
+      }
+
+      function _tkWatchSize() {
+        var el = document.getElementById('map');
+
+        if (window.requestAnimationFrame) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { _tkFixSize(); });
+          });
+        }
+        [0, 120, 400, 1000, 2200].forEach(function (ms) {
+          setTimeout(function () { _tkFixSize(); }, ms);
+        });
+
+        var t = null;
+        function nudge() {
+          clearTimeout(t);
+          t = setTimeout(function () { _tkFixSize(); }, 150);
+        }
+
+        window.addEventListener('resize', nudge);
+        window.addEventListener('orientationchange', nudge);
+        window.addEventListener('pageshow', nudge);
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) nudge();
+        });
+
+        // Animasi fade pada .view selesai: ukuran final baru diketahui
+        if (el && el.closest) {
+          var view = el.closest('.view');
+          if (view) view.addEventListener('animationend', function () { _tkFixSize(); });
+        }
+
+        // Font kustom mengubah tinggi kartu di sekitar peta
+        if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+          document.fonts.ready.then(function () { _tkFixSize(); }).catch(function () {});
+        }
+
+        if (window.ResizeObserver && el) {
+          try { new ResizeObserver(nudge).observe(el); } catch (e) {}
+        }
+      }
+
+      // ===== SHOW APP VIEW =====
+      function showApp() {
+        document.getElementById('app').innerHTML = `
+          <div class="topbar">
+            <div class="brand">
+              <div class="logo">
+                <img src="/icon-192.png" alt="Pintu Angin" />
+              </div>
+              <div>
+                <small>PINTU ANGIN</small>
+                <h1>📍 Pelacakan Keluarga</h1>
+              </div>
+            </div>
+            <a href="/" style="color:#fff;text-decoration:none;font-size:13px;font-weight:700;background:rgba(255,255,255,.2);padding:8px 14px;border-radius:10px">← Keluar</a>
+          </div>
+
+          <div class="view active">
+            <!-- Status & Info -->
+            <div class="info-card" id="infoCard">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div class="info-name" id="trackName">Memuat...</div>
+                <div class="status-badge offline" id="statusBadge">
+                  <span class="status-dot"></span>
+                  <span id="statusText">Memuat...</span>
+                </div>
+              </div>
+              <div class="info-meta" id="infoMeta">⏳ Mengambil data lokasi...</div>
+            </div>
+
+            <!-- Duration Bar -->
+            <div class="duration-bar" id="durationBar">
+              <div class="duration-header">
+                <span class="duration-title">⏱️ Sesi Aktif</span>
+                <span class="duration-time" id="durationTime">—</span>
+              </div>
+              <div class="duration-bar-fill">
+                <div class="duration-bar-fill-inner" id="durationFill" style="width:100%"></div>
+              </div>
+            </div>
+
+            <!-- Map -->
+            <div class="map-wrap">
+              <div id="map"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+              <div class="stat-box">
+                <div class="label">Koordinat</div>
+                <div class="value" id="statCoords">—</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Akurasi</div>
+                <div class="value" id="statAccuracy">—</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Titik GPS</div>
+                <div class="value" id="statPoints">0</div>
+              </div>
+            </div>
+
+            <div class="stats-row">
+              <div class="stat-box">
+                <div class="label">Baterai</div>
+                <div class="value" id="statBattery">—</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Terakhir</div>
+                <div class="value" id="statLast">—</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Kecepatan</div>
+                <div class="value" id="statSpeed">—</div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="btn-row">
+              <button class="btn btn-wa" id="btnWa" onclick="shareWA()">📱 WhatsApp</button>
+              <button class="btn btn-copy" id="btnCopy" onclick="copyLink()">📋 Salin Link</button>
+              <button class="btn btn-map" id="btnMaps" onclick="openInMaps()">🗺️ Google Maps</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-reload" onclick="refresh()">🔄 Perbarui Lokasi</button>
+            </div>
+          </div>
+        `;
+
+        initMap();
+        refresh();
+        watchTimer = setInterval(refresh, REFRESH_MS);
+      }
+
+      // ===== REFRESH DATA =====
+      async function refresh() {
+        if (!SESSION_ID || !TOKEN) return;
+
+        try {
+          // Get session status
+          const sessRes = await fetch(`${API}?act=status&id=${SESSION_ID}&token=${TOKEN}`);
+          const sessData = await sessRes.json();
+
+          if (!sessRes.ok && !sessData.error) sessData.error = 'HTTP ' + sessRes.status;
+
+          if (sessData.error) {
+            console.error('[TRACKER] status gagal:', sessData.error);
+            const em = String(sessData.error);
+            if (em.indexOf('tidak ditemukan') >= 0 || em.indexOf('berakhir') >= 0) {
+              clearInterval(watchTimer);
+              showError('Sesi Berakhir', 'Pelacakan sudah dihentikan atau habis waktunya.');
+              return;
+            }
+            _tkFail(em);
+            return;
+          }
+
+          sessionData = sessData.session || sessData.data;
+          if (!sessionData) {
+            _tkFail('Server tidak mengirim data sesi.');
+            return;
+          }
+          updateSessionStatus();
+
+          // Riwayat lebih dulu: jumlah titik dan kecepatan harus dihitung
+          // dari data siklus ini, bukan siklus sebelumnya.
+          let hist = [];
+          try {
+            // Ambil seluruh jejak sesi (hingga 7 hari / 2.000 titik), bukan hanya
+            // cuplikan empat jam, agar jalur yang sudah dilalui tetap terlihat.
+            const histRes = await fetch(`${API}?act=history&id=${SESSION_ID}&token=${TOKEN}&limit=2000&hours=168`);
+            const histData = await histRes.json();
+            if (histData.ok && Array.isArray(histData.positions) && histData.positions.length) {
+              hist = histData.positions;
+              positions = hist;
+            }
+          } catch (e) {
+            console.error('[TRACKER] gagal memuat riwayat:', e);
+          }
+
+          // Get last position
+          const posRes = await fetch(`${API}?act=latest&id=${SESSION_ID}&token=${TOKEN}`);
+          const posData = await posRes.json();
+
+          // Titik pertama dari HP sering belum sampai ketika tautan dibuka:
+          // perekam GPS baru mulai, atau layar HP pengirim sempat mati. Riwayat
+          // dan ringkasan sesi dipakai sebagai cadangan supaya kartu statistik
+          // tidak diam-diam kosong tanpa penjelasan.
+          let cur = (posData.ok && posData.position) ? posData.position : null;
+          if (!cur && hist.length) cur = hist[0];
+          if (!cur && sessionData.last_lat != null && sessionData.last_lng != null) {
+            cur = {
+              lat: sessionData.last_lat,
+              lng: sessionData.last_lng,
+              accuracy_m: sessionData.last_accuracy_m,
+              sent_at: sessionData.last_seen || sessionData.created_at
+            };
+          }
+
+          if (cur) {
+            _tkClearWaiting();
+            // Statistik lebih dulu: kalau peta bermasalah, angka tetap tampil
+            updateStats(cur);
+            try {
+              updateMapPosition(cur);
+            } catch (e) {
+              console.error('[TRACKER] gagal memperbarui peta:', e);
+            }
+            lastPosition = cur;
+          } else {
+            _tkWaiting();
+          }
+
+          if (hist.length > 1) {
+            try {
+              updatePolyline(hist);
+            } catch (e) {
+              console.error('[TRACKER] gagal menggambar jejak:', e);
+            }
+          }
+
+          window.dispatchEvent(new CustomEvent('bwk:tracker-update', { detail: {
+            map: map, latest: cur, positions: positions, session: sessionData
+          }}));
+
+        } catch (err) {
+          console.error('[TRACKER] Refresh error:', err);
+          _tkFail('Gagal menghubungi server: ' + (err && err.message ? err.message : err));
+        }
+      }
+
+      // ===== UPDATE SESSION STATUS =====
+      function updateSessionStatus() {
+        if (!sessionData) return;
+
+        const badge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const trackName = document.getElementById('trackName');
+        const infoMeta = document.getElementById('infoMeta');
+
+        // Name
+        trackName.textContent = sessionData.name || 'Pendaki';
+
+        // Status
+        if (sessionData.active) {
+          badge.className = 'status-badge online';
+          statusText.textContent = 'Online';
+        } else {
+          badge.className = 'status-badge offline';
+          statusText.textContent = 'Offline';
+        }
+
+        // Meta info
+        const metaLines = [];
+        if (sessionData.note) {
+          metaLines.push(`📝 ${escapeHtml(sessionData.note)}`);
+        }
+        if (sessionData.device_name) {
+          metaLines.push(`📱 ${escapeHtml(sessionData.device_name)}`);
+        }
+        if (sessionData.mins_ago != null) {
+          metaLines.push(`⏱️ ${sessionData.mins_ago} menit lalu`);
+        }
+        if (sessionData.expires_at) {
+          const expireAt = new Date(sessionData.expires_at);
+          const remaining = Math.round((expireAt - Date.now()) / 60000);
+          if (remaining > 0) {
+            metaLines.push(`⏰ Berakhir dalam ${remaining} menit`);
+          } else {
+            metaLines.push('⚠️ Sesi telah berakhir');
+          }
+        }
+        infoMeta.innerHTML = metaLines.join('<br>');
+      }
+
+      // ===== UPDATE MAP =====
+      function updateMapPosition(pos) {
+        const latLng = [pos.lat, pos.lng];
+        const acc = _tkAcc(pos);
+        const sentAt = pos.sent_at || pos.at;
+        const ageMin = sentAt ? (Date.now() - new Date(sentAt).getTime()) / 60000 : 999;
+        const stale = ageMin > 15;
+
+        const popupHtml =
+          '<div style="padding:2px 0">' +
+            '<b>' + escapeHtml(sessionData && sessionData.name ? sessionData.name : 'Lokasi Saat Ini') + '</b><br>' +
+            '<small>' + pos.lat.toFixed(5) + ', ' + pos.lng.toFixed(5) + '</small>' +
+            (acc != null ? '<br><small>\ud83c\udfaf Akurasi \u00b1' + acc + ' m</small>' : '') +
+            (_tkBat(pos) != null ? '<br><small>\ud83d\udd0b ' + _tkBat(pos) + '%</small>' : '') +
+          '</div>';
+
+        if (!marker) {
+          const icon = L.divIcon({
+            className: 'tk-marker',
+            html: '<div class="tk-heart" aria-label="Posisi pendaki"><i>♥</i><em></em></div>',
+            iconSize: [36, 42],
+            iconAnchor: [18, 42]
+          });
+          marker = L.marker(latLng, { icon: icon, zIndexOffset: 1000 }).addTo(map).bindPopup(popupHtml);
+          map.setView(latLng, 16);
+        } else {
+          marker.setLatLng(latLng);
+          marker.setPopupContent(popupHtml);
+        }
+
+        var markerEl = marker.getElement();
+        if (markerEl && markerEl.classList) markerEl.classList.toggle('tk-stale', stale);
+
+        // Lingkaran akurasi: keluarga melihat seberapa yakin GPS-nya
+        if (acc != null && acc > 0) {
+          if (!accuracyCircle) {
+            accuracyCircle = L.circle(latLng, {
+              radius: acc, color: '#2b6fff', weight: 1, opacity: .5,
+              fillColor: '#2b6fff', fillOpacity: .12, interactive: false
+            }).addTo(map);
+          } else {
+            accuracyCircle.setLatLng(latLng);
+            accuracyCircle.setRadius(acc);
+          }
+        }
+
+        _tkFixSize();
+
+        // Hanya ikuti kalau keluarga belum menggeser peta sendiri
+        if (_tkFollow) {
+          if (positions.length > 1) {
+            const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
+            bounds.extend(latLng);
+            if (bounds.isValid()) {
+              map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17, animate: true });
+            }
+          } else {
+            map.panTo(latLng, { animate: true, duration: 0.6 });
+          }
+        }
+      }
+
+      // ===== UPDATE POLYLINE =====
+      function updatePolyline(positionsList) {
+        if (!positionsList || positionsList.length < 2) return;
+        positions = positionsList;
+        var pts = document.getElementById('statPoints'); if (pts) pts.textContent = positions.length;
+        var ordered = positions.slice().reverse();
+        var segments = [[]], gaps = [];
+        for (var i=0;i<ordered.length;i++) {
+          if (i>0) {
+            var prevT=new Date(ordered[i-1].sent_at||ordered[i-1].at).getTime();
+            var curT=new Date(ordered[i].sent_at||ordered[i].at).getTime();
+            if (isFinite(prevT)&&isFinite(curT)&&curT-prevT>90000) {
+              gaps.push({lost:ordered[i-1],resumed:ordered[i],minutes:Math.round((curT-prevT)/60000)});
+              segments.push([]);
+            }
+          }
+          segments[segments.length-1].push([ordered[i].lat,ordered[i].lng]);
+        }
+        segments=segments.filter(function(x){return x.length>1;});
+        if (polyline) { map.removeLayer(polyline); polyline=null; }
+        polyline=L.polyline(segments,{color:'#168a78',weight:5,opacity:.9,smoothFactor:1.15,lineCap:'round',lineJoin:'round'}).addTo(map);
+        if (polyline.bringToBack) polyline.bringToBack();
+        if (gapLayer) map.removeLayer(gapLayer);
+        gapLayer=L.layerGroup();
+        gaps.forEach(function(g){
+          L.circleMarker([g.lost.lat,g.lost.lng],{radius:7,color:'#fff',weight:2,fillColor:'#e0524d',fillOpacity:1}).bindTooltip('Sinyal/GPS hilang di sini · jeda '+g.minutes+' menit').addTo(gapLayer);
+          L.circleMarker([g.resumed.lat,g.resumed.lng],{radius:7,color:'#fff',weight:2,fillColor:'#2783de',fillOpacity:1}).bindTooltip('GPS tersambung kembali di sini').addTo(gapLayer);
+        });
+        gapLayer.addTo(map);
+        var first=[ordered[0].lat,ordered[0].lng];
+        if (!startMarker) startMarker=L.circleMarker(first,{radius:5,color:'#fff',weight:2,fillColor:'#08b96f',fillOpacity:1}).addTo(map).bindPopup('Awal jejak');
+        else startMarker.setLatLng(first);
+      }
+
+      // ===== UPDATE STATS =====
+      function updateStats(pos) {
+        const coords = document.getElementById('statCoords');
+        const accuracy = document.getElementById('statAccuracy');
+        const points = document.getElementById('statPoints');
+        const battery = document.getElementById('statBattery');
+        const last = document.getElementById('statLast');
+        const speed = document.getElementById('statSpeed');
+
+        if (coords) {
+          coords.textContent = `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
+          coords.className = 'value good';
+        }
+
+        if (accuracy) {
+          const acc = _tkAcc(pos);
+          accuracy.textContent = acc ? `±${acc}m` : '—';
+          accuracy.className = 'value ' + (acc ? (acc < 20 ? 'good' : acc < 50 ? 'warn' : 'bad') : '');
+        }
+
+        if (points) {
+          points.textContent = positions.length || 1;
+        }
+
+        if (battery) {
+          const b = _tkBat(pos);
+          battery.textContent = b != null ? `${b}%` : '—';
+          battery.className = 'value ' + (b != null ? (b > 50 ? 'good' : b > 20 ? 'warn' : 'bad') : '');
+        }
+
+        if (last) {
+          const sentAt = pos.sent_at || pos.at;
+          const mins = sentAt ? Math.round((Date.now() - new Date(sentAt).getTime()) / 60000) : 999;
+          last.textContent = mins < 1 ? 'Baru saja' : `${mins}m`;
+          last.className = 'value ' + (mins < 5 ? 'good' : mins < 15 ? 'warn' : 'bad');
+        }
+
+        if (speed) {
+          // act=latest mengirim titik yang sama sampai ada titik baru,
+          // jadi selisih waktunya nol. Kecepatan dihitung dari riwayat:
+          // positions[0] terbaru, positions[1] sebelumnya.
+          let spd = (pos.speed != null) ? pos.speed : null;
+          if (spd == null) spd = _tkSpeedFromHist(positions);
+          if (spd == null && lastPosition) spd = _tkSpeedKmh(lastPosition, pos);
+          if (spd == null) { speed.textContent = '—'; speed.className = 'value'; }
+          else if (spd < 0.5) { speed.textContent = '0 km/j'; speed.className = 'value'; }
+          else { speed.textContent = spd + ' km/j'; speed.className = 'value good'; }
+        }
+      }
+
+      // ===== DURATION TIMER =====
+      function updateDuration() {
+        if (!sessionData?.expires_at) return;
+
+        const expireAt = new Date(sessionData.expires_at);
+        const now = Date.now();
+        const remaining = expireAt - now;
+        const totalDuration = DEFAULT_DURATION * 3600 * 1000;
+        const pctLeft = Math.max(0, (remaining / totalDuration) * 100);
+
+        const timeEl = document.getElementById('durationTime');
+        const fillEl = document.getElementById('durationFill');
+
+        if (timeEl && fillEl) {
+          if (remaining <= 0) {
+            timeEl.textContent = 'Berakhir';
+            timeEl.className = 'duration-time danger';
+            fillEl.style.width = '0%';
+            fillEl.className = 'duration-bar-fill-inner danger';
+            clearInterval(watchTimer);
+            showError('Sesi Berakhir', 'Waktu pelacakan sudah habis.');
+            return;
+          }
+
+          const hours = Math.floor(remaining / 3600000);
+          const mins = Math.floor((remaining % 3600000) / 60000);
+          timeEl.textContent = `${hours}j ${mins}m lagi`;
+
+          fillEl.style.width = `${pctLeft}%`;
+
+          if (pctLeft < 25) {
+            timeEl.className = 'duration-time danger';
+            fillEl.className = 'duration-bar-fill-inner danger';
+          } else if (pctLeft < 50) {
+            timeEl.className = 'duration-time';
+            fillEl.className = 'duration-bar-fill-inner warning';
+          } else {
+            timeEl.className = 'duration-time';
+            fillEl.className = 'duration-bar-fill-inner';
+          }
+        }
+      }
+
+      // ===== ACTIONS =====
+      window.shareWA = function() {
+        const msg = '📍 *Live Tracking — Pintu Angin*\nPantau posisi pendaki real-time:\n👉 ' + window.location.href;
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+      };
+
+      window.copyLink = function() {
+        const url = window.location.href;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url).then(() => toast('✅ Link disalin!'));
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          toast('✅ Link disalin!');
+        }
+      };
+
+      window.openInMaps = function() {
+        if (lastPosition) {
+          window.open('https://www.google.com/maps?q=' + lastPosition.lat + ',' + lastPosition.lng, '_blank');
+        } else {
+          toast('⚠️ Lokasi belum tersedia');
+        }
+      };
+
+      window.refresh = refresh;
+      window.BWKTrackingView = {
+        getMap: function () { return map; },
+        getMarker: function () { return marker; },
+        getLatest: function () { return lastPosition; },
+        getPositions: function () { return positions.slice(); },
+        getSession: function () { return sessionData; },
+        follow: function () {
+          _tkFollow = true;
+          _tkSyncRecenter();
+          if (lastPosition && map) map.setView([lastPosition.lat, lastPosition.lng], Math.max(map.getZoom(), 16), { animate:true });
+        }
+      };
+      window.dispatchEvent(new CustomEvent('bwk:tracker-ready', { detail: { map: map } }));
+
+      // ===== INIT =====
+      function init() {
+        if (!SESSION_ID || !TOKEN) {
+          showError('Link Tidak Valid', 'Parameter session atau token tidak ditemukan di URL.');
+          return;
+        }
+
+        if (!/^[0-9a-f-]{36}$/i.test(SESSION_ID)) {
+          showError('ID Sesi Tidak Valid', 'ID sesi tidak sesuai format.');
+          return;
+        }
+
+        showApp();
+
+        // Update duration every second
+        setInterval(updateDuration, 1000);
+        updateDuration();
+      }
+
+      // Handle visibility change
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          if (watchTimer) { clearInterval(watchTimer); watchTimer = null; }
+        } else {
+          refresh();
+          watchTimer = setInterval(refresh, REFRESH_MS);
+        }
+      });
+
+      // Start
+      init();
+    })();
+  </script>
+  <script src="/tracking-plus.js"></script>
+  <script src="/tracking-message-viewer.js"></script>
+  <script src="/tracking-live-recovery.js"></script>
+  <script src="/tracking-sos.js"></script>
+</body>
+</html>

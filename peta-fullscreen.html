@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Peta Layar Penuh — Pintu Angin</title>
+<meta name="theme-color" content="#10243D"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="icon" type="image/png" href="/icon-192.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<!-- Leaflet LOKAL (bukan CDN) supaya halaman ini tetap terbuka saat offline di gunung -->
+<link rel="stylesheet" href="leaflet.css"/>
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+  body{display:flex;flex-direction:column;background:#0b1a2e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  /* Bar atas: tombol ESC + judul. Sengaja tipis supaya peta seleluasa mungkin. */
+  #topbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;background:#10243d;color:#fff;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));box-shadow:0 2px 12px rgba(0,0,0,.35);z-index:2000}
+  #escBtn{display:flex;align-items:center;gap:7px;background:#e53935;color:#fff;border:none;border-radius:11px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(229,57,53,.45);white-space:nowrap}
+  #escBtn:active{transform:scale(.96)}
+  #escBtn kbd{background:rgba(255,255,255,.25);border-radius:5px;padding:1px 7px;font-size:11px;font-weight:800;font-family:inherit}
+  #ttl{flex:1;min-width:0;text-align:center}
+  #ttl b{display:block;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ttl small{display:block;font-size:10.5px;font-weight:600;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #locBtn{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;font-size:17px;cursor:pointer}
+  #locBtn:active{transform:scale(.95)}
+  #map{flex:1 1 auto;min-height:0;background:#0b1a2e;z-index:1}
+  /* Chip info bawah (legenda jalur / status penyimpanan offline) */
+  #chip{position:fixed;left:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1100;background:rgba(16,36,61,.93);color:#eaf2ff;font-size:11.5px;font-weight:600;padding:8px 12px;border-radius:10px;max-width:78vw;line-height:1.5;pointer-events:none;border:1px solid rgba(120,180,255,.22)}
+  #chip .lg{display:inline-flex;align-items:center;gap:5px;margin-right:10px;font-weight:700}
+  #chip .lg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  #toast{position:fixed;left:50%;bottom:calc(56px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(14px);background:rgba(16,36,61,.95);color:#fff;border:1px solid rgba(255,255,255,.18);padding:10px 16px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:3000;max-width:88vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* Penanda peta (sama seperti di index.html) */
+  .wdrop{font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+  .sigmark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #2ecc71;border-radius:50%;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  /* leaflet.css lokal tidak menyertakan images/layers.png — ganti ikon kontrol layer dengan emoji */
+  .leaflet-control-layers-toggle{background-image:none!important;text-decoration:none}
+  .leaflet-control-layers-toggle::after{content:'🗺️';font-size:17px;line-height:34px;display:block;text-align:center}
+  .leaflet-popup-content b{font-size:14px}
+  .fspop .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-bottom:4px}
+  .fspop .meta{font-size:12px;color:#565f78;margin-top:3px}
+  .fspop .desc{font-size:12.5px;margin-top:6px;line-height:1.5}
+  @media (max-width:480px){
+    #ttl b{font-size:12.5px}
+    #escBtn{padding:9px 11px;font-size:12px}
+    #escBtn .lbl-full{display:none}
+  }
+</style>
+</head>
+<body>
+<header id="topbar">
+  <button id="escBtn" type="button" onclick="goBack()">✕ <kbd>ESC</kbd> <span class="lbl-full">Kembali ke Pintu Angin</span></button>
+  <div id="ttl"><b id="fsTitle">Peta</b><small id="fsSub">Pintu Angin · Gunung Bawakaraeng</small></div>
+  <button id="locBtn" type="button" title="Tunjukkan lokasi saya" onclick="fsLocate()">📍</button>
+</header>
+<div id="map"></div>
+<div id="chip" style="display:none"></div>
+<div id="toast"></div>
+<script src="leaflet.js"></script>
+<script src="peta-data.js"></script>
+<script src="map-files.js"></script>
+<script src="map-offline.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(window.location.search);
+var MODE=(params.get('map')==='offline')?'offline':'jalur';
+var BACK_HASH=(params.get('from')||(MODE==='offline'?'petaoffline':'peta')).replace(/[^a-z0-9_-]/gi,'');
+
+/* Toast mini — dipakai juga oleh map-offline.js lewat window.toast */
+window.toast=function(msg,type){
+  var t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.className='show';
+  clearTimeout(window._tt);window._tt=setTimeout(function(){t.className='';},2600);
+};
+
+/* ESC: kembali ke Pintu Angin, persis ke bagian peta yang tadi dibuka */
+window.goBack=function(){
+  window.location.href='index.html#'+(BACK_HASH||'peta');
+};
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){e.preventDefault();window.goBack();}
+});
+
+if(!window.L){
+  document.getElementById('map').innerHTML='<div style="padding:44px 22px;text-align:center;color:#cfd9ea;font-size:13px;font-weight:600;line-height:1.7">⚠️ Pustaka peta (leaflet.js) gagal dimuat.<br/>Kembali lalu coba lagi.</div>';
+  return;
+}
+
+var map=L.map('map',{scrollWheelZoom:true}).setView([-5.293,119.923],13);
+L.control.scale({imperial:false,position:'bottomright'}).addTo(map);
+
+/* Lokasi saya (dipakai kedua mode) */
+window._fsMe=null;window._fsMeC=null;
+window.fsLocate=function(){
+  if(!navigator.geolocation){window.toast('GPS tidak tersedia di perangkat ini','err');return;}
+  window.toast('Mencari posisi GPS…','ok');
+  navigator.geolocation.getCurrentPosition(function(p){
+    var la=p.coords.latitude,ln=p.coords.longitude,ac=p.coords.accuracy||30;
+    if(window._fsMe){map.removeLayer(window._fsMe);window._fsMe=null;}
+    if(window._fsMeC){map.removeLayer(window._fsMeC);window._fsMeC=null;}
+    window._fsMeC=L.circle([la,ln],{radius:ac,color:'#2b6fff',fillColor:'#2b6fff',fillOpacity:.15,weight:1}).addTo(map);
+    window._fsMe=L.circleMarker([la,ln],{radius:7,color:'#fff',weight:3,fillColor:'#2b6fff',fillOpacity:1}).addTo(map).bindTooltip('📍 Lokasi Anda (±'+Math.round(ac)+' m)',{direction:'top'}).openTooltip();
+    map.setView([la,ln],Math.max(map.getZoom(),15),{animate:true});
+    window.toast('Lokasi ditemukan (±'+Math.round(ac)+' m)','ok');
+  },function(){window.toast('GPS belum mendapat posisi. Coba di tempat terbuka.','err');},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+};
+
+var chip=document.getElementById('chip');
+
+if(MODE==='jalur'){
+  /* ===== Mode Peta Jalur (citra satelit + pos + air + sinyal) ===== */
+  document.title='Peta Jalur Layar Penuh — Pintu Angin';
+  document.getElementById('fsTitle').textContent='🗺️ Peta Jalur — Layar Penuh';
+  document.getElementById('fsSub').textContent='Ketuk titik pos untuk detail · ESC untuk kembali';
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles © Esri'}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,opacity:.85}).addTo(map);
+
+  var pts=jalurPos.map(function(p){return _jc(p.f);});
+  L.polyline(pts,{color:'#ff2d55',weight:3.5,dashArray:'7 6',lineCap:'round'}).addTo(map);
+
+  jalurPos.forEach(function(p){
+    var c=_jc(p.f);
+    L.circleMarker(c,{radius:9,color:'#fff',weight:2,fillColor:_jzc[p.st],fillOpacity:1}).addTo(map)
+      .bindTooltip(p.n+' · '+p.el+' m',{direction:'top'})
+      .bindPopup('<div class="fspop"><span class="pill" style="background:'+_jzc[p.st]+'22;color:'+_jzc[p.st]+'">● '+_jzt[p.st]+'</span><br/><b>'+p.n+'</b><div class="meta">🏔️ '+p.el+' m · '+c[0].toFixed(4)+', '+c[1].toFixed(4)+'</div><div class="desc">'+p.d+'</div></div>');
+  });
+  waterPos.forEach(function(w){
+    var c=_jc(w.f);
+    var wi=L.divIcon({html:'<div class="wdrop">💧</div>',className:'wdrop-wrap',iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker(c,{icon:wi,zIndexOffset:500}).addTo(map)
+      .bindTooltip('💧 '+w.n,{direction:'top'})
+      .bindPopup('<div class="fspop"><span class="pill" style="background:#2b6fff22;color:#2b6fff">💧 Sumber Air</span><br/><b>'+w.n+'</b><div class="meta">🏔️ '+w.el+' m · '+c[0].toFixed(4)+', '+c[1].toFixed(4)+'</div><div class="desc"><b>'+w.type+'</b><br/>'+w.note+'</div></div>');
+  });
+  signalPos.forEach(function(s){
+    var c=_jc(s.f);var q=_SIG_Q[s.q]||_SIG_Q.lemah;
+    var sic=L.divIcon({html:'<div class="sigmark" style="border-color:'+q.c+'">📶</div>',className:'sigmark-wrap',iconSize:[30,30],iconAnchor:[15,15]});
+    L.marker(c,{icon:sic,zIndexOffset:600}).addTo(map)
+      .bindTooltip('📶 '+s.n+' · sinyal '+s.q,{direction:'top'})
+      .bindPopup('<div class="fspop"><span class="pill" style="background:'+q.c+'22;color:'+q.c+'">📶 Sinyal '+q.t+'</span><br/><b>'+s.n+'</b><div class="meta">🏔️ '+s.el+' m · '+c[0].toFixed(4)+', '+c[1].toFixed(4)+'</div><div class="desc"><b>Operator: '+s.op+'</b><br/>'+s.d+'</div></div>');
+  });
+
+  map.fitBounds(pts,{padding:[36,36]});
+  chip.style.display='block';
+  chip.innerHTML='<span class="lg"><i style="background:#08a35f"></i>Aman</span><span class="lg"><i style="background:#d5803b"></i>Waspada</span><span class="lg"><i style="background:#ff2d55"></i>Bahaya</span><br/>💧 sumber air · 📶 perkiraan sinyal HP';
+
+}else{
+  /* ===== Mode Peta Offline (OSM/topo/sat + simpan area + upload + reset) ===== */
+  document.title='Peta Offline Layar Penuh — Pintu Angin';
+  document.getElementById('fsTitle').textContent='📡 Peta Offline — Layar Penuh';
+  document.getElementById('fsSub').textContent='Simpan area & buka file jalur · ESC untuk kembali';
+
+  map.setView([-5.293,119.923],14);
+  var osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'\u00a9 OpenStreetMap',maxZoom:19,keepBuffer:3});
+  var topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'\u00a9 OpenTopoMap (CC-BY-SA)',maxZoom:17});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'\u00a9 Esri',maxZoom:19});
+  osm.addTo(map);
+  map._bwkLayersCtrl=L.control.layers({'Peta':osm,'Topografi':topo,'Satelit':sat},{},{position:'topright'}).addTo(map);
+
+  if(window.bwkMapOffline){
+    window.bwkMapOffline.addSaveAreaControl(map,{position:'topright'}).addTo(map);
+    window.bwkMapOffline.addUploadControl(map,{position:'topright'}).addTo(map);
+    if(window.bwkMapOffline.addResetControl)window.bwkMapOffline.addResetControl(map,{position:'topright'}).addTo(map);
+  }
+
+  /* Pulihkan file yang pernah di-upload (localStorage dipakai bersama index.html) */
+  if(window.bwkMapFiles){
+    (window.bwkMapFiles.list()||[]).forEach(function(it){
+      try{
+        var r=window.bwkMapFiles.render(map,it.data||it.parsed||it,it.name||it.filename||'file');
+        if(r&&window.bwkMapOffline&&window.bwkMapOffline.addToLayerControl)window.bwkMapOffline.addToLayerControl(map,r);
+      }catch(e){}
+    });
+  }
+
+  chip.style.display='block';
+  if(navigator.storage&&navigator.storage.estimate){
+    navigator.storage.estimate().then(function(est){
+      var used=(est.usage||0)/1048576,quota=(est.quota||0)/1073741824;
+      chip.innerHTML='💾 Penyimpanan: <b>'+used.toFixed(1)+' MB</b> terpakai'+(quota?' dari ~'+quota.toFixed(1)+' GB':'')+'<br/>📥 simpan area · 📂 upload file · 🗑️ reset file';
+    }).catch(function(){chip.innerHTML='💾 Tile & file peta offline tersimpan di perangkat ini.';});
+  }else{
+    chip.innerHTML='💾 Tile & file peta offline tersimpan di perangkat ini.';
+  }
+}
+
+setTimeout(function(){try{map.invalidateSize();}catch(e){}},150);
+window.addEventListener('resize',function(){try{map.invalidateSize();}catch(e){}});
+})();
+</script>
+</body>
+</html>

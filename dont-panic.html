@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DONT PANIC — Pintu Angin</title>
+<style>
+  :root{ --red:#D42B27; --gold:#ffce4a; --ink:#2C2C2B; }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:#0e1b24; color:var(--ink);
+    display:flex; align-items:center; justify-content:center; min-height:100vh; overflow:hidden; }
+  #wrap{ position:relative; width:100%; max-width:440px; height:100vh; max-height:760px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5); overflow:hidden; background:#12222e; display:flex; flex-direction:column; }
+  @media(min-width:460px){ #wrap{ border-radius:18px; height:96vh; } }
+
+  /* MENU */
+  #menu{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    padding:26px 22px; gap:14px; text-align:center; overflow-y:auto;
+    background:radial-gradient(120% 80% at 50% 0%, #1c3a4d, #0e1b24 70%); }
+  .milad{ display:inline-block; background:var(--red); color:#fff; font-weight:800;
+    font-size:12.5px; letter-spacing:1.4px; padding:7px 15px; border-radius:999px;
+    box-shadow:0 6px 18px rgba(212,43,39,.5); text-transform:uppercase; margin-top:4px; }
+  .logo{ width:92px; height:92px; border-radius:50%;
+    box-shadow:0 8px 26px rgba(0,0,0,.5), 0 0 0 4px rgba(255,255,255,.14);
+    animation:bob 2.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-4deg);} 50%{transform:translateY(-8px) rotate(4deg);} }
+  @keyframes rcNeonPulse{0%,100%{box-shadow:0 8px 26px rgba(0,0,0,.5),0 0 0 4px rgba(255,255,255,.14),0 0 12px rgba(41,180,255,.68),0 0 25px rgba(255,44,49,.42)}50%{box-shadow:0 10px 32px rgba(0,0,0,.55),0 0 0 4px rgba(255,255,255,.22),0 0 24px rgba(41,180,255,.98),0 0 48px rgba(255,44,49,.72)}}
+  .logo{animation:bob 2.6s ease-in-out infinite,rcNeonPulse 2.15s ease-in-out infinite}
+  .brand{ color:#fff; font-weight:800; font-size:27px; letter-spacing:1px; line-height:1.05; }
+  .brand span{ color:var(--gold); }
+  .tag{ color:rgba(255,255,255,.78); font-size:13.5px; font-weight:600; margin-top:-4px; }
+  .pick{ color:rgba(255,255,255,.6); font-size:12px; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; margin-top:6px; }
+  .cards{ display:flex; flex-direction:column; gap:14px; width:100%; margin-top:2px; }
+  .card{ display:flex; align-items:center; gap:14px; width:100%; cursor:pointer;
+    background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:14px 16px;
+    text-align:left; transition:transform .1s ease, border-color .15s ease, background .15s ease; }
+  .card:hover{ transform:translateY(-2px); border-color:rgba(255,206,74,.6); }
+  .card:active{ transform:scale(.98); }
+  .ic{ width:58px; height:58px; min-width:58px; border-radius:14px; display:flex;
+    align-items:center; justify-content:center; font-size:30px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); }
+  .ic.fly{ background:linear-gradient(180deg,#6cc4ef,#2783de); }
+  .ic.cof{ background:linear-gradient(180deg,#e3b483,#a5622f); }
+  .cbody{ flex:1; }
+  .cname{ color:#fff; font-weight:800; font-size:17px; }
+  .cname i{ color:var(--gold); font-style:normal; }
+  .cdesc{ color:rgba(255,255,255,.75); font-size:12.5px; margin-top:2px; line-height:1.35; }
+  .go{ color:#0e1b24; background:var(--gold); font-weight:800; font-size:13px;
+    padding:9px 14px; border-radius:10px; white-space:nowrap; }
+  .foot{ color:rgba(255,255,255,.5); font-size:11px; margin-top:auto; padding-top:10px; letter-spacing:.4px; }
+
+  /* GAME VIEW */
+  #gameView{ position:absolute; inset:0; display:none; flex-direction:column; background:#000; }
+  #topbar{ height:46px; min-height:46px; display:flex; align-items:center; gap:10px;
+    padding:0 12px; background:#0b161e; border-bottom:1px solid rgba(255,255,255,.08); }
+  #backBtn{ display:flex; align-items:center; gap:6px; cursor:pointer; border:none;
+    background:rgba(255,255,255,.1); color:#fff; font-weight:700; font-size:14px;
+    padding:8px 14px; border-radius:10px; min-height:36px; }
+  #backBtn:active{ transform:scale(.97); }
+  #gameName{ color:var(--gold); font-weight:800; font-size:14px; letter-spacing:.5px; }
+  #frame{ flex:1; width:100%; border:none; display:block; background:#000; }
+
+/* DONT PANIC visual polish: static depth, micro-interactions, low-cost glow */
+#menu{background:radial-gradient(circle at 82% 18%,rgba(255,207,73,.15),transparent 27%),radial-gradient(circle at 10% 85%,rgba(59,190,255,.15),transparent 33%),#0b1d29}.brand span{color:#ffd45b;text-shadow:0 0 12px rgba(255,201,59,.38)}.tag{max-width:280px;line-height:1.45}.cards{gap:12px}.card{border-color:rgba(158,238,226,.19);background:linear-gradient(125deg,rgba(255,255,255,.13),rgba(255,255,255,.055));box-shadow:0 7px 18px rgba(0,0,0,.18);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.card:active{transform:scale(.98)}.card:hover{border-color:rgba(98,255,205,.55);box-shadow:0 0 0 1px rgba(98,255,205,.16),0 0 19px rgba(63,209,255,.16),0 9px 24px rgba(0,0,0,.25)}.go{background:linear-gradient(135deg,#ffe373,#ffc534);box-shadow:0 0 14px rgba(255,208,62,.23)}.milad{box-shadow:0 0 16px rgba(255,65,57,.35)}@media(max-width:460px){.card{box-shadow:0 5px 13px rgba(0,0,0,.15)}.card:hover{box-shadow:0 5px 13px rgba(0,0,0,.15)}}@media(prefers-reduced-motion:reduce){.card{transition:none}}
+.pintu-back{position:fixed;z-index:20;top:12px;left:12px;min-height:42px;padding:0 12px;border:1px solid rgba(255,255,255,.22);border-radius:11px;background:rgba(6,20,30,.78);color:#fff;font:800 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.24)}.pintu-back:active{transform:scale(.97)}@media(max-width:460px){.pintu-back{top:10px;left:10px}}
+
+/* Cloud leaderboard */
+.leaderboard{width:100%;margin:2px 0 4px;border:1px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(5,15,23,.42);padding:12px;text-align:left}.lb-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.lb-head b{font-size:13px;color:#ffe373;letter-spacing:.04em}.lb-head small{color:rgba(255,255,255,.62);font-size:10px}.lb-tabs{display:flex;gap:6px;margin:10px 0 7px}.lb-tab{border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.06);color:#ddecf5;padding:7px 9px;border-radius:8px;font:800 11px/1 system-ui;cursor:pointer}.lb-tab.on{background:#ffe373;color:#263241;border-color:#ffe373}.lb-list{display:grid;gap:5px}.lb-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.06);font-size:12px}.lb-rank{font-weight:900;color:#ffe373}.lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:750}.lb-score{font-weight:900;color:#9ff1d8}.lb-empty{color:rgba(255,255,255,.6);font-size:11px;padding:8px 3px;text-align:center}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="logo-blessing.js" defer></script>
+</head>
+<body>
+<button class="pintu-back" id="pintuBack" type="button" aria-label="Kembali ke Pintu Angin">← Pintu Angin</button>
+<div id="wrap">
+  <!-- MENU -->
+  <div id="menu">
+    <span class="milad">🎮 DONT PANIC</span>
+    <img class="logo" id="logoImg" alt="RCS.CBS">
+    <div class="brand">DONT <span>PANIC</span></div>
+    <div class="tag">Game ringan untuk istirahat sejenak. Tetap waspada dan utamakan keselamatan. 🆘</div>
+    <div class="pick">— Pilih Tantangan —</div>
+    <div class="cards">
+      <div class="card" data-game="flyer">
+        <div class="ic fly">🏵️</div>
+        <div class="cbody">
+          <div class="cname">RCS.CBS <i>FLYER</i></div>
+          <div class="cdesc">Terbangkan logo melewati celah pegunungan. Uji seberapa jauh kamu bertahan!</div>
+        </div>
+        <div class="go">MAIN ▶</div>
+      </div>
+      <div class="card" data-game="ngopi">
+        <div class="ic cof">☕</div>
+        <div class="cbody">
+          <div class="cname">RCS.CBS <i>NGOPI</i></div>
+          <div class="cdesc">Geser cangkir berlogo untuk menangkap kopi, kumpulkan poin sebanyak mungkin!</div>
+        </div>
+        <div class="go">MAIN ▶</div>
+      </div>
+    </div>
+
+    <section class="leaderboard" aria-label="Leaderboard sepanjang waktu"><div class="lb-head"><b>🏆 LEADERBOARD</b><small>Sepanjang waktu</small></div><div class="lb-tabs"><button class="lb-tab on" data-lb-game="flyer">Flyer</button><button class="lb-tab" data-lb-game="ngopi">Ngopi</button></div><div class="lb-list" id="lbList"><div class="lb-empty">Memuat peringkat…</div></div></section>
+    <div class="foot">PINTU ANGIN • RCS.CBS</div>
+  </div>
+
+  <!-- GAME -->
+  <div id="gameView">
+    <div id="topbar">
+      <button id="backBtn">← Menu</button>
+      <div id="gameName"></div>
+    </div>
+    <iframe id="frame" title="Game"></iframe>
+  </div>
+</div>
+
+<script>
+const LOGO_SRC = "rc-logo.webp";
+document.getElementById('logoImg').src = LOGO_SRC;
+document.getElementById('pintuBack').addEventListener('click',function(){try{sessionStorage.removeItem('pintuReturn');}catch(e){}window.location.href='index.html';});
+
+
+const LB_URL='https://ncoueeeskzslldppsbvx.supabase.co';
+const LB_KEY='sb_publishable_kJ_OnKqVK7dnt0qaKXX_lQ_Phgg_TZ2';
+let lbGame='flyer', lbClient=null;
+function lb(){try{if(!lbClient&&window.supabase)lbClient=window.supabase.createClient(LB_URL,LB_KEY);return lbClient;}catch(e){return null}}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(x){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[x]})}
+async function loadLeaderboard(game){lbGame=game||lbGame;document.querySelectorAll('.lb-tab').forEach(function(b){b.classList.toggle('on',b.dataset.lbGame===lbGame)});const host=document.getElementById('lbList'),c=lb();if(!c){host.innerHTML='<div class="lb-empty">Leaderboard perlu koneksi internet.</div>';return 0}host.innerHTML='<div class="lb-empty">Memuat peringkat…</div>';const r=await c.from('game_leaderboard').select('player_name,best_score,updated_at').eq('game_key',lbGame).order('best_score',{ascending:false}).limit(10);if(r.error){host.innerHTML='<div class="lb-empty">Leaderboard akan aktif setelah SQL kompetisi dijalankan.</div>';return 0}const rows=r.data||[];rows.sort(function(a,b){if(b.best_score!==a.best_score)return b.best_score-a.best_score;return new Date(a.updated_at)-new Date(b.updated_at);});host.innerHTML=rows.length?rows.map(function(x,i){return '<div class="lb-row"><span class="lb-rank">'+(i<3?['🥇','🥈','🥉'][i]:'#'+(i+1))+'</span><span class="lb-name">'+esc(x.player_name)+'</span><span class="lb-score">'+Number(x.best_score||0).toLocaleString('id-ID')+'</span></div>'}).join(''):'<div class="lb-empty">Belum ada rekor. Jadilah yang pertama!</div>';return rows[0]?Number(rows[0].best_score||0):0}
+async function submitScore(game,score){const c=lb();let global=await loadLeaderboard(game);if(!c){console.warn('Leaderboard tidak tersedia');return {saved:false,reason:'offline',global:global};}const s=await c.auth.getSession().catch(function(){return {data:{session:null}}});const user=s&&s.data&&s.data.session&&s.data.session.user;if(!user){console.warn('Skor tidak disimpan: login Google diperlukan');return {saved:false,reason:'noauth',global:global};}const name=((user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||user.email||'Pemain').slice(0,80);const r=await c.rpc('submit_game_score',{p_game_key:game,p_score:Math.max(0,Math.min(100000,Math.round(Number(score)||0))),p_player_name:name});if(r.error){console.error('Gagal menyimpan skor:',r.error.message||r.error);return {saved:false,reason:'rpc_error',global:global};}global=await loadLeaderboard(game);return {saved:true,reason:null,global:global};}
+function showToast(msg,kind){var t=document.createElement('div');t.textContent=msg;t.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);max-width:90%;padding:12px 18px;border-radius:12px;font:800 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;text-align:center;z-index:99;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.4);'+(kind==='err'?'background:rgba(170,30,40,.92);border:1px solid rgba(255,100,100,.45);':'background:rgba(20,30,50,.92);border:1px solid rgba(255,255,255,.18);');document.body.appendChild(t);setTimeout(function(){if(t&&t.parentNode)t.parentNode.removeChild(t);},4500);}
+window.addEventListener('message',async function(e){if(e.source!==frame.contentWindow||!e.data||e.data.type!=='pintu-game-score')return;const game=e.data.game==='ngopi'?'ngopi':'flyer',score=Math.max(0,Math.round(Number(e.data.score)||0));const res=await submitScore(game,score);if(res&&!res.saved){if(res.reason==='noauth')showToast('Skor '+score+' tidak masuk leaderboard — login Google dulu dari Pintu Angin untuk menyimpan rekor.','err');else if(res.reason==='offline')showToast('Skor '+score+' tidak masuk leaderboard — perlu koneksi internet.','err');else showToast('Skor tidak dapat disimpan saat ini. Coba lagi nanti.','err');}else if(res&&res.saved){showToast('Rekor tersimpan! Skor: '+score,'ok');}try{frame.contentWindow.postMessage({type:'pintu-game-global',score:res?res.global:0},'*')}catch(_){} });
+document.querySelectorAll('.lb-tab').forEach(function(b){b.addEventListener('click',function(){loadLeaderboard(b.dataset.lbGame)})});
+window.addEventListener('load',function(){setTimeout(function(){loadLeaderboard('flyer')},250);setInterval(function(){loadLeaderboard(lbGame);},30000);});
+
+const GAMES = {
+  flyer: { name: 'RCS.CBS FLYER', src: 'games/flyer.html' },
+  ngopi: { name: 'RCS.CBS NGOPI', src: 'games/ngopi.html' }
+};
+const menu = document.getElementById('menu');
+const gameView = document.getElementById('gameView');
+const frame = document.getElementById('frame');
+const gameName = document.getElementById('gameName');
+
+function openGame(key){
+  const g = GAMES[key]; if(!g) return;
+  gameName.textContent = g.name;
+  try{ frame.removeAttribute('srcdoc'); }catch(e){}
+  frame.src = g.src + '?v=' + Date.now();
+  menu.style.display = 'none';
+  gameView.style.display = 'flex';
+}
+function backToMenu(){
+  try{ frame.src = 'about:blank'; frame.removeAttribute('srcdoc'); }catch(e){}
+  gameView.style.display = 'none';
+  menu.style.display = 'flex';
+}
+
+document.querySelectorAll('.card').forEach(c=>{
+  c.addEventListener('click', ()=> openGame(c.getAttribute('data-game')));
+});
+document.getElementById('backBtn').addEventListener('click', backToMenu);
+</script>
+</body>
+</html>
