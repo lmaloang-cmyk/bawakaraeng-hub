@@ -260,7 +260,11 @@
   <!-- ================= MODE LANGSUNG ================= -->
   <div class="card" id="directCard">
     <h2>⚡ Mode Langsung — Radio di Halaman Ini</h2>
+<<<<<<< HEAD
     <p>Tanpa install aplikasi apa pun: halaman ini sendiri yang jadi radionya. Butuh Android Chrome/Edge terbaru, dan semua HP tersambung ke satu hotspot WiFi yang sama (panduan hotspot ada di bawah). Jangkauan bisa diperjauh berantai lewat <b>Mode RELAY</b> — panduannya juga di bawah.</p>
+=======
+    <p>Tanpa install aplikasi apa pun: halaman ini sendiri yang jadi radionya. Butuh Android Chrome/Edge terbaru, dan semua HP tersambung ke satu hotspot WiFi yang sama (panduan hotspot ada di bawah).</p>
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
 
     <!-- ==== BERANDA RADIO ==== -->
     <div id="viewHome">
@@ -301,9 +305,12 @@
         <button class="btn sec" id="btnMember" onclick="uiMemberStart()">🙋 Aktivasi sebagai ANGGOTA</button>
       </div>
       <div class="btnrow">
+<<<<<<< HEAD
         <button class="btn sec" id="btnRelay" onclick="uiRelayStart()">🔀 Aktivasi sebagai RELAY (penerus)</button>
       </div>
       <div class="btnrow">
+=======
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
         <button class="btn sec" onclick="showView('viewHome')">‹ Kembali</button>
       </div>
     </div>
@@ -343,7 +350,11 @@
 
     <!-- ==== ANGGOTA: PINDAI TAWARAN ==== -->
     <div id="viewMemberScan" hidden>
+<<<<<<< HEAD
       <p style="margin-top:0" id="memberScanCap"><b>Langkah 1 — Pindai QR tawaran</b> yang tampil di layar HP ketua.</p>
+=======
+      <p style="margin-top:0"><b>Langkah 1 — Pindai QR tawaran</b> yang tampil di layar HP ketua.</p>
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
       <div class="scanbox"><video id="memberScanVideo" playsinline muted></video><div class="scanhint">Arahkan kamera ke QR di layar HP ketua</div></div>
       <details style="margin-top:10px">
         <summary>Kamera tidak bisa / tidak ada pemindai? Tempel kode manual</summary>
@@ -383,9 +394,12 @@
           <span class="ptt-timer" id="pttTimer" aria-hidden="true">0.0s</span>
         </button>
         <div class="memrow" id="memRow"></div>
+<<<<<<< HEAD
         <div class="btnrow" style="width:100%" id="relayAddRow" hidden>
           <button class="btn pri" onclick="uiRelayAddMember()">📡 Sambungkan Anggota Belakang</button>
         </div>
+=======
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
         <div class="btnrow" style="width:100%">
           <button class="btn warn" onclick="uiLeave()">⏻ Tinggalkan Radio</button>
         </div>
@@ -414,6 +428,7 @@
     </div>
   </div>
 
+<<<<<<< HEAD
   <!-- ================= MODE RELAY (PENERUS SINYAL) ================= -->
   <div class="card">
     <h2>🔀 Mode RELAY — Perjauh Jangkauan</h2>
@@ -435,6 +450,8 @@
     </div>
   </div>
 
+=======
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
   <!-- ================= APLIKASI PIHAK KETIGA (ALTERNATIF) ================= -->
   <div class="card">
     <h2>📱 Alternatif: Aplikasi PTT (Gratis)</h2>
@@ -470,7 +487,11 @@
   <div class="card">
     <h2>🏔️ Tips Lapangan</h2>
     <ul class="tips">
+<<<<<<< HEAD
       <li><span>📏</span><div>Jangkauan mengikuti WiFi: ±30–100 m di area terbuka, lebih pendek di hutan lebat. Bisa diperjauh berantai dengan <b>Mode RELAY</b> (panduan di atas). Untuk jarak jauh antar-pos tetap andalkan HT atau node LoRa.</div></li>
+=======
+      <li><span>📏</span><div>Jangkauan mengikuti WiFi: ±30–100 m di area terbuka, lebih pendek di hutan lebat. Cukup untuk satu rombongan/pos. Untuk jarak jauh antar-pos tetap andalkan HT atau node LoRa.</div></li>
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
       <li><span>🔋</span><div>HP anggota boleh matikan <b>data seluler &amp; mode pesawat OFF tetap WiFi ON</b> supaya tidak boros baterai mencari sinyal. HP host jangan dimatikan hotspotnya.</div></li>
       <li><span>🎙️</span><div>Bicara singkat &amp; jelas: sebut nama dulu ("Basecamp dari Rombongan 2…"), lepas tombol baru orang lain bisa menjawab.</div></li>
       <li><span>🌧️</span><div>Simpan HP host di tempat kering &amp; hangat (kantong dalam jaket) — baterai cepat drop di suhu dingin puncak.</div></li>
@@ -493,10 +514,13 @@
       <p>Sebagian HP mematikan hotspot saat "tidak ada internet" atau layar kunci. Matikan fitur hemat baterai untuk hotspot, dan di pengaturan hotspot pilih "tetap aktif". Jaga layar HP host tetap menyala saat sesi radio penting.</p>
     </details>
     <details>
+<<<<<<< HEAD
       <summary>Mode relay: anggota belakang tidak bisa tersambung</summary>
       <p>Pastikan HP relay benar-benar mendukung WiFi + hotspot bersamaan (tes: nyalakan hotspot saat WiFi tersambung — kalau WiFi ikut putus, HP-nya tidak mendukung). Anggota belakang harus tersambung ke <b>hotspot HP relay</b>, bukan ke hotspot ketua. Pairing anggota belakang dilakukan dari layar radio HP relay lewat tombol "Sambungkan Anggota Belakang". Jaga HP relay tetap di tengah: masih dalam jangkauan hotspot depan, tapi terjangkau anggota belakang.</p>
     </details>
     <details>
+=======
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
       <summary>Harus install saat di gunung, tidak ada sinyal. Bagaimana?</summary>
       <p>Mode Langsung tidak butuh install apa pun — halaman ini bagian dari Pintu Angin dan tersimpan offline. Cukup pastikan Pintu Angin pernah dibuka sebelumnya (otomatis tercache). Kalau mau pakai aplikasi pihak ketiga, aplikasinya harus diinstall <b>sebelum berangkat</b>.</p>
     </details>
@@ -635,7 +659,11 @@ async function uiHostNextOffer() {
   window.__bwkLastOffer = offer; /* hook uji otomatis */
   drawQr(document.getElementById('offerQr'), offer);
   var slot = R._state.pendingSlot;
+<<<<<<< HEAD
   document.getElementById('offerCap').textContent = (currentRole === 'relay' ? 'QR tawaran untuk anggota belakang #' : 'QR tawaran untuk anggota #') + (slot + 1) + '. Setelah ia memindai, lanjut ke Langkah B.';
+=======
+  document.getElementById('offerCap').textContent = 'QR tawaran untuk anggota #' + (slot + 1) + '. Setelah ia memindai, lanjut ke Langkah B.';
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
   document.getElementById('btnScanAnswer').disabled = false;
 }
 function uiHostScanAnswer() {
@@ -673,6 +701,7 @@ function uiHostScanDone() {
 /* ---------- ANGGOTA ---------- */
 function uiMemberStart() {
   currentRole = 'member';
+<<<<<<< HEAD
   document.getElementById('memberScanCap').innerHTML = '<b>Langkah 1 — Pindai QR tawaran</b> yang tampil di layar HP ketua.';
   showView('viewMemberScan');
   R.startScan(document.getElementById('memberScanVideo'), onMemberOfferScanned, function (err) {
@@ -685,6 +714,8 @@ function uiMemberStart() {
 function uiRelayStart() {
   currentRole = 'relay';
   document.getElementById('memberScanCap').innerHTML = '<b>Mode RELAY — Langkah 1: pindai QR tawaran</b> dari HP di depan (ketua / relay lain). Pastikan HP-mu tersambung ke hotspot depan DAN hotspot-mu sendiri aktif (mis. Samsung Wi-Fi sharing).';
+=======
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
   showView('viewMemberScan');
   R.startScan(document.getElementById('memberScanVideo'), onMemberOfferScanned, function (err) {
     if (err === 'no-bd') toast('Pemindai QR tidak ada — pakai tempel kode manual');
@@ -695,6 +726,7 @@ async function onMemberOfferScanned(text) {
   var c = R.parseCode(text);
   if (!c || c.type !== 'O') {
     toast('QR tidak dikenali — coba lagi');
+<<<<<<< HEAD
     setTimeout(currentRole === 'relay' ? uiRelayStart : uiMemberStart, 700);
     return;
   }
@@ -709,6 +741,20 @@ async function onMemberOfferScanned(text) {
   } catch (e) {
     toast(e && e.name === 'NotAllowedError' ? 'Izin mikrofon ditolak' : 'Gagal memproses tawaran');
     setTimeout(currentRole === 'relay' ? uiRelayStart : uiMemberStart, 700);
+=======
+    setTimeout(uiMemberStart, 700);
+    return;
+  }
+  try {
+    var ans = await R.memberAnswer(text);
+    window.__bwkLastAnswer = ans; /* hook uji otomatis */
+    drawQr(document.getElementById('answerQr'), ans);
+    showView('viewAnswer');
+    document.getElementById('answerCap').textContent = 'Menunggu ketua memindai… radio terbuka otomatis begitu tersambung.';
+  } catch (e) {
+    toast(e && e.name === 'NotAllowedError' ? 'Izin mikrofon ditolak' : 'Gagal memproses tawaran');
+    setTimeout(uiMemberStart, 700);
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
   }
 }
 function uiMemberManual() {
@@ -725,6 +771,7 @@ function uiCancelToRoom() {
 function openRadio() {
   showView('viewRadio');
   renderMembers();
+<<<<<<< HEAD
   document.getElementById('relayAddRow').hidden = (currentRole !== 'relay');
   document.getElementById('radioStatus').textContent =
     currentRole === 'host' ? 'Kamu KETUA — semua suara lewat HP-mu' :
@@ -732,10 +779,15 @@ function openRadio() {
 }
 async function uiRelayAddMember() {
   try { await uiHostNextOffer(); } catch (e) { toast('Gagal menyiapkan tawaran'); }
+=======
+  document.getElementById('radioStatus').textContent =
+    currentRole === 'host' ? 'Kamu KETUA — semua suara lewat HP-mu' : 'Radio siap';
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
 }
 function renderMembers() {
   var el = document.getElementById('memRow');
   el.innerHTML = '';
+<<<<<<< HEAD
   if (currentRole === 'member' || currentRole === 'relay') {
     var upState = R.upstreamState();
     var upOk = upState === 'connected';
@@ -750,14 +802,23 @@ function renderMembers() {
     if (currentRole === 'host') {
       el.innerHTML = '<span class="mem"><span class="dot wait"></span>Belum ada anggota tersambung</span>';
     }
+=======
+  var list = R.memberList();
+  if (!list.length) {
+    el.innerHTML = '<span class="mem"><span class="dot wait"></span>Belum ada anggota tersambung</span>';
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
     return;
   }
   list.forEach(function (m) {
     var ok = m.state === 'connected';
     var s = document.createElement('span');
     s.className = 'mem';
+<<<<<<< HEAD
     s.innerHTML = '<span class="dot ' + (ok ? 'ok' : 'wait') + '"></span>' +
       (currentRole === 'relay' ? 'Bawahan #' : 'Anggota #') + (m.slot + 1) + (ok ? '' : ' (' + esc(m.state) + ')');
+=======
+    s.innerHTML = '<span class="dot ' + (ok ? 'ok' : 'wait') + '"></span>Anggota #' + (m.slot + 1) + (ok ? '' : ' (' + esc(m.state) + ')');
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
     el.appendChild(s);
   });
 }
@@ -814,8 +875,13 @@ function uiLeave() {
 /* ---------- event radio ---------- */
 R.on('peer', function (d) {
   renderMembers();
+<<<<<<< HEAD
   if (d.up && d.state === 'connected' && (currentRole === 'member' || currentRole === 'relay')) {
     toast(currentRole === 'relay' ? 'Tersambung ke menara depan! 🔗' : 'Tersambung ke ketua! 🎉');
+=======
+  if (currentRole === 'member' && d.state === 'connected') {
+    toast('Tersambung ke ketua! 🎉');
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
     openRadio();
   }
 });

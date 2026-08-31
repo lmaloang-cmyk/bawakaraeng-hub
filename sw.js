@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const CACHE='bwk-v92-ptt-tile';
+=======
+const CACHE='bwk-v89-offline-tiles';
+>>>>>>> 4efb1c93fedd7b4c95e6ce44b86a2edebcd983d8
 // Pre-cached app shell. Keep install small; guide-assets images are cached
 // at runtime via cache-first fetch strategy so first install stays fast.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
