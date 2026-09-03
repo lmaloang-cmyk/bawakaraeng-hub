@@ -11,11 +11,6 @@
  * Host menjadi "menara": menerima mic tiap anggota, mencampur (mix-minus via
  * Web Audio), dan mengirim balik ke semua anggota. Jangkauan = jangkauan WiFi.
  *
- * Mode RELAY (penerus sinyal): HP yang sanggup WiFi+hotspot bersamaan (mis.
- * Samsung "Wi-Fi sharing") menjadi anggota bagi menara depan SEKALIGUS host
- * bagi anggota di belakangnya. Suara diteruskan dua arah lewat Web Audio,
- * jadi jangkauan berlipat mengikuti jumlah HP relay dalam rantai.
- *
  * Dependensi: radio-qr.js (QRGen). Web Bluetooth/aplikasi native: tidak perlu.
  */
 window.BWKRadio = (function () {
@@ -66,7 +61,7 @@ function parseCode(text) {
 
 /* ================= state ================= */
 var S = {
-  room: null, role: null,        // role: 'host' | 'member' | 'relay'
+  room: null, role: null,        // role: 'host' | 'member'
   stream: null, micTrack: null, actx: null, hostMicSrc: null,
   pcs: {},        // slot -> RTCPeerConnection (sisi host)
   pc: null,       // sisi anggota
@@ -74,9 +69,6 @@ var S = {
   mixDests: {},   // slot -> MediaStreamDestination (mix-minus per anggota)
   remoteSrcs: {}, // slot -> MediaStreamAudioSourceNode (mic anggota)
   remoteEls: {},  // slot/name -> elemen audio (pemakaian anggota)
-  uplinkMix: null,   // relay: MediaStreamDestination campuran mic sendiri + bawahan -> menara depan
-  upstreamSrc: null, // relay: MediaStreamAudioSourceNode dari menara depan
-  upState: null,     // anggota/relay: status koneksi ke menara depan
   members: {},    // slot -> {state}
   talking: false,
   scanHandler: null, scanStop: null
@@ -129,34 +121,30 @@ function waitIce(pc) {
   });
 }
 
-function watchPc(pc, slot, isUp) {
-  pc.__bwkUp = !!isUp;
+function watchPc(pc, slot) {
   pc.onconnectionstatechange = function () {
     var st = pc.connectionState;
-    if (isUp) { S.upState = st; } else { S.members[slot] = { state: st }; }
-    if (st === 'connected') { log((isUp ? 'Menara depan' : 'Slot ' + slot) + ' tersambung'); }
-    emit('peer', { slot: slot, state: st, up: !!isUp });
+    S.members[slot] = { state: st };
+    if (st === 'connected') { log('Slot ' + slot + ' tersambung'); }
+    emit('peer', { slot: slot, state: st });
   };
   pc.onicecandidateerror = function () { };
 }
 
 function hostWireIncomingTrack(slot, stream) {
-  /* Mic anggota masuk: sambungkan ke speaker lokal + ke mix semua anggota LAIN.
-     Pada relay: juga ke campuran uplink agar terdengar oleh menara depan. */
+  /* Mic anggota masuk: sambungkan ke speaker host + ke mix semua anggota LAIN */
   try {
     var src = S.actx.createMediaStreamSource(stream);
     S.remoteSrcs[slot] = src;
-    src.connect(S.actx.destination); /* host/relay ikut mendengar */
+    src.connect(S.actx.destination); /* host ikut mendengar */
     Object.keys(S.mixDests).forEach(function (k) {
       if (+k !== slot) { try { src.connect(S.mixDests[k]); } catch (e) { } }
     });
-    if (S.uplinkMix) { try { src.connect(S.uplinkMix); } catch (e) { } } /* relay: bawahan -> menara depan */
   } catch (e) { }
 }
 
 async function hostMakeOffer() {
   await initAudio();
-  if (!S.role) S.role = 'host';
   var slot = 0;
   while (S.pcs[slot]) slot++;
   var pc = new RTCPeerConnection({ iceServers: [] });
@@ -167,7 +155,6 @@ async function hostMakeOffer() {
   S.mixDests[slot] = dest;
   S.hostMicSrc.connect(dest); /* suara host → anggota ini */
   Object.keys(S.remoteSrcs).forEach(function (k) { if (+k !== slot) { try { S.remoteSrcs[k].connect(dest); } catch (e) { } } });
-  if (S.upstreamSrc) { try { S.upstreamSrc.connect(dest); } catch (e) { } } /* relay: suara menara depan -> bawahan baru */
 
   pc.addTransceiver(dest.stream.getAudioTracks()[0], { direction: 'sendrecv' });
   pc.ontrack = function (ev) { hostWireIncomingTrack(slot, ev.streams[0] || new MediaStream([ev.track])); };
@@ -194,7 +181,7 @@ async function memberAnswer(offerText) {
   if (!c || c.type !== 'O') throw new Error('bukan-tawaran');
   await initAudio();
   var pc = new RTCPeerConnection({ iceServers: [] });
-  S.pc = pc; S.slot = c.slot; S.role = 'member';
+  S.pc = pc; S.slot = c.slot;
   pc.ontrack = function (ev) {
     /* mix dari host berisi suara host + anggota lain (tanpa diri sendiri) */
     var st = ev.streams[0] || new MediaStream([ev.track]);
@@ -203,52 +190,10 @@ async function memberAnswer(offerText) {
     S.remoteEls.host = el;
     el.play().catch(function () { });
   };
-  watchPc(pc, c.slot, true);
+  watchPc(pc, c.slot);
   var sdp = await inflateText(c.payload);
   await pc.setRemoteDescription({ type: 'offer', sdp: sdp });
   pc.addTrack(S.micTrack); /* menempel ke transceiver yang disiapkan host */
-  var ans = await pc.createAnswer();
-  await pc.setLocalDescription(ans);
-  await waitIce(pc);
-  return 'BWKR1|A|' + c.slot + '|' + await packSdp(pc.localDescription.sdp);
-}
-
-/* ================= RELAY (penerus sinyal) ================= */
-/* HP relay = anggota bagi menara depan SEKALIGUS host bagi anggota di
- * belakangnya. Menara depan mengirim mix-minus terhadap relay, jadi tidak
- * ada gema balik walau suara diteruskan dua arah:
- *   uplink   : mic relay + mic semua bawahan -> dicampur -> ke menara depan
- *   downlink : suara menara depan -> speaker relay + semua mix bawahan
- * Butuh HP yang sanggup WiFi+hotspot bersamaan (mis. Samsung Wi-Fi sharing).
- */
-async function relayAnswer(offerText) {
-  var c = parseCode(offerText);
-  if (!c || c.type !== 'O') throw new Error('bukan-tawaran');
-  await initAudio();
-  var pc = new RTCPeerConnection({ iceServers: [] });
-  S.pc = pc; S.slot = c.slot; S.role = 'relay';
-
-  /* Campuran uplink: mic relay + mic semua bawahan yang sudah tersambung */
-  var up = S.actx.createMediaStreamDestination();
-  S.uplinkMix = up;
-  try { S.hostMicSrc.connect(up); } catch (e) { }
-  Object.keys(S.remoteSrcs).forEach(function (k) { try { S.remoteSrcs[k].connect(up); } catch (e) { } });
-
-  pc.ontrack = function (ev) {
-    var st = ev.streams[0] || new MediaStream([ev.track]);
-    try {
-      var src = S.actx.createMediaStreamSource(st);
-      S.upstreamSrc = src;
-      src.connect(S.actx.destination); /* relay ikut mendengar menara depan */
-      Object.keys(S.mixDests).forEach(function (k) { /* teruskan ke tiap bawahan */
-        try { src.connect(S.mixDests[k]); } catch (e) { }
-      });
-    } catch (e) { }
-  };
-  watchPc(pc, c.slot, true);
-  var sdp = await inflateText(c.payload);
-  await pc.setRemoteDescription({ type: 'offer', sdp: sdp });
-  pc.addTrack(up.stream.getAudioTracks()[0]); /* menempel ke transceiver tawaran */
   var ans = await pc.createAnswer();
   await pc.setLocalDescription(ans);
   await waitIce(pc);
@@ -275,7 +220,6 @@ function leave() {
   if (S.scanStop) { try { S.scanStop(); } catch (e) { } }
   S.pcs = {}; S.pc = null; S.slot = -1; S.pendingSlot = -1;
   S.mixDests = {}; S.remoteSrcs = {}; S.remoteEls = {}; S.members = {};
-  S.uplinkMix = null; S.upstreamSrc = null; S.upState = null; S.role = null;
   S.stream = null; S.micTrack = null; S.actx = null; S.hostMicSrc = null;
   S.talking = false; S.scanHandler = null;
   emit('peer', { slot: -1, state: 'closed' });
@@ -318,9 +262,6 @@ return {
   hostMakeOffer: hostMakeOffer,
   hostAcceptAnswer: hostAcceptAnswer,
   memberAnswer: memberAnswer,
-  relayAnswer: relayAnswer,
-  upstreamState: function () { return S.upState; },
-  role: function () { return S.role; },
   setTalking: setTalking,
   isTalking: isTalking,
   memberList: memberList,

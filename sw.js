@@ -1,4 +1,4 @@
-const CACHE='bwk-v85-radio-offline';
+const CACHE='bwk-v90-radio-ptt';
 // Pre-cached app shell. Keep install small; guide-assets images are cached
 // at runtime via cache-first fetch strategy so first install stays fast.
 const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
@@ -11,13 +11,16 @@ const ASSETS=['/','/index.html','/styles.css','/manifest.json','/rc-logo.webp',
   '/icon-192.png','/icon-512.png','/apple-touch-icon.png',
   // Fallback untuk navigasi offline
   '/offline.html',
-  '/radio.html',
   // Modul peta offline (parser GPX/KML/GeoJSON + tile downloader UI)
   '/map-files.js',
   '/map-offline.js',
   // Halaman peta layar penuh + Leaflet lokal + data jalur bersama
   '/peta-fullscreen.html',
   '/peta-data.js',
+// Radio PTT offline (walkie-talkie WebRTC via hotspot, pairing QR)
+  '/radio.html',
+  '/radio-qr.js',
+  '/radio-ptt.js',
   '/leaflet.js',
   '/leaflet.css',
   // Halaman tim & transparansi
